@@ -1,0 +1,207 @@
+<!DOCTYPE model>
+<Option type="Map">
+  <Option name="children" type="Map">
+    <Option name="gdal:warpreproject_1" type="Map">
+      <Option name="active" value="true" type="bool"/>
+      <Option name="alg_config"/>
+      <Option name="alg_id" value="gdal:warpreproject" type="QString"/>
+      <Option name="component_description" value="Warp (reproject)" type="QString"/>
+      <Option name="component_pos_x" value="479.20000000000005" type="double"/>
+      <Option name="component_pos_y" value="231.20000000000002" type="double"/>
+      <Option name="dependencies"/>
+      <Option name="id" value="gdal:warpreproject_1" type="QString"/>
+      <Option name="outputs"/>
+      <Option name="outputs_collapsed" value="true" type="bool"/>
+      <Option name="parameters_collapsed" value="true" type="bool"/>
+      <Option name="params" type="Map">
+        <Option name="DATA_TYPE" type="List">
+          <Option type="Map">
+            <Option name="source" value="2" type="int"/>
+            <Option name="static_value" value="0" type="int"/>
+          </Option>
+        </Option>
+        <Option name="EXTRA" type="List">
+          <Option type="Map">
+            <Option name="source" value="2" type="int"/>
+            <Option name="static_value" value="" type="QString"/>
+          </Option>
+        </Option>
+        <Option name="INPUT" type="List">
+          <Option type="Map">
+            <Option name="parameter_name" value="TemplateRaster" type="QString"/>
+            <Option name="source" value="0" type="int"/>
+          </Option>
+        </Option>
+        <Option name="MULTITHREADING" type="List">
+          <Option type="Map">
+            <Option name="source" value="2" type="int"/>
+            <Option name="static_value" value="false" type="bool"/>
+          </Option>
+        </Option>
+        <Option name="NODATA" type="List">
+          <Option type="Map">
+            <Option name="source" value="2" type="int"/>
+            <Option name="static_value" type="invalid"/>
+          </Option>
+        </Option>
+        <Option name="OPTIONS" type="List">
+          <Option type="Map">
+            <Option name="source" value="2" type="int"/>
+            <Option name="static_value" value="" type="QString"/>
+          </Option>
+        </Option>
+        <Option name="RESAMPLING" type="List">
+          <Option type="Map">
+            <Option name="source" value="2" type="int"/>
+            <Option name="static_value" value="0" type="int"/>
+          </Option>
+        </Option>
+        <Option name="SOURCE_CRS" type="List">
+          <Option type="Map">
+            <Option name="source" value="2" type="int"/>
+            <Option name="static_value" type="invalid"/>
+          </Option>
+        </Option>
+        <Option name="TARGET_CRS" type="List">
+          <Option type="Map">
+            <Option name="source" value="2" type="int"/>
+            <Option name="static_value" type="QgsCoordinateReferenceSystem">
+              <spatialrefsys>
+                <wkt>PROJCRS["USA_Contiguous_Albers_Equal_Area_Conic_USGS_version",BASEGEOGCRS["NAD83",DATUM["North American Datum 1983",ELLIPSOID["GRS 1980",6378137,298.257222101,LENGTHUNIT["metre",1]]],PRIMEM["Greenwich",0,ANGLEUNIT["Degree",0.0174532925199433]]],CONVERSION["USA_Contiguous_Albers_Equal_Area_Conic_USGS_version",METHOD["Albers Equal Area",ID["EPSG",9822]],PARAMETER["Latitude of false origin",23,ANGLEUNIT["Degree",0.0174532925199433],ID["EPSG",8821]],PARAMETER["Longitude of false origin",-96,ANGLEUNIT["Degree",0.0174532925199433],ID["EPSG",8822]],PARAMETER["Latitude of 1st standard parallel",29.5,ANGLEUNIT["Degree",0.0174532925199433],ID["EPSG",8823]],PARAMETER["Latitude of 2nd standard parallel",45.5,ANGLEUNIT["Degree",0.0174532925199433],ID["EPSG",8824]],PARAMETER["Easting at false origin",0,LENGTHUNIT["metre",1],ID["EPSG",8826]],PARAMETER["Northing at false origin",0,LENGTHUNIT["metre",1],ID["EPSG",8827]]],CS[Cartesian,2],AXIS["(E)",east,ORDER[1],LENGTHUNIT["metre",1]],AXIS["(N)",north,ORDER[2],LENGTHUNIT["metre",1]],USAGE[SCOPE["unknown"],AREA["USA - CONUS - onshore"],BBOX[24.41,-124.79,49.38,-66.91]],ID["ESRI",102039]]</wkt>
+                <proj4>+proj=aea +lat_0=23 +lon_0=-96 +lat_1=29.5 +lat_2=45.5 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs</proj4>
+                <srsid>60503</srsid>
+                <srid>520000503</srid>
+                <authid>ESRI:102039</authid>
+                <description>USA_Contiguous_Albers_Equal_Area_Conic_USGS_version</description>
+                <projectionacronym>aea</projectionacronym>
+                <ellipsoidacronym>EPSG:7019</ellipsoidacronym>
+                <geographicflag>false</geographicflag>
+              </spatialrefsys>
+            </Option>
+          </Option>
+        </Option>
+        <Option name="TARGET_EXTENT" type="List">
+          <Option type="Map">
+            <Option name="parameter_name" value="watershed" type="QString"/>
+            <Option name="source" value="0" type="int"/>
+          </Option>
+        </Option>
+        <Option name="TARGET_EXTENT_CRS" type="List">
+          <Option type="Map">
+            <Option name="source" value="2" type="int"/>
+            <Option name="static_value" type="invalid"/>
+          </Option>
+        </Option>
+        <Option name="TARGET_RESOLUTION" type="List">
+          <Option type="Map">
+            <Option name="source" value="2" type="int"/>
+            <Option name="static_value" type="invalid"/>
+          </Option>
+        </Option>
+      </Option>
+    </Option>
+  </Option>
+  <Option name="help"/>
+  <Option name="modelVariables"/>
+  <Option name="model_group" value="" type="QString"/>
+  <Option name="model_name" value="Align Rasters" type="QString"/>
+  <Option name="parameterDefinitions" type="Map">
+    <Option name="TemplateRaster" type="Map">
+      <Option name="default" type="invalid"/>
+      <Option name="description" value="Template Raster" type="QString"/>
+      <Option name="flags" value="0" type="int"/>
+      <Option name="metadata"/>
+      <Option name="name" value="TemplateRaster" type="QString"/>
+      <Option name="parameter_type" value="raster" type="QString"/>
+    </Option>
+    <Option name="rasterstoalign" type="Map">
+      <Option name="default" type="invalid"/>
+      <Option name="description" value="Rasters to Align" type="QString"/>
+      <Option name="flags" value="0" type="int"/>
+      <Option name="layer_type" value="3" type="int"/>
+      <Option name="metadata"/>
+      <Option name="min_inputs" value="0" type="int"/>
+      <Option name="name" value="rasterstoalign" type="QString"/>
+      <Option name="parameter_type" value="multilayer" type="QString"/>
+    </Option>
+    <Option name="samplemethod" type="Map">
+      <Option name="allow_multiple" value="false" type="bool"/>
+      <Option name="default" type="invalid"/>
+      <Option name="description" value="Sample Method" type="QString"/>
+      <Option name="flags" value="0" type="int"/>
+      <Option name="metadata"/>
+      <Option name="name" value="samplemethod" type="QString"/>
+      <Option name="options" type="StringList">
+        <Option value="Nearest Neighbor" type="QString"/>
+        <Option value="new item" type="QString"/>
+        <Option value="new item" type="QString"/>
+        <Option value="new item" type="QString"/>
+        <Option value="new item" type="QString"/>
+        <Option value="new item" type="QString"/>
+        <Option value="new item" type="QString"/>
+        <Option value="new item" type="QString"/>
+        <Option value="new item" type="QString"/>
+        <Option value="new item" type="QString"/>
+        <Option value="new item" type="QString"/>
+        <Option value="new item" type="QString"/>
+        <Option value="new item" type="QString"/>
+        <Option value="new item" type="QString"/>
+      </Option>
+      <Option name="parameter_type" value="enum" type="QString"/>
+    </Option>
+    <Option name="watershed" type="Map">
+      <Option name="data_types" type="List">
+        <Option value="2" type="int"/>
+      </Option>
+      <Option name="default" type="invalid"/>
+      <Option name="description" value="Watershed" type="QString"/>
+      <Option name="flags" value="0" type="int"/>
+      <Option name="metadata"/>
+      <Option name="name" value="watershed" type="QString"/>
+      <Option name="parameter_type" value="vector" type="QString"/>
+    </Option>
+    <Option name="watershedbuffer" type="Map">
+      <Option name="data_type" value="1" type="int"/>
+      <Option name="default" value="0" type="QString"/>
+      <Option name="description" value="Watershed Buffer" type="QString"/>
+      <Option name="flags" value="8" type="int"/>
+      <Option name="max" value="1.7976931348623157e+308" type="double"/>
+      <Option name="metadata"/>
+      <Option name="min" value="0" type="double"/>
+      <Option name="name" value="watershedbuffer" type="QString"/>
+      <Option name="parameter_type" value="number" type="QString"/>
+    </Option>
+  </Option>
+  <Option name="parameters" type="Map">
+    <Option name="TemplateRaster" type="Map">
+      <Option name="component_description" value="TemplateRaster" type="QString"/>
+      <Option name="component_pos_x" value="129.59999999999994" type="double"/>
+      <Option name="component_pos_y" value="137.5999999999999" type="double"/>
+      <Option name="name" value="TemplateRaster" type="QString"/>
+    </Option>
+    <Option name="rasterstoalign" type="Map">
+      <Option name="component_description" value="rasterstoalign" type="QString"/>
+      <Option name="component_pos_x" value="179.19999999999993" type="double"/>
+      <Option name="component_pos_y" value="301.6" type="double"/>
+      <Option name="name" value="rasterstoalign" type="QString"/>
+    </Option>
+    <Option name="samplemethod" type="Map">
+      <Option name="component_description" value="samplemethod" type="QString"/>
+      <Option name="component_pos_x" value="165.59999999999997" type="double"/>
+      <Option name="component_pos_y" value="44.79999999999998" type="double"/>
+      <Option name="name" value="samplemethod" type="QString"/>
+    </Option>
+    <Option name="watershed" type="Map">
+      <Option name="component_description" value="watershed" type="QString"/>
+      <Option name="component_pos_x" value="161.60000000000002" type="double"/>
+      <Option name="component_pos_y" value="208.8" type="double"/>
+      <Option name="name" value="watershed" type="QString"/>
+    </Option>
+    <Option name="watershedbuffer" type="Map">
+      <Option name="component_description" value="watershedbuffer" type="QString"/>
+      <Option name="component_pos_x" value="377.59999999999997" type="double"/>
+      <Option name="component_pos_y" value="392.00000000000006" type="double"/>
+      <Option name="name" value="watershedbuffer" type="QString"/>
+    </Option>
+  </Option>
+</Option>
