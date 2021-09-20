@@ -15,7 +15,9 @@ class AlignRasters(QgsProcessingAlgorithm):
     def initAlgorithm(self, config=None):
         self.addParameter(
             QgsProcessingParameterRasterLayer(
-                "TemplateRaster", "Reference Raster", defaultValue=None
+                "TemplateRaster",
+                "Reference Raster",
+                defaultValue=None,  # change the variable names (typical)
             )
         )
         self.addParameter(
@@ -99,7 +101,7 @@ class AlignRasters(QgsProcessingAlgorithm):
             "INPUT": parameters["TemplateRaster"],
             "NODATA": None,
             "OPTIONS": "",
-            "PROJWIN": "-10857764.687300000,-10847402.800600000,3885443.311200000,3890820.388900000 [EPSG:3857]",
+            "PROJWIN": "-10857764.687300000,-10847402.800600000,3885443.311200000,3890820.388900000 [EPSG:3857]",  # hard-coded
             "OUTPUT": parameters["AlignedSoil"],
         }
         outputs["ClipRasterByExtent"] = processing.run(
@@ -123,12 +125,12 @@ class AlignRasters(QgsProcessingAlgorithm):
             "MULTITHREADING": False,
             "NODATA": None,
             "OPTIONS": "",
-            "RESAMPLING": 0,
+            "RESAMPLING": 0,  # hard-coded
             "SOURCE_CRS": None,
             "TARGET_CRS": parameters["TemplateRaster"],
             "TARGET_EXTENT": outputs["ClipRasterByExtent"]["OUTPUT"],
             "TARGET_EXTENT_CRS": None,
-            "TARGET_RESOLUTION": QgsExpression("3").evaluate(),
+            "TARGET_RESOLUTION": QgsExpression("3").evaluate(),  # hard-coded
             "OUTPUT": parameters["Aligned"],
         }
         outputs["WarpReproject"] = processing.run(
