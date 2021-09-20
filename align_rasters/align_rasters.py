@@ -5,98 +5,180 @@ from qgis.core import QgsProcessingParameterRasterLayer
 from qgis.core import QgsProcessingParameterMultipleLayers
 from qgis.core import QgsProcessingParameterEnum
 from qgis.core import QgsProcessingParameterVectorLayer
-from qgis.core import QgsProcessingParameterFile
-from qgis.core import QgsCoordinateReferenceSystem
-from qgis.core import QgsProcessingParameterNumber
-from qgis.core import QgsProcessingParameterCrs
-from qgis.core import QgsRasterLayer, QgsVectorLayer, QgsMapLayer
+from qgis.core import QgsProcessingParameterDistance
+from qgis.core import QgsProcessingParameterRasterDestination
+from qgis.core import QgsExpression
 import processing
-import os
+
 
 class AlignRasters(QgsProcessingAlgorithm):
-
     def initAlgorithm(self, config=None):
-        self.addParameter(QgsProcessingParameterRasterLayer('TemplateRaster', 'Template Raster', defaultValue=None))
-        self.addParameter(QgsProcessingParameterCrs('outputcrs', 'Output CRS', defaultValue='EPSG:4326'))
-        self.addParameter(QgsProcessingParameterVectorLayer('watershed', 'Watershed', types=[QgsProcessing.TypeVectorPolygon], defaultValue=None))
-        #self.addParameter(QgsProcessingParameterNumber('watershedbuffer', 'Watershed Buffer', optional=True, type=QgsProcessingParameterNumber.Double, minValue=0, defaultValue=0))
-        self.addParameter(QgsProcessingParameterEnum('samplemethod', 'Sample Method', options=['Nearest Neighbor','Bilinear','Cubic','Cubic Spline','Lanczos Windowed Sinc','Average','Mode','Maximum','Minimum','Median','First Quartile','Third Quartile'], allowMultiple=False, defaultValue=0))
-        self.addParameter(QgsProcessingParameterMultipleLayers('rasterstoalign', 'Rasters to Align', layerType=QgsProcessing.TypeRaster, defaultValue=None))
-        self.addParameter(QgsProcessingParameterFile('OutputFolder', 'Output Folder', behavior=QgsProcessingParameterFile.Folder, fileFilter='All files (*.*)', defaultValue=None))
+        self.addParameter(
+            QgsProcessingParameterRasterLayer(
+                "TemplateRaster", "Reference Raster", defaultValue=None
+            )
+        )
+        self.addParameter(
+            QgsProcessingParameterMultipleLayers(
+                "rasterstoalign",
+                "Rasters to Align",
+                layerType=QgsProcessing.TypeRaster,
+                defaultValue=None,
+            )
+        )
+        self.addParameter(
+            QgsProcessingParameterEnum(
+                "samplemethod",
+                "Sample Method",
+                options=[
+                    "Nearest Neighbor",
+                    "new item",
+                    "new item",
+                    "new item",
+                    "new item",
+                    "new item",
+                    "new item",
+                    "new item",
+                    "new item",
+                    "new item",
+                    "new item",
+                    "new item",
+                    "new item",
+                    "new item",
+                ],
+                allowMultiple=False,
+                defaultValue=None,
+            )
+        )
+        self.addParameter(
+            QgsProcessingParameterVectorLayer(
+                "watershed",
+                "Watershed to Mask",
+                optional=True,
+                types=[QgsProcessing.TypeVectorPolygon],
+                defaultValue=None,
+            )
+        )
+        self.addParameter(
+            QgsProcessingParameterDistance(
+                "WatershedBuffer",
+                "Mask Buffer",
+                optional=True,
+                parentParameterName="watershed",
+                minValue=0,
+                defaultValue=10,
+            )
+        )
+        self.addParameter(
+            QgsProcessingParameterRasterLayer(
+                "TempRasterAlign", "Temp Raster Align", defaultValue=None
+            )
+        )
+        self.addParameter(
+            QgsProcessingParameterRasterDestination(
+                "AlignedSoil", "Aligned Soil", createByDefault=True, defaultValue=None
+            )
+        )
+        self.addParameter(
+            QgsProcessingParameterRasterDestination(
+                "Aligned", "Aligned", createByDefault=True, defaultValue=None
+            )
+        )
 
     def processAlgorithm(self, parameters, context, model_feedback):
         # Use a multi-step feedback, so that individual child algorithm progress reports are adjusted for the
         # overall progress through the model
-        feedback = QgsProcessingMultiStepFeedback(1, model_feedback)
+        feedback = QgsProcessingMultiStepFeedback(2, model_feedback)
         results = {}
         outputs = {}
 
-        watershed = parameters['watershed']
-        if isinstance(watershed, str):
-            crs = QgsVectorLayer(watershed).crs().toWkt()
-        elif isinstance(watershed, (QgsVectorLayer, QgsMapLayer)):
-            crs = watershed.crs().toWrt()
-            watershed = watershed.source()
-        '''
-        if parameters['watershedbuffer']:
-            feedback.pushInfo('Buffering watershed...')
-            amount = parameters['watershedbuffer']
-            ws = watershed
-            watershed = QgsVectorLayer('Polygon?crs=' + crs, 'temp_buffer', 'memory')
-            buffers = [feature.geometry().buffer(amount) for feature in ws.getFeatures()]
-            watershed.addFeatures(buffers)
-            del buffers
-        '''
-        
-        template = parameters['TemplateRaster']
-        if isinstance(template, str):
-            template = QgsRasterLayer(template)
-        xsize = template.rasterUnitsPerPixelX()
-        ysize = template.rasterUnitsPerPixelY()
-        if xsize > ysize:
-            resolution = ysize
-        else:
-            resolution = xsize
-        
-        
+        # Clip raster by extent
+        alg_params = {
+            "DATA_TYPE": 0,
+            "EXTRA": "",
+            "INPUT": parameters["TemplateRaster"],
+            "NODATA": None,
+            "OPTIONS": "",
+            "PROJWIN": "-10857764.687300000,-10847402.800600000,3885443.311200000,3890820.388900000 [EPSG:3857]",
+            "OUTPUT": parameters["AlignedSoil"],
+        }
+        outputs["ClipRasterByExtent"] = processing.run(
+            "gdal:cliprasterbyextent",
+            alg_params,
+            context=context,
+            feedback=feedback,
+            is_child_algorithm=True,
+        )
+        results["AlignedSoil"] = outputs["ClipRasterByExtent"]["OUTPUT"]
+
+        feedback.setCurrentStep(1)
+        if feedback.isCanceled():
+            return {}
+
         # Warp (reproject)
-        for raster in parameters['rasterstoalign']:
-            if isinstance(raster, (QgsRasterLayer, QgsMapLayer)):
-                raster = raster.source()
-            raster_output = os.path.join(parameters['OutputFolder'], os.path.basename(raster))
-            while os.path.isfile(raster_output):
-                name, ext = os.path.splitext(raster_output)
-                raster_output = f'{name}_1{ext}'
-            
-            alg_params = {
-                'DATA_TYPE': 0,
-                'EXTRA': '',
-                'INPUT': raster,
-                'MULTITHREADING': False,
-                'NODATA': None,
-                'OPTIONS': '',
-                'RESAMPLING': parameters['samplemethod'],
-                'SOURCE_CRS': None,
-                'TARGET_CRS': parameters['outputcrs'],
-                'TARGET_EXTENT': parameters['watershed'],
-                'TARGET_EXTENT_CRS': None,
-                'TARGET_RESOLUTION': None,
-                'OUTPUT': raster_output
-            }
-            processing.run('gdal:warpreproject', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
+        alg_params = {
+            "DATA_TYPE": 0,
+            "EXTRA": "",
+            "INPUT": parameters["TempRasterAlign"],
+            "MULTITHREADING": False,
+            "NODATA": None,
+            "OPTIONS": "",
+            "RESAMPLING": 0,
+            "SOURCE_CRS": None,
+            "TARGET_CRS": parameters["TemplateRaster"],
+            "TARGET_EXTENT": outputs["ClipRasterByExtent"]["OUTPUT"],
+            "TARGET_EXTENT_CRS": None,
+            "TARGET_RESOLUTION": QgsExpression("3").evaluate(),
+            "OUTPUT": parameters["Aligned"],
+        }
+        outputs["WarpReproject"] = processing.run(
+            "gdal:warpreproject",
+            alg_params,
+            context=context,
+            feedback=feedback,
+            is_child_algorithm=True,
+        )
+        results["Aligned"] = outputs["WarpReproject"]["OUTPUT"]
         return results
 
     def name(self):
-        return 'Align Rasters'
+        return "Align Rasters"
 
     def displayName(self):
-        return 'Align Rasters'
+        return "Align Rasters"
 
     def group(self):
-        return ''
+        return ""
 
     def groupId(self):
-        return ''
+        return ""
+
+    def shortHelpString(self):
+        return """<html><body><h2>Algorithm description</h2>
+<p></p>
+<h2>Input parameters</h2>
+<h3>Reference Raster</h3>
+<p></p>
+<h3>Rasters to Align</h3>
+<p></p>
+<h3>Sample Method</h3>
+<p></p>
+<h3>Watershed to Mask</h3>
+<p></p>
+<h3>Mask Buffer</h3>
+<p></p>
+<h3>Temp Raster Align</h3>
+<p></p>
+<h3>Aligned Soil</h3>
+<p></p>
+<h3>Aligned</h3>
+<p></p>
+<h2>Outputs</h2>
+<h3>Aligned Soil</h3>
+<p></p>
+<h3>Aligned</h3>
+<p></p>
+<br></body></html>"""
 
     def createInstance(self):
         return AlignRasters()
