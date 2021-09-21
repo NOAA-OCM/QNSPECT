@@ -7,8 +7,11 @@ from qgis.core import QgsProcessingParameterEnum
 from qgis.core import QgsProcessingParameterVectorLayer
 from qgis.core import QgsProcessingParameterDistance
 from qgis.core import QgsProcessingParameterRasterDestination
+from qgis.core import QgsProcessingParameterFile
 from qgis.core import QgsExpression
+from qgis.core import QgsRasterLayer, QgsMapLayer
 import processing
+import os
 
 
 class AlignRasters(QgsProcessingAlgorithm):
@@ -34,22 +37,20 @@ class AlignRasters(QgsProcessingAlgorithm):
                 "Sample Method",
                 options=[
                     "Nearest Neighbor",
-                    "new item",
-                    "new item",
-                    "new item",
-                    "new item",
-                    "new item",
-                    "new item",
-                    "new item",
-                    "new item",
-                    "new item",
-                    "new item",
-                    "new item",
-                    "new item",
-                    "new item",
+                    "Bilinear",
+                    "Cubic",
+                    "Cubic Spline",
+                    "Lanczos Windowed Sinc",
+                    "Average",
+                    "Mode",
+                    "Maximum",
+                    "Minimum",
+                    "Median",
+                    "First Quartile",
+                    "Third Quartile",
                 ],
                 allowMultiple=False,
-                defaultValue=None,
+                defaultValue=0,
             )
         )
         self.addParameter(
@@ -86,6 +87,15 @@ class AlignRasters(QgsProcessingAlgorithm):
                 "Aligned", "Aligned", createByDefault=True, defaultValue=None
             )
         )
+        self.addParameter(
+            QgsProcessingParameterFile(
+                'OutputFolder',
+                'Results Folder', 
+                behavior=QgsProcessingParameterFile.Folder,
+                fileFilter='All files (*.*)',
+                defaultValue=None
+            )
+        )
 
     def processAlgorithm(self, parameters, context, model_feedback):
         # Use a multi-step feedback, so that individual child algorithm progress reports are adjusted for the
@@ -101,7 +111,7 @@ class AlignRasters(QgsProcessingAlgorithm):
             "INPUT": parameters["TemplateRaster"],
             "NODATA": None,
             "OPTIONS": "",
-            "PROJWIN": "-10857764.687300000,-10847402.800600000,3885443.311200000,3890820.388900000 [EPSG:3857]",  # hard-coded
+            "PROJWIN": parameters['watershed'],
             "OUTPUT": parameters["AlignedSoil"],
         }
         outputs["ClipRasterByExtent"] = processing.run(
@@ -117,30 +127,73 @@ class AlignRasters(QgsProcessingAlgorithm):
         if feedback.isCanceled():
             return {}
 
-        # Warp (reproject)
-        alg_params = {
-            "DATA_TYPE": 0,
-            "EXTRA": "",
-            "INPUT": parameters["TempRasterAlign"],
-            "MULTITHREADING": False,
-            "NODATA": None,
-            "OPTIONS": "",
-            "RESAMPLING": 0,  # hard-coded
-            "SOURCE_CRS": None,
-            "TARGET_CRS": parameters["TemplateRaster"],
-            "TARGET_EXTENT": outputs["ClipRasterByExtent"]["OUTPUT"],
-            "TARGET_EXTENT_CRS": None,
-            "TARGET_RESOLUTION": QgsExpression("3").evaluate(),  # hard-coded
-            "OUTPUT": parameters["Aligned"],
-        }
-        outputs["WarpReproject"] = processing.run(
-            "gdal:warpreproject",
-            alg_params,
-            context=context,
-            feedback=feedback,
-            is_child_algorithm=True,
-        )
-        results["Aligned"] = outputs["WarpReproject"]["OUTPUT"]
+        rasters = parameters['rasterstoalign']
+        for i in range(len(rasters)):
+            raster = rasters[i]
+            if isinstance(raster, str):
+                name = os.path.basename(raster)
+                path = raster
+                lyr = QgsRasterLayer(raster)
+                sizex = lyr.rasterUnitsPerPixelX()
+                sizey = lyr.rasterUnitsPerPixelY()
+            elif isinstance(raster, (QgsRasterLayer, QgsMapLayer)):
+                path = raster.source()
+                name = os.path.basename()
+                sizex = raster.rasterUnitsPerPixelX()
+                sizey = raster.rasterUnitsPerPixelY()
+
+            input = QgsProcessingParameterRasterLayer(
+                "TemplateRaster",
+                "Reference Raster",
+                defaultValue=path,
+            )
+
+            if sizex < sizey:
+                resolution = sizex
+            else:
+                resolution = sizey
+            
+            out_raster = os.path.join(
+                parameters['OutputFolder'].String,
+                name
+            )
+            while os.path.exists(out_raster):
+                base, ext = os.path.splitext(out_raster)
+                out_raster = os.path.join(base + '_1', ext)
+            destination = QgsProcessingParameterRasterDestination(
+                "Aligned", 
+                "Aligned", 
+                createByDefault=True, 
+                defaultValue=os.path.join(
+                    parameters['OutputFolder'].String,
+                    name
+                )
+            )
+
+            # Warp (reproject)
+            alg_params = {
+                "DATA_TYPE": 0,
+                "EXTRA": "",
+                "INPUT": input,
+                "MULTITHREADING": False,
+                "NODATA": None,
+                "OPTIONS": "",
+                "RESAMPLING": parameters['samplemethod'],
+                "SOURCE_CRS": None,
+                "TARGET_CRS": parameters["TemplateRaster"],
+                "TARGET_EXTENT": outputs["ClipRasterByExtent"]["OUTPUT"],
+                "TARGET_EXTENT_CRS": None,
+                "TARGET_RESOLUTION": QgsExpression(str(resolution)).evaluate(),  # hard-coded
+                "OUTPUT": destination,
+            }
+            outputs[out_raster] = processing.run(
+                "gdal:warpreproject",
+                alg_params,
+                context=context,
+                feedback=feedback,
+                is_child_algorithm=True,
+            )
+            results[out_raster] = outputs[out_raster]["OUTPUT"]
         return results
 
     def name(self):
