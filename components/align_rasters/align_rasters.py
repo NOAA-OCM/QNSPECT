@@ -182,9 +182,15 @@ class AlignRasters(QgsProcessingAlgorithm):
             extent = parameters["ReferenceRaster"]
             if size_x == size_y:
                 rasters_to_align = []
+                feedback.pushWarning(
+                    "Reference Raster does not require any clipping or aligning."
+                )
             else:  # keep the same raster extent
                 # but add it to align list because of non square size
                 rasters_to_align = [ref_layer]
+                feedback.pushWarning(
+                    "Reference Raster requires aligning because of non-square cell size, a new aligned raster will be returned."
+                )
 
         feedback.setCurrentStep(3)
         if feedback.isCanceled():
