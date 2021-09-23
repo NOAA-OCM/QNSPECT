@@ -176,75 +176,63 @@ class AlignRasters(QgsProcessingAlgorithm):
         else:  # set extent to reference raster extent
             extent = parameters["ReferenceRaster"]
 
-        return results
-
         feedback.setCurrentStep(1)
         if feedback.isCanceled():
             return {}
 
-        rasters = parameters["rasterstoalign"]
-        for i in range(len(rasters)):
-            raster = rasters[i]
-            if isinstance(raster, str):
-                name = os.path.basename(raster)
-                path = raster
-                lyr = QgsRasterLayer(raster)
-                sizex = lyr.rasterUnitsPerPixelX()
-                sizey = lyr.rasterUnitsPerPixelY()
-            elif isinstance(raster, (QgsRasterLayer, QgsMapLayer)):
-                path = raster.source()
-                name = os.path.basename()
-                sizex = raster.rasterUnitsPerPixelX()
-                sizey = raster.rasterUnitsPerPixelY()
+        if len(parameters["RastersToAlign"]) == 0:
+            return results
 
-            input = QgsProcessingParameterRasterLayer(
-                "TemplateRaster",
-                "Reference Raster",
-                defaultValue=path,
-            )
+        size_x = ref_layer.rasterUnitsPerPixelX()
+        size_y = ref_layer.rasterUnitsPerPixelY()
 
-            if sizex < sizey:
-                resolution = sizex
-            else:
-                resolution = sizey
+        # select lowest resolution
+        if size_x < size_y:
+            resolution = size_x
+        else:
+            resolution = size_y
 
-            out_raster = os.path.join(parameters["OutputFolder"].String, name)
-            while os.path.exists(out_raster):
-                base, ext = os.path.splitext(out_raster)
-                out_raster = os.path.join(base + "_1", ext)
-            destination = QgsProcessingParameterRasterDestination(
-                "Aligned",
-                "Aligned",
-                createByDefault=True,
-                defaultValue=os.path.join(parameters["OutputFolder"].String, name),
-            )
+        rasters_to_align = self.parameterAsLayerList(
+            parameters, "RastersToAlign", context
+        )
+
+        for rast in rasters_to_align:
+
+            # to do: get name directly
+            rast_name = "Aligned" + "_" + rast.name()
+            out_path = os.path.join(output_dir, f"{rast_name}.tif")
 
             # Warp (reproject)
             alg_params = {
                 "DATA_TYPE": 0,
                 "EXTRA": "",
-                "INPUT": input,
+                "INPUT": rast,
                 "MULTITHREADING": False,
                 "NODATA": None,
                 "OPTIONS": "",
-                "RESAMPLING": parameters["samplemethod"],
+                "RESAMPLING": parameters["ResamplingMethod"],
                 "SOURCE_CRS": None,
-                "TARGET_CRS": parameters["TemplateRaster"],
-                "TARGET_EXTENT": outputs["ClipRasterByExtent"]["OUTPUT"],
+                "TARGET_CRS": parameters["ReferenceRaster"],
+                "TARGET_EXTENT": extent,
                 "TARGET_EXTENT_CRS": None,
-                "TARGET_RESOLUTION": QgsExpression(
-                    str(resolution)
-                ).evaluate(),  # hard-coded
-                "OUTPUT": destination,
+                "TARGET_RESOLUTION": resolution,
+                "OUTPUT": out_path,
             }
-            outputs[out_raster] = processing.run(
+            outputs[rast_name] = processing.run(
                 "gdal:warpreproject",
                 alg_params,
                 context=context,
                 feedback=feedback,
                 is_child_algorithm=True,
             )
-            results[out_raster] = outputs[out_raster]["OUTPUT"]
+
+            context.addLayerToLoadOnCompletion(
+                outputs[rast_name]["OUTPUT"],
+                QgsProcessingContext.LayerDetails(
+                    rast_name, context.project(), rast_name
+                ),
+            )
+
         return results
 
     def name(self):
