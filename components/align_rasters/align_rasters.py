@@ -1,15 +1,19 @@
-from qgis.core import QgsProcessing
-from qgis.core import QgsProcessingAlgorithm
-from qgis.core import QgsProcessingMultiStepFeedback
-from qgis.core import QgsProcessingParameterRasterLayer
-from qgis.core import QgsProcessingParameterMultipleLayers
-from qgis.core import QgsProcessingParameterEnum
-from qgis.core import QgsProcessingParameterVectorLayer
-from qgis.core import QgsProcessingParameterDistance
-from qgis.core import QgsProcessingParameterRasterDestination
-from qgis.core import QgsProcessingParameterFile
-from qgis.core import QgsExpression
-from qgis.core import QgsRasterLayer, QgsMapLayer
+from qgis.core import (
+    QgsProcessing,
+    QgsProcessingAlgorithm,
+    QgsProcessingMultiStepFeedback,
+    QgsProcessingParameterRasterLayer,
+    QgsProcessingParameterMultipleLayers,
+    QgsProcessingParameterEnum,
+    QgsProcessingParameterDistance,
+    QgsProcessingParameterRasterDestination,
+    QgsExpression,
+    QgsRasterLayer,
+    QgsMapLayer,
+    QgsProcessingParameterExtent,
+    QgsProcessingParameterFolderDestination,
+    QgsProcessingContext,
+)
 import processing
 import os
 
@@ -18,23 +22,24 @@ class AlignRasters(QgsProcessingAlgorithm):
     def initAlgorithm(self, config=None):
         self.addParameter(
             QgsProcessingParameterRasterLayer(
-                "TemplateRaster",
+                "ReferenceRaster",
                 "Reference Raster",
                 defaultValue=None,  # change the variable names (typical)
             )
         )
         self.addParameter(
             QgsProcessingParameterMultipleLayers(
-                "rasterstoalign",
+                "RastersToAlign",
                 "Rasters to Align",
                 layerType=QgsProcessing.TypeRaster,
+                optional=True,
                 defaultValue=None,
             )
         )
         self.addParameter(
             QgsProcessingParameterEnum(
-                "samplemethod",
-                "Sample Method",
+                "ResamplingMethod",
+                "Resampling Method",
                 options=[
                     "Nearest Neighbor",
                     "Bilinear",
@@ -54,46 +59,26 @@ class AlignRasters(QgsProcessingAlgorithm):
             )
         )
         self.addParameter(
-            QgsProcessingParameterVectorLayer(
-                "watershed",
-                "Watershed to Mask",
-                optional=True,
-                types=[QgsProcessing.TypeVectorPolygon],
-                defaultValue=None,
+            QgsProcessingParameterExtent(
+                "ClippingExtent", "Clipping Extent", optional=True, defaultValue=None
             )
         )
         self.addParameter(
             QgsProcessingParameterDistance(
-                "WatershedBuffer",
-                "Mask Buffer",
+                "ClipBuffer",
+                "Clip Buffer",
                 optional=True,
-                parentParameterName="watershed",
+                parentParameterName="ReferenceRaster",
                 minValue=0,
                 defaultValue=10,
             )
         )
         self.addParameter(
-            QgsProcessingParameterRasterLayer(
-                "TempRasterAlign", "Temp Raster Align", defaultValue=None
-            )
-        )
-        self.addParameter(
-            QgsProcessingParameterRasterDestination(
-                "AlignedSoil", "Aligned Soil", createByDefault=True, defaultValue=None
-            )
-        )
-        self.addParameter(
-            QgsProcessingParameterRasterDestination(
-                "Aligned", "Aligned", createByDefault=True, defaultValue=None
-            )
-        )
-        self.addParameter(
-            QgsProcessingParameterFile(
-                'OutputFolder',
-                'Results Folder', 
-                behavior=QgsProcessingParameterFile.Folder,
-                fileFilter='All files (*.*)',
-                defaultValue=None
+            QgsProcessingParameterFolderDestination(
+                "OutputDirectory",
+                "Output Directory",
+                createByDefault=True,
+                defaultValue=None,
             )
         )
 
@@ -104,30 +89,100 @@ class AlignRasters(QgsProcessingAlgorithm):
         results = {}
         outputs = {}
 
-        # Clip raster by extent
-        alg_params = {
-            "DATA_TYPE": 0,
-            "EXTRA": "",
-            "INPUT": parameters["TemplateRaster"],
-            "NODATA": None,
-            "OPTIONS": "",
-            "PROJWIN": parameters['watershed'],
-            "OUTPUT": parameters["AlignedSoil"],
-        }
-        outputs["ClipRasterByExtent"] = processing.run(
-            "gdal:cliprasterbyextent",
-            alg_params,
-            context=context,
-            feedback=feedback,
-            is_child_algorithm=True,
-        )
-        results["AlignedSoil"] = outputs["ClipRasterByExtent"]["OUTPUT"]
+        # feedback.pushWarning(self.parameterDefinition('RastersToAlign').valueAsPythonString(parameters["RastersToAlign"], context))
+
+        output_dir = self.parameterAsString(parameters, "OutputDirectory", context)
+        extent = parameters.get("ClippingExtent", "")
+
+        if all(
+            [
+                parameters["ClippingExtent"],
+                parameters["ClipBuffer"],
+                parameters["ClipBuffer"] != 0,
+            ]
+        ):
+            # Create layer from  to buffer later
+            alg_params = {
+                "INPUT": parameters["ClippingExtent"],
+                "OUTPUT": QgsProcessing.TEMPORARY_OUTPUT,
+            }
+            outputs["CreateLayerFromExtent"] = processing.run(
+                "native:extenttolayer",
+                alg_params,
+                context=context,
+                feedback=feedback,
+                is_child_algorithm=True,
+            )
+
+            feedback.setCurrentStep(1)
+            if feedback.isCanceled():
+                return {}
+
+            # Buffer
+            alg_params = {
+                "DISSOLVE": False,
+                "DISTANCE": parameters["ClipBuffer"],
+                "END_CAP_STYLE": 0,
+                "INPUT": outputs["CreateLayerFromExtent"]["OUTPUT"],
+                "JOIN_STYLE": 0,
+                "MITER_LIMIT": 2,
+                "SEGMENTS": 5,
+                "OUTPUT": QgsProcessing.TEMPORARY_OUTPUT,
+            }
+            outputs["Buffer"] = processing.run(
+                "native:buffer",
+                alg_params,
+                context=context,
+                feedback=feedback,
+                is_child_algorithm=True,
+            )
+            extent = outputs["Buffer"]["OUTPUT"]
+
+        os.makedirs(output_dir, exist_ok=True)
+
+        ref_layer = self.parameterAsRasterLayer(parameters, "ReferenceRaster", context)
+
+        if extent:  # if extent is provided then clip and buffer
+            ref_name = "Aligned" + "_" + ref_layer.name()
+            out_path = os.path.join(output_dir, f"{ref_name}.tif")
+
+            feedback.pushWarning(extent)
+            # Clip raster by extent
+            alg_params = {
+                "DATA_TYPE": 0,
+                "EXTRA": "",
+                "INPUT": parameters["ReferenceRaster"],
+                "NODATA": None,
+                "OPTIONS": "",
+                "PROJWIN": extent,
+                "OUTPUT": out_path,
+            }
+
+            outputs["ClipRasterByExtent"] = processing.run(
+                "gdal:cliprasterbyextent",
+                alg_params,
+                context=context,
+                feedback=feedback,
+                is_child_algorithm=True,
+            )
+
+            context.addLayerToLoadOnCompletion(
+                outputs["ClipRasterByExtent"]["OUTPUT"],
+                QgsProcessingContext.LayerDetails(
+                    ref_name, context.project(), ref_name
+                ),
+            )
+
+        else:  # set extent to reference raster extent
+            extent = parameters["ReferenceRaster"]
+
+        return results
 
         feedback.setCurrentStep(1)
         if feedback.isCanceled():
             return {}
 
-        rasters = parameters['rasterstoalign']
+        rasters = parameters["rasterstoalign"]
         for i in range(len(rasters)):
             raster = rasters[i]
             if isinstance(raster, str):
@@ -152,22 +207,16 @@ class AlignRasters(QgsProcessingAlgorithm):
                 resolution = sizex
             else:
                 resolution = sizey
-            
-            out_raster = os.path.join(
-                parameters['OutputFolder'].String,
-                name
-            )
+
+            out_raster = os.path.join(parameters["OutputFolder"].String, name)
             while os.path.exists(out_raster):
                 base, ext = os.path.splitext(out_raster)
-                out_raster = os.path.join(base + '_1', ext)
+                out_raster = os.path.join(base + "_1", ext)
             destination = QgsProcessingParameterRasterDestination(
-                "Aligned", 
-                "Aligned", 
-                createByDefault=True, 
-                defaultValue=os.path.join(
-                    parameters['OutputFolder'].String,
-                    name
-                )
+                "Aligned",
+                "Aligned",
+                createByDefault=True,
+                defaultValue=os.path.join(parameters["OutputFolder"].String, name),
             )
 
             # Warp (reproject)
@@ -178,12 +227,14 @@ class AlignRasters(QgsProcessingAlgorithm):
                 "MULTITHREADING": False,
                 "NODATA": None,
                 "OPTIONS": "",
-                "RESAMPLING": parameters['samplemethod'],
+                "RESAMPLING": parameters["samplemethod"],
                 "SOURCE_CRS": None,
                 "TARGET_CRS": parameters["TemplateRaster"],
                 "TARGET_EXTENT": outputs["ClipRasterByExtent"]["OUTPUT"],
                 "TARGET_EXTENT_CRS": None,
-                "TARGET_RESOLUTION": QgsExpression(str(resolution)).evaluate(),  # hard-coded
+                "TARGET_RESOLUTION": QgsExpression(
+                    str(resolution)
+                ).evaluate(),  # hard-coded
                 "OUTPUT": destination,
             }
             outputs[out_raster] = processing.run(
@@ -203,10 +254,10 @@ class AlignRasters(QgsProcessingAlgorithm):
         return "Align Rasters"
 
     def group(self):
-        return ""
+        return "QNSPECT"
 
     def groupId(self):
-        return ""
+        return "QNSPECT"
 
     def shortHelpString(self):
         return """<html><body><h2>Algorithm description</h2>
@@ -216,7 +267,7 @@ class AlignRasters(QgsProcessingAlgorithm):
 <p></p>
 <h3>Rasters to Align</h3>
 <p></p>
-<h3>Sample Method</h3>
+<h3>Resampling Method</h3>
 <p></p>
 <h3>Watershed to Mask</h3>
 <p></p>
