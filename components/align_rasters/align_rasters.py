@@ -83,7 +83,7 @@ class AlignRasters(QgsProcessingAlgorithm):
         # overall progress through the model
 
         feedback = QgsProcessingMultiStepFeedback(
-            3 + len(parameters["RastersToAlign"]), model_feedback
+            4 + len(parameters["RastersToAlign"]), model_feedback
         )
         results = {}
         outputs = {}
@@ -143,47 +143,6 @@ class AlignRasters(QgsProcessingAlgorithm):
 
         os.makedirs(output_dir, exist_ok=True)
         ref_layer = self.parameterAsRasterLayer(parameters, "ReferenceRaster", context)
-
-        if extent:  # if extent is provided then clip and buffer
-            ref_name = "Aligned" + "_" + ref_layer.name()
-            out_path = os.path.join(output_dir, f"{ref_name}.tif")
-
-            # Clip raster by extent
-            alg_params = {
-                "DATA_TYPE": 0,
-                "EXTRA": "",
-                "INPUT": parameters["ReferenceRaster"],
-                "NODATA": None,
-                "OPTIONS": "",
-                "PROJWIN": extent,
-                "OUTPUT": out_path,
-            }
-
-            outputs["ClipRasterByExtent"] = processing.run(
-                "gdal:cliprasterbyextent",
-                alg_params,
-                context=context,
-                feedback=feedback,
-                is_child_algorithm=True,
-            )
-
-            context.addLayerToLoadOnCompletion(
-                outputs["ClipRasterByExtent"]["OUTPUT"],
-                QgsProcessingContext.LayerDetails(
-                    ref_name, context.project(), ref_name
-                ),
-            )
-
-        else:  # set extent to reference raster extent
-            extent = parameters["ReferenceRaster"]
-
-        feedback.setCurrentStep(3)
-        if feedback.isCanceled():
-            return {}
-
-        if len(parameters["RastersToAlign"]) == 0:
-            return results
-
         size_x = ref_layer.rasterUnitsPerPixelX()
         size_y = ref_layer.rasterUnitsPerPixelY()
 
@@ -193,14 +152,51 @@ class AlignRasters(QgsProcessingAlgorithm):
         else:
             resolution = size_y
 
-        rasters_to_align = self.parameterAsLayerList(
+        if extent:
+            # if extent is provided then clip raster to get new updated clip extents
+            # this is step is necessary to make sure reference raster cells do not get shifted
+            # though, for non square cells reference raster will also shift
+
+            # Clip raster by extent
+            alg_params = {
+                "DATA_TYPE": 0,
+                "EXTRA": "",
+                "INPUT": parameters["ReferenceRaster"],
+                "NODATA": None,
+                "OPTIONS": "",
+                "PROJWIN": extent,
+                "OUTPUT": QgsProcessing.TEMPORARY_OUTPUT,
+            }
+
+            outputs["ClipRasterByExtent"] = processing.run(
+                "gdal:cliprasterbyextent",
+                alg_params,
+                context=context,
+                feedback=feedback,
+                is_child_algorithm=True,
+            )
+            extent = outputs["ClipRasterByExtent"]["OUTPUT"]
+            rasters_to_align = [ref_layer]
+
+        else:  # set extent to reference raster extent
+            extent = parameters["ReferenceRaster"]
+            if size_x == size_y:
+                rasters_to_align = []
+            else:  # keep the same raster extent
+                # but add it to align list because of non square size
+                rasters_to_align = [ref_layer]
+
+        feedback.setCurrentStep(3)
+        if feedback.isCanceled():
+            return {}
+
+        rasters_to_align += self.parameterAsLayerList(
             parameters, "RastersToAlign", context
         )
 
         for i, rast in enumerate(rasters_to_align, start=4):
 
-            # to do: get name directly
-            rast_name = "Aligned" + "_" + rast.name()
+            rast_name = rast.name()
             out_path = os.path.join(output_dir, f"{rast_name}.tif")
 
             # Warp (reproject)
@@ -230,7 +226,7 @@ class AlignRasters(QgsProcessingAlgorithm):
             context.addLayerToLoadOnCompletion(
                 outputs[rast_name]["OUTPUT"],
                 QgsProcessingContext.LayerDetails(
-                    rast_name, context.project(), rast_name
+                    f"Aligned_{rast_name}", context.project(), ""
                 ),
             )
 
