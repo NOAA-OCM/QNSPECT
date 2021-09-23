@@ -6,10 +6,6 @@ from qgis.core import (
     QgsProcessingParameterMultipleLayers,
     QgsProcessingParameterEnum,
     QgsProcessingParameterDistance,
-    QgsProcessingParameterRasterDestination,
-    QgsExpression,
-    QgsRasterLayer,
-    QgsMapLayer,
     QgsProcessingParameterExtent,
     QgsProcessingParameterFolderDestination,
     QgsProcessingContext,
@@ -24,7 +20,7 @@ class AlignRasters(QgsProcessingAlgorithm):
             QgsProcessingParameterRasterLayer(
                 "ReferenceRaster",
                 "Reference Raster",
-                defaultValue=None,  # change the variable names (typical)
+                defaultValue=None,
             )
         )
         self.addParameter(
@@ -70,7 +66,7 @@ class AlignRasters(QgsProcessingAlgorithm):
                 optional=True,
                 parentParameterName="ReferenceRaster",
                 minValue=0,
-                defaultValue=10,
+                defaultValue=100,
             )
         )
         self.addParameter(
@@ -85,15 +81,18 @@ class AlignRasters(QgsProcessingAlgorithm):
     def processAlgorithm(self, parameters, context, model_feedback):
         # Use a multi-step feedback, so that individual child algorithm progress reports are adjusted for the
         # overall progress through the model
-        feedback = QgsProcessingMultiStepFeedback(2, model_feedback)
+
+        feedback = QgsProcessingMultiStepFeedback(
+            3 + len(parameters["RastersToAlign"]), model_feedback
+        )
         results = {}
         outputs = {}
-
-        # feedback.pushWarning(self.parameterDefinition('RastersToAlign').valueAsPythonString(parameters["RastersToAlign"], context))
 
         output_dir = self.parameterAsString(parameters, "OutputDirectory", context)
         extent = parameters.get("ClippingExtent", "")
 
+        # Get buffered extents
+        # Use QGIS algorithms so as to handle unit conversion and projection per context
         if all(
             [
                 parameters["ClippingExtent"],
@@ -138,15 +137,17 @@ class AlignRasters(QgsProcessingAlgorithm):
             )
             extent = outputs["Buffer"]["OUTPUT"]
 
-        os.makedirs(output_dir, exist_ok=True)
+        feedback.setCurrentStep(2)
+        if feedback.isCanceled():
+            return {}
 
+        os.makedirs(output_dir, exist_ok=True)
         ref_layer = self.parameterAsRasterLayer(parameters, "ReferenceRaster", context)
 
         if extent:  # if extent is provided then clip and buffer
             ref_name = "Aligned" + "_" + ref_layer.name()
             out_path = os.path.join(output_dir, f"{ref_name}.tif")
 
-            feedback.pushWarning(extent)
             # Clip raster by extent
             alg_params = {
                 "DATA_TYPE": 0,
@@ -176,7 +177,7 @@ class AlignRasters(QgsProcessingAlgorithm):
         else:  # set extent to reference raster extent
             extent = parameters["ReferenceRaster"]
 
-        feedback.setCurrentStep(1)
+        feedback.setCurrentStep(3)
         if feedback.isCanceled():
             return {}
 
@@ -196,7 +197,7 @@ class AlignRasters(QgsProcessingAlgorithm):
             parameters, "RastersToAlign", context
         )
 
-        for rast in rasters_to_align:
+        for i, rast in enumerate(rasters_to_align, start=4):
 
             # to do: get name directly
             rast_name = "Aligned" + "_" + rast.name()
@@ -232,6 +233,10 @@ class AlignRasters(QgsProcessingAlgorithm):
                     rast_name, context.project(), rast_name
                 ),
             )
+
+            feedback.setCurrentStep(i)
+            if feedback.isCanceled():
+                return {}
 
         return results
 
