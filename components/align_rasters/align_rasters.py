@@ -226,8 +226,8 @@ class AlignRasters(QgsProcessingAlgorithm):
             context.addLayerToLoadOnCompletion(
                 outputs[rast_name]["OUTPUT"],
                 QgsProcessingContext.LayerDetails(
-                    f"Aligned_{rast_name}", context.project(), ""
-                ),
+                    f"Aligned {rast_name}", context.project(), rast_name
+                ),  # to do: Remove Aligned from name and group layers
             )
 
             feedback.setCurrentStep(i)
