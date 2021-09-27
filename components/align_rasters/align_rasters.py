@@ -100,7 +100,7 @@ class AlignRasters(QgsProcessingAlgorithm):
                 parameters["ClipBuffer"] != 0,
             ]
         ):
-            # Create layer from  to buffer later
+            # Create layer from extent to buffer later
             alg_params = {
                 "INPUT": parameters["ClippingExtent"],
                 "OUTPUT": QgsProcessing.TEMPORARY_OUTPUT,
@@ -186,7 +186,7 @@ class AlignRasters(QgsProcessingAlgorithm):
                     "Reference Raster does not require any clipping or aligning."
                 )
             else:  # keep the same raster extent
-                # but add it to align list because of non square size
+                # but add it to align list because of non square pixel size
                 rasters_to_align = [ref_layer]
                 feedback.pushWarning(
                     "Reference Raster requires aligning because of non-square cell size, a new aligned raster will be returned."
