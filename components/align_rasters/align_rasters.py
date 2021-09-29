@@ -273,20 +273,12 @@ class AlignRasters(QgsProcessingAlgorithm):
 <p></p>
 <h3>Resampling Method</h3>
 <p></p>
-<h3>Watershed to Mask</h3>
+<h3>Clipping Extent</h3>
 <p></p>
-<h3>Mask Buffer</h3>
-<p></p>
-<h3>Temp Raster Align</h3>
-<p></p>
-<h3>Aligned Soil</h3>
-<p></p>
-<h3>Aligned</h3>
+<h3>Clip Buffer</h3>
 <p></p>
 <h2>Outputs</h2>
-<h3>Aligned Soil</h3>
-<p></p>
-<h3>Aligned</h3>
+<h3>Output Directory</h3>
 <p></p>
 <br></body></html>"""
 
