@@ -176,26 +176,20 @@ class AlignRasters(QgsProcessingAlgorithm):
                 is_child_algorithm=True,
             )
             extent = outputs["ClipRasterByExtent"]["OUTPUT"]
-            rasters_to_align = [ref_layer]
 
         else:  # set extent to reference raster extent
             extent = parameters["ReferenceRaster"]
-            if size_x == size_y:
-                rasters_to_align = []
-                feedback.pushWarning(
-                    "Reference Raster does not require any clipping or aligning."
-                )
-            else:  # keep the same raster extent
-                # but add it to align list because of non square pixel size
-                rasters_to_align = [ref_layer]
-                feedback.pushWarning(
-                    "Reference Raster requires aligning because of non-square cell size, a new aligned raster will be returned."
-                )
 
         feedback.setCurrentStep(3)
         if feedback.isCanceled():
             return {}
 
+        # Reference raster will always be aligned for these reasons:
+        # It may have non-square cell size, and
+        # QGIS will write other new rasters with standard projection string
+        # if reference is not aligned, it will have old projection which will be same
+        # in theory but some software like ArcGIS can interpret both projections as different
+        rasters_to_align = [ref_layer]
         rasters_to_align += self.parameterAsLayerList(
             parameters, "RastersToAlign", context
         )
