@@ -194,10 +194,20 @@ class AlignRasters(QgsProcessingAlgorithm):
             parameters, "RastersToAlign", context
         )
 
+        all_out_paths = []
+
         for i, rast in enumerate(rasters_to_align, start=4):
 
             rast_name = rast.name()
             out_path = os.path.join(output_dir, f"{rast_name}.tif")
+
+            # prevent self overwriting in algorithm outputs if two rasters have same display name
+            j = 1
+            while out_path in all_out_paths:
+                rast_name = f"{rast.name()}_{j}"
+                out_path = os.path.join(output_dir, f"{rast_name}.tif")
+                j += 1
+            all_out_paths.append(out_path)
 
             # Warp (reproject)
             alg_params = {
@@ -229,6 +239,8 @@ class AlignRasters(QgsProcessingAlgorithm):
                     f"Aligned {rast_name}", context.project(), rast_name
                 ),  # to do: Remove Aligned from name and group layers
             )
+
+            results[rast_name] = outputs[rast_name]["OUTPUT"]
 
             feedback.setCurrentStep(i)
             if feedback.isCanceled():
