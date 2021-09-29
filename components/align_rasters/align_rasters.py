@@ -82,9 +82,12 @@ class AlignRasters(QgsProcessingAlgorithm):
         # Use a multi-step feedback, so that individual child algorithm progress reports are adjusted for the
         # overall progress through the model
 
-        feedback = QgsProcessingMultiStepFeedback(
-            4 + len(parameters["RastersToAlign"]), model_feedback
-        )
+        if parameters["RastersToAlign"]:
+            feedback = QgsProcessingMultiStepFeedback(
+                4 + len(parameters["RastersToAlign"]), model_feedback
+            )
+        else:
+            feedback = QgsProcessingMultiStepFeedback(4, model_feedback)
         results = {}
         outputs = {}
 
