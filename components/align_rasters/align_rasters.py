@@ -82,9 +82,12 @@ class AlignRasters(QgsProcessingAlgorithm):
         # Use a multi-step feedback, so that individual child algorithm progress reports are adjusted for the
         # overall progress through the model
 
-        feedback = QgsProcessingMultiStepFeedback(
-            4 + len(parameters["RastersToAlign"]), model_feedback
-        )
+        if parameters["RastersToAlign"]:
+            feedback = QgsProcessingMultiStepFeedback(
+                4 + len(parameters["RastersToAlign"]), model_feedback
+            )
+        else:
+            feedback = QgsProcessingMultiStepFeedback(4, model_feedback)
         results = {}
         outputs = {}
 
@@ -194,10 +197,20 @@ class AlignRasters(QgsProcessingAlgorithm):
             parameters, "RastersToAlign", context
         )
 
+        all_out_paths = []
+
         for i, rast in enumerate(rasters_to_align, start=4):
 
             rast_name = rast.name()
             out_path = os.path.join(output_dir, f"{rast_name}.tif")
+
+            # prevent self overwriting in algorithm outputs if two rasters have same display name
+            j = 1
+            while out_path in all_out_paths:
+                rast_name = f"{rast.name()}_{j}"
+                out_path = os.path.join(output_dir, f"{rast_name}.tif")
+                j += 1
+            all_out_paths.append(out_path)
 
             # Warp (reproject)
             alg_params = {
@@ -230,6 +243,8 @@ class AlignRasters(QgsProcessingAlgorithm):
                 ),  # to do: Remove Aligned from name and group layers
             )
 
+            results[rast_name] = outputs[rast_name]["OUTPUT"]
+
             feedback.setCurrentStep(i)
             if feedback.isCanceled():
                 return {}
@@ -258,20 +273,12 @@ class AlignRasters(QgsProcessingAlgorithm):
 <p></p>
 <h3>Resampling Method</h3>
 <p></p>
-<h3>Watershed to Mask</h3>
+<h3>Clipping Extent</h3>
 <p></p>
-<h3>Mask Buffer</h3>
-<p></p>
-<h3>Temp Raster Align</h3>
-<p></p>
-<h3>Aligned Soil</h3>
-<p></p>
-<h3>Aligned</h3>
+<h3>Clip Buffer</h3>
 <p></p>
 <h2>Outputs</h2>
-<h3>Aligned Soil</h3>
-<p></p>
-<h3>Aligned</h3>
+<h3>Output Directory</h3>
 <p></p>
 <br></body></html>"""
 
