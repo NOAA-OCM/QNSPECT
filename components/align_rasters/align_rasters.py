@@ -190,6 +190,7 @@ class AlignRasters(QgsProcessingAlgorithm):
         # QGIS will write other new rasters with standard projection string
         # if reference is not aligned, it will have old projection which will be same
         # in theory but some software like ArcGIS can interpret both projections as different
+        ref_source = ref_layer.source()
         rasters_to_align = [ref_layer]
         rasters_to_align += self.parameterAsLayerList(
             parameters, "RastersToAlign", context
@@ -197,7 +198,11 @@ class AlignRasters(QgsProcessingAlgorithm):
 
         all_out_paths = []
 
-        for i, rast in enumerate(rasters_to_align, start=4):
+        enum_start = 4
+        for i, rast in enumerate(rasters_to_align, start=enum_start):
+            # Prevent the reference raster from being alignd multiple times
+            if (i != enum_start) and (rast.source() == ref_source):
+                continue
 
             rast_name = rast.name()
             out_path = os.path.join(output_dir, f"{rast_name}.tif")
@@ -267,7 +272,7 @@ class AlignRasters(QgsProcessingAlgorithm):
 <p>The algorithm aligns one or more rasters to a reference raster. The aligned rasters will adopt the CRS, cell size, and origin of the reference raster. The aligned rasters will be saved as TIFF files.</p>
 <h2>Input parameters</h2>
 <h3>Reference Raster</h3>
-<p>The raster used for determining the CRS, cell size, and origin coordinates of the output rasters.</p>
+<p>The raster used for determining the CRS, cell size, and origin coordinates of the output rasters. If the reference raster has non-square pixels, the aligned raster pixel sizes will be the smallest length.</p>
 <h3>Rasters to Align</h3>
 <p>The rasters that will be aligned to the reference raster.</p>
 <h3>Resampling Method</h3>
