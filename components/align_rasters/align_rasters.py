@@ -18,9 +18,7 @@ class AlignRasters(QgsProcessingAlgorithm):
     def initAlgorithm(self, config=None):
         self.addParameter(
             QgsProcessingParameterRasterLayer(
-                "ReferenceRaster",
-                "Reference Raster",
-                defaultValue=None,
+                "ReferenceRaster", "Reference Raster", defaultValue=None,
             )
         )
         self.addParameter(
@@ -264,22 +262,25 @@ class AlignRasters(QgsProcessingAlgorithm):
         return "QNSPECT"
 
     def shortHelpString(self):
-        return """<html><body><h2>Algorithm description</h2>
-<p></p>
+        return """<html><body>
+<h2>Algorithm description</h2>
+<p>The algorithm aligns one or more rasters to a reference raster. The aligned rasters will adopt the CRS, cell size, and origin of the reference raster. The aligned rasters will be saved as TIFF files.</p>
 <h2>Input parameters</h2>
 <h3>Reference Raster</h3>
-<p></p>
+<p>The raster used for determining the CRS, cell size, and origin coordinates of the output rasters.</p>
 <h3>Rasters to Align</h3>
-<p></p>
+<p>The rasters that will be aligned to the reference raster.</p>
 <h3>Resampling Method</h3>
-<p></p>
-<h3>Clipping Extent</h3>
-<p></p>
-<h3>Clip Buffer</h3>
-<p></p>
+<p>The resampling method used for determining the value of aligned rasters' pixel value. The algorithms are identical to the algorithms executed in GDAL Warp.</p>
+<h3>Clipping Extent [optional]</h3>
+<p>The extent the aligned rasters will be clipped to. Smaller raster extents will decrease file size and processing time for later components. Thus, it is suggested the rasters be clipped to the area of interest of the project. Common intputs would include a watershed or county boundary.</p>
+<p>If this is not set, the aligned rasters will be clipped to the extent of the Reference Raster.</p>
+<h3>Clip Buffer [optional]</h3>
+<p>Buffer added around the Clipping Extent. A small buffer around the project area of interest may increase the accuracy of drainage algorithms.</p>
+<p>If the Clipping Extent is not set, no buffer will be applied.</p>
 <h2>Outputs</h2>
 <h3>Output Directory</h3>
-<p></p>
+<p>The output directory the aligned rasters will be saved to. The aligned rasters will share the name of their source files. If more than one raster share the same source name, numbers will be added to the end in the order they are processed.</p>
 <br></body></html>"""
 
     def createInstance(self):
