@@ -12,7 +12,7 @@ import processing
 import csv
 
 
-class Model(QgsProcessingAlgorithm):
+class CreateCsvs(QgsProcessingAlgorithm):
     def initAlgorithm(self, config=None):
         self.addParameter(
             QgsProcessingParameterEnum(
@@ -91,10 +91,10 @@ class Model(QgsProcessingAlgorithm):
         return results
 
     def name(self):
-        return "model"
+        return "Create CSVs"
 
     def displayName(self):
-        return "model"
+        return "Create CSVs"
 
     def group(self):
         return ""
@@ -103,7 +103,7 @@ class Model(QgsProcessingAlgorithm):
         return ""
 
     def createInstance(self):
-        return Model()
+        return CreateCsvs()
 
     def ncld_properties(self):
         return [
