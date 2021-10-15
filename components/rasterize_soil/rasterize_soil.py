@@ -201,6 +201,7 @@ class RasterizeSoil(QgsProcessingAlgorithm):
     def shortHelpString(self):
         return """<html><body><h2>Algorithm description</h2>
 <p>The algorithm converts a vector polygon layer into Hydrologic Soul Group and/or K-Factor rasters. The value of the raster pixels is determined by the vector layer's attributes.</p>
+<p>Soils data are used to estimate sediment loads. Two soil parameters are needed: the hydrologic soils group, which is a measure of how permeable the soils are; and the K-factor, which is a measure of how erodible the soils are. This information can be obtained from the Soil Survey Geographic (SSURGO) database, an archive of county-level soil data for most of the United States, maintained by the USDA Natural Resource Conservation Service. This is an excellent first (and generally last) place to look for county-level soils data.</p>
 <h2>Input parameters</h2>
 <h3>Soil Layer</h3>
 <p>Vector layer representing the soil properties.</p>
