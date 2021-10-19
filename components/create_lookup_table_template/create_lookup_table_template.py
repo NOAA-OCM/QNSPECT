@@ -3,10 +3,11 @@ from qgis.core import (
     QgsProcessingAlgorithm,
     QgsProcessingMultiStepFeedback,
     QgsProcessingParameterEnum,
-    QgsProcessingParameterFeatureSink,
     QgsVectorLayer,
     QgsProcessingParameterFeatureSink,
     QgsVectorFileWriter,
+    QgsFeatureSink,
+    QgsFeature,
 )
 import processing
 import os
@@ -17,12 +18,14 @@ COEFFICIENTS_PATH = (
 
 
 class CreateLookupTableTemplate(QgsProcessingAlgorithm):
+    outputTable = "OutputTable"
+    landCoverIndex = "LandCoverType"
     landCoverTypes = ["NLCD", "CCAP"]
 
     def initAlgorithm(self, config=None):
         self.addParameter(
             QgsProcessingParameterEnum(
-                "LandCoverType",
+                self.landCoverIndex,
                 "Land Cover Type",
                 options=self.landCoverTypes,
                 allowMultiple=False,
@@ -30,10 +33,10 @@ class CreateLookupTableTemplate(QgsProcessingAlgorithm):
             )
         )
 
-        try:
+        try:  ## Account for changes in the constructor parameters between QGIS 3.x versions
             self.addParameter(
                 QgsProcessingParameterFeatureSink(
-                    "OutputTable",
+                    self.outputTable,
                     "Output Table",
                     type=QgsProcessing.TypeVector,
                     createByDefault=True,
@@ -41,10 +44,10 @@ class CreateLookupTableTemplate(QgsProcessingAlgorithm):
                     defaultValue=None,
                 )
             )
-        except TypeError:  ## Account for changes in the constructor parameters between versions
+        except TypeError:
             self.addParameter(
                 QgsProcessingParameterFeatureSink(
-                    "OutputTable",
+                    self.outputTable,
                     "Output Table",
                     type=QgsProcessing.TypeVector,
                     defaultValue=None,
@@ -60,48 +63,22 @@ class CreateLookupTableTemplate(QgsProcessingAlgorithm):
         results = {}
         outputs = {}
 
-        # Check if the output file is a CSV or GeoPackage
-        destination = self.parameterDefinition("OutputTable").valueAsPythonString(
-            parameters["OutputTable"], context
+        index = self.parameterAsInt(parameters, self.landCoverIndex, context)
+        land_cover = self.landCoverTypes[index]
+
+        template_path = COEFFICIENTS_PATH.format(land_cover)
+        template_layer = QgsVectorLayer(
+            template_path, "template_layer", "delimitedtext"
         )
-        # QgsProcessing.TEMPORARY_OUTPUT
-        feedback.reportError(str(destination))
-        while destination.startswith("'") or destination.startswith('"'):
-            destination = destination[1:]
-        while destination.endswith("'") or destination.endswith('"'):
-            destination = destination[:-1]
-        try:
-            extention = os.path.splitext(destination)[1].lower()
-        except IndexError:
-            extention = None
-        if extention != ".csv":
-            feedback.reportError("Output file must be a CSV.", True)
-            return {}
 
-        # Find the template based on the land cover values chosen
-        feedback.setCurrentStep(1)
-        if feedback.isCanceled():
-            return {}
-        land_cover = self.parameterAsInt(parameters, "LandCoverType", context)
-        layer_name = self.landCoverTypes[land_cover]
-
-        template_path = COEFFICIENTS_PATH.format(layer_name)
-
-        feedback.setCurrentStep(2)
-        if feedback.isCanceled():
-            return {}
-        table_layer = QgsVectorLayer(template_path, "scratch", "delimitedtext")
-
-        error_code, error_message = outputs[
-            "OutputTable"
-        ] = QgsVectorFileWriter.writeAsVectorFormat(
-            table_layer, destination, "utf-8", driverName="CSV"
+        sink, dest_id = self.parameterAsSink(
+            parameters, self.outputTable, context, template_layer.fields()
         )
-        if error_code != QgsVectorFileWriter.NoError:
-            feedback.reportError(f"Error writing to output file: {error_message}")
-            return {}
+        for feature in template_layer.getFeatures():
+            insert_feature = QgsFeature(feature)
+            sink.addFeature(insert_feature, QgsFeatureSink.FastInsert)
 
-        return results
+        return {self.outputTable: dest_id}
 
     def name(self):
         return "Create Lookup Table Template"
