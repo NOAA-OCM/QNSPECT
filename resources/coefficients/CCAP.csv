@@ -1,0 +1,27 @@
+lu_value,lu_name,cn_a,cn_b,cn_c,cn_d,c_factor,tss,lead,zinc,nitrogen,phosphorus
+0,Background,0,0,0,0,0,0,0,0,0,0
+1,No Data,0,0,0,0,0,0,0,0,0,0
+2,High Intensity Developed,89,92,94,95,0,71,0.09,0.06,2.22,0.47
+3,Medium Intensity Developed,77,85,90,92,0.01,27,0.06,0.06,2.29,0.3
+4,Low Intensity Developed,61,75,83,87,0.03,19.1,0.04,0.03,1.77,0.18
+5,Developed Open Space,49,69,79,84,0.005,11.1,0.03,0.03,1.25,0.05
+6,Cultivated Land,67,78,85,89,0.24,107,0.03,0.03,2.68,0.42
+7,Pasture/Hay,39,61,74,80,0.05,55.3,0.02,0.03,2.48,0.48
+8,Grassland,30,58,71,78,0.12,55.3,0.03,0.03,1.25,0.05
+9,Deciduous Forest,30,55,70,77,0.009,11.1,0,0.03,1.25,0.05
+10,Evergreen Forest,30,55,70,77,0.004,11.1,0,0.03,1.25,0.05
+11,Mixed Forest,30,55,70,77,0.007,11.1,0,0.03,1.25,0.05
+12,Scrub/Shrub,30,48,65,73,0.014,11.1,0,0.03,1.25,0.05
+13,Palustrine Forested Wetland,0,0,0,0,0.003,19,0,0,1.1,0.2
+14,Palustrine Scrub/Shrub Wetland,0,0,0,0,0,19,0,0,1.1,0.2
+15,Palustrine Emergent Wetland,0,0,0,0,0,19,0,0,1.1,0.2
+16,Estuarine Forested Wetland,0,0,0,0,0.003,19,0,0,1.1,0.2
+17,Estuarine Scrub/Shrub Wetland,0,0,0,0,0.003,19,0,0,1.1,0.2
+18,Estuarine Emergent Wetland,0,0,0,0,0.003,19,0,0,1.1,0.2
+19,Unconsolidated Shore,0,0,0,0,0.5,70,0.03,0.03,0.97,0.12
+20,Bare Land,77,86,91,94,0.7,70,0.03,0.03,0.97,0.12
+21,Water,0,0,0,0,0,0,0,0,0,0
+22,Palustrine Aquatic Bed,0,0,0,0,0,0,0,0,0,0
+23,Estuarine Aquatic Bed,0,0,0,0,0,0,0,0,0,0
+24,Tundra,30,48,65,73,0.014,0,0,0,0,0
+25,Snow/Ice,0,0,0,0,0,0,0,0,0,0
