@@ -27,6 +27,7 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
     lookup_tables = {0: "NLCD", 1: "C-CAP"}
     default_lookup_path = r"file:///C:\Users\asiddiqui\Documents\github_repos\QNSPECT\resources\coefficients\{0}.csv"
     dual_soil_reclass = {0: [5, 9, 4], 1: [5, 5, 1, 6, 6, 2, 7, 7, 3, 8, 9, 4]}
+    reference_raster = "Elevation Raster"
 
     def initAlgorithm(self, config=None):
         self.addParameter(
@@ -187,11 +188,16 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
                 True,
             )
 
-        # Convert Soil type 8,9 to 4
+        # Build CN Expression
+        cn_exprs = self.generate_cn_exprs(lookup_layer)
+
+        # Preprocess Soil
         if dual_soil_type in [0, 1]:
-            outputs["CleanSoil"] = self.reclass_soil(
+            # replace soil type 5 to 9 per chosen option
+            outputs["Soil"] = self.reclass_soil(
                 self.dual_soil_reclass[dual_soil_type], parameters, context, feedback
             )
+
         elif dual_soil_type == 2:
             outputs["SoilUndrain"] = self.reclass_soil(
                 self.dual_soil_reclass[0], parameters, context, feedback
@@ -200,9 +206,54 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
                 self.dual_soil_reclass[1], parameters, context, feedback
             )
 
-        return results
+        # Generate CN Raster
+        input_params = {
+            "input_a": parameters["LandUseRaster"],
+            "band_a": "1",
+        }
+
+        if dual_soil_type in [0, 1]:
+            feedback.pushInfo(str((outputs["Soil"])))
+            input_params.update(
+                {
+                    "input_b": outputs["Soil"]["OUTPUT"],
+                    "band_b": "1",
+                }
+            )
+            outputs["CN"] = self.perform_raster_math(
+                cn_exprs, input_params, context, feedback
+            )
+
+        elif dual_soil_type == 2:
+            input_params.update(
+                {
+                    "input_b": outputs["SoilUndrain"]["OUTPUT"],
+                    "band_b": "1",
+                }
+            )
+            outputs["CNUndrain"] = self.perform_raster_math(
+                cn_exprs, input_params, context, feedback
+            )
+            input_params.update(
+                {
+                    "input_b": outputs["SoilDrain"]["OUTPUT"],
+                    "band_b": "1",
+                }
+            )
+            outputs["CNDrain"] = self.perform_raster_math(
+                cn_exprs, input_params, context, feedback
+            )
+
+            # average undrain and drain CN rasters
+            outputs["CN"] = self.average_rasters(
+                [outputs["CNUndrain"]["OUTPUT"], outputs["CNDrain"]["OUTPUT"]],
+                parameters,
+                context,
+                feedback,
+            )
 
         # temp
+        results["cn"] = outputs["CN"]["OUTPUT"].source()
         results["lookup"] = [f.name() for f in lookup_layer.fields()]
         results["desired_outputs"] = desired_outputs
         results["desired_pollutants"] = desired_pollutants
@@ -222,6 +273,73 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
         }
         return processing.run(
             "native:reclassifybytable",
+            alg_params,
+            context=context,
+            feedback=feedback,
+            is_child_algorithm=True,
+        )
+
+    def generate_cn_exprs(self, lookup_layer) -> str:
+        """Generate generic CN expression"""
+        # Build CN Expression
+        cn_calc_expr = []
+        for feat in lookup_layer.getFeatures():
+            lu = feat.attribute("lu_value")
+            for i, hsg in enumerate(["a", "b", "c", "d"]):
+                cn = feat.attribute(f"cn_{hsg}")
+                cn_calc_expr.append(f"logical_and(A=={lu},B=={i+1})*{cn}")
+
+        return " + ".join(cn_calc_expr)
+
+    def perform_raster_math(
+        self,
+        exprs,
+        input_dict,
+        context,
+        feedback,
+        output=QgsProcessing.TEMPORARY_OUTPUT,
+    ):
+        # Raster calculator
+        alg_params = {
+            "BAND_A": input_dict.get("band_a", None),
+            "BAND_B": input_dict.get("band_b", None),
+            "BAND_C": input_dict.get("band_c", None),
+            "BAND_D": input_dict.get("band_d", None),
+            "BAND_E": input_dict.get("band_e", None),
+            "BAND_F": input_dict.get("band_f", None),
+            "EXTRA": "",
+            "FORMULA": exprs,
+            "INPUT_A": input_dict.get("input_a", None),
+            "INPUT_B": input_dict.get("input_b", None),
+            "INPUT_C": input_dict.get("input_c", None),
+            "INPUT_D": input_dict.get("input_d", None),
+            "INPUT_E": input_dict.get("input_e", None),
+            "INPUT_F": input_dict.get("input_f", None),
+            "NO_DATA": -9999,
+            "OPTIONS": "",
+            "RTYPE": 5,
+            "OUTPUT": output,
+        }
+        return processing.run(
+            "gdal:rastercalculator",
+            alg_params,
+            context=context,
+            feedback=feedback,
+            is_child_algorithm=True,
+        )
+
+    def average_rasters(self, rasters, parameters, context, feedback):
+        # Cell statistics
+        alg_params = {
+            "IGNORE_NODATA": True,
+            "INPUT": rasters,
+            "OUTPUT_NODATA_VALUE": -9999,
+            "REFERENCE_LAYER": parameters[self.reference_raster],
+            "STATISTIC": 2,
+            "OUTPUT": QgsProcessing.TEMPORARY_OUTPUT,
+        }
+        return processing.run(
+            "native:cellstatistics",
             alg_params,
             context=context,
             feedback=feedback,
