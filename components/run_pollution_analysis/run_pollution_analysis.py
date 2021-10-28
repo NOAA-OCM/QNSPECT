@@ -10,6 +10,9 @@ from qgis.core import (
     QgsProcessingParameterVectorLayer,
     QgsProcessingParameterMatrix,
     QgsVectorLayer,
+    QgsProcessingParameterFolderDestination,
+    QgsProcessingParameterBoolean,
+    QgsProcessingParameterDefinition,
 )
 import processing
 
@@ -24,7 +27,7 @@ def filter_matrix(matrix: list) -> list:
 
 
 class RunPollutionAnalysis(QgsProcessingAlgorithm):
-    lookup_tables = {0: "NLCD", 1: "C-CAP"}
+    lookup_tables = {0: "NLCD", 1: "CCAP"}
     default_lookup_path = r"file:///C:\Users\asiddiqui\Documents\github_repos\QNSPECT\resources\coefficients\{0}.csv"
     dual_soil_reclass = {0: [5, 9, 4], 1: [5, 5, 1, 6, 6, 2, 7, 7, 3, 8, 9, 4]}
     reference_raster = "Elevation Raster"
@@ -40,33 +43,19 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
             )
         )
         self.addParameter(
-            QgsProcessingParameterFile(
-                "ProjectLocation",
-                "Location for Run Output",
+            QgsProcessingParameterRasterLayer(
+                "ElevatoinRaster",
+                "Elevation Raster",
                 optional=True,
-                behavior=QgsProcessingParameterFile.Folder,
-                fileFilter="All files (*.*)",
-                defaultValue=None,
+                defaultValue="C:/Users/asiddiqui/Documents/Projects/NSPECT/HI_SAMPLE_TEST_DATA/drived/aligned_DEM.tif",
             )
         )
         self.addParameter(
             QgsProcessingParameterRasterLayer(
-                "ElevatoinRaster", "Elevation Raster", optional=True, defaultValue=None
-            )
-        )
-        self.addParameter(
-            QgsProcessingParameterRasterLayer(
-                "SoilRaster", "Soil Raster", optional=True, defaultValue=None
-            )
-        )
-        self.addParameter(
-            QgsProcessingParameterEnum(
-                "DualSoils",
-                "Treat Dual Category Soils as",
+                "SoilRaster",
+                "Soil Raster",
                 optional=True,
-                options=["Undrained [Default]", "Drained", "Average"],
-                allowMultiple=False,
-                defaultValue=[0],
+                defaultValue="C:/Users/asiddiqui/Documents/Projects/NSPECT/HI_SAMPLE_TEST_DATA/drived/HSG.tif",
             )
         )
         self.addParameter(
@@ -79,8 +68,8 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
         )
         self.addParameter(
             QgsProcessingParameterEnum(
-                "RainUnits",
-                "Rain Units",
+                "PrecipUnits",
+                "Precipitation Raster Units",
                 options=["Inches", "Millimeters"],
                 optional=True,
                 allowMultiple=False,
@@ -100,7 +89,10 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
         )
         self.addParameter(
             QgsProcessingParameterRasterLayer(
-                "LandUseRaster", "Land Use Raster", optional=True, defaultValue=None
+                "LandUseRaster",
+                "Land Use Raster",
+                optional=True,
+                defaultValue="C:/Users/asiddiqui/Documents/Projects/NSPECT/HI_SAMPLE_TEST_DATA/drived/HI_CCAP05.tif",
             )
         )
         self.addParameter(
@@ -144,6 +136,29 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
                 ],
             )
         )
+        param = QgsProcessingParameterBoolean(
+            "MDF", "Use Multi Direction Flow [MDF] Routing", defaultValue=False
+        )
+        param.setFlags(param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
+        self.addParameter(param)
+        param = QgsProcessingParameterEnum(
+            "DualSoils",
+            "Treat Dual Category Soils as",
+            optional=True,
+            options=["Undrained [Default]", "Drained", "Average"],
+            allowMultiple=False,
+            defaultValue=[0],
+        )
+        param.setFlags(param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
+        self.addParameter(param)
+        self.addParameter(
+            QgsProcessingParameterFolderDestination(
+                "ProjectLocation",
+                "Folder for Run Outputs",
+                createByDefault=True,
+                defaultValue=None,
+            )
+        )
 
     def processAlgorithm(self, parameters, context, model_feedback):
         # Use a multi-step feedback, so that individual child algorithm progress reports are adjusted for the
@@ -154,6 +169,8 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
 
         ## Extract inputs
         land_use_type = self.parameterAsEnum(parameters, "LandUseType", context)
+        feedback.pushWarning(str(land_use_type))
+
         desired_outputs = filter_matrix(
             self.parameterAsMatrix(parameters, "DesiredOutputs", context)
         )
@@ -161,6 +178,7 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
             pol.lower() for pol in desired_outputs if pol.lower() != "runoff"
         ]
         dual_soil_type = self.parameterAsEnum(parameters, "DualSoils", context)
+        feedback.pushWarning(str(dual_soil_type))
 
         ## Extract Lookup Table
         if parameters["LookupTable"]:
@@ -180,6 +198,7 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
             )
             return {}
         lookup_fields = [f.name().lower() for f in lookup_layer.fields()]
+        feedback.pushWarning(str(lookup_fields))
 
         ## Assertions
         if not all([pol in lookup_fields for pol in desired_pollutants]):
@@ -190,6 +209,7 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
 
         # Build CN Expression
         cn_exprs = self.generate_cn_exprs(lookup_layer)
+        feedback.pushWarning(cn_exprs)
 
         # Preprocess Soil
         if dual_soil_type in [0, 1]:
@@ -253,7 +273,7 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
             )
 
         # temp
-        results["cn"] = outputs["CN"]["OUTPUT"].source()
+        results["cn"] = outputs["CN"]["OUTPUT"]
         results["lookup"] = [f.name() for f in lookup_layer.fields()]
         results["desired_outputs"] = desired_outputs
         results["desired_pollutants"] = desired_pollutants
