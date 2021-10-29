@@ -106,10 +106,10 @@ class ModifyLandUse(QgsProcessingAlgorithm):
         return "Modify Land Use"
 
     def group(self):
-        return ""
+        return "QNSPECT"
 
     def groupId(self):
-        return ""
+        return "QNSPECT"
 
     def createInstance(self):
         return ModifyLandUse()
