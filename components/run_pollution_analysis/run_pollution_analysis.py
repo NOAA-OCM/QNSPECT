@@ -272,6 +272,25 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
                 feedback,
             )
 
+
+        ## Calculate S (Potential Maximum Retention) (inches)
+        input_params = {
+            "input_a": outputs["CN"]["OUTPUT"],
+            "band_a": "1",
+        }        "
+        outputs["S"] = self.perform_raster_math("(1000/A)-10",input_params, context, feedback)
+
+        ## Calculate Ia (Initial Abstrection) (inches)
+        input_params = {
+            "input_a": outputs["S"]["OUTPUT"],
+            "band_a": "1",
+        }        "
+        outputs["Ia"] = self.perform_raster_math("0.2*A",input_params, context, feedback)
+
+
+
+
+
         # temp
         results["cn"] = outputs["CN"]["OUTPUT"]
         results["lookup"] = [f.name() for f in lookup_layer.fields()]
