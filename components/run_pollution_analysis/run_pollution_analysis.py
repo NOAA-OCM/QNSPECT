@@ -60,7 +60,7 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
         )
         self.addParameter(
             QgsProcessingParameterRasterLayer(
-                "PrecipitationRaster",
+                "PrecipRaster",
                 "Precipitation Raster",
                 optional=True,
                 defaultValue=None,
@@ -180,6 +180,8 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
         dual_soil_type = self.parameterAsEnum(parameters, "DualSoils", context)
         feedback.pushWarning(str(dual_soil_type))
 
+        precip_units = self.parameterAsEnum(parameters, "PrecipUnits", context)
+
         ## Extract Lookup Table
         if parameters["LookupTable"]:
             lookup_layer = self.parameterAsVectorLayer(
@@ -207,11 +209,11 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
                 True,
             )
 
-        # Build CN Expression
+        ## Build CN Expression
         cn_exprs = self.generate_cn_exprs(lookup_layer)
         feedback.pushWarning(cn_exprs)
 
-        # Preprocess Soil
+        ## Preprocess Soil
         if dual_soil_type in [0, 1]:
             # replace soil type 5 to 9 per chosen option
             outputs["Soil"] = self.reclass_soil(
@@ -226,7 +228,7 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
                 self.dual_soil_reclass[1], parameters, context, feedback
             )
 
-        # Generate CN Raster
+        ## Generate CN Raster
         input_params = {
             "input_a": parameters["LandUseRaster"],
             "band_a": "1",
@@ -272,27 +274,45 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
                 feedback,
             )
 
+        ## Convert Units of Precip to inches
+        if precip_units == 1:  # millimeter
+            input_params = {
+                "input_a": parameters["PrecipRaster"],
+                "band_a": "1",
+            }
+            outputs["P"] = self.perform_raster_math(
+                "A/25.4", input_params, context, feedback
+            )
+            precip_raster = outputs["P"]["OUTPUT"]
+        else:
+            precip_raster = parameters["PrecipRaster"]
 
         ## Calculate S (Potential Maximum Retention) (inches)
         input_params = {
             "input_a": outputs["CN"]["OUTPUT"],
             "band_a": "1",
-        }        "
-        outputs["S"] = self.perform_raster_math("(1000/A)-10",input_params, context, feedback)
+        }
+        outputs["S"] = self.perform_raster_math(
+            "(1000/A)-10", input_params, context, feedback
+        )
 
-        ## Calculate Ia (Initial Abstrection) (inches)
+        ## Calculate Q (Runoff Depth) (inches)
         input_params = {
-            "input_a": outputs["S"]["OUTPUT"],
+            "input_a": precip_raster,
             "band_a": "1",
-        }        "
-        outputs["Ia"] = self.perform_raster_math("0.2*A",input_params, context, feedback)
-
-
-
-
+            "input_b": outputs["S"]["OUTPUT"],
+            "band_b": "1",
+        }
+        outputs["Q"] = self.perform_raster_math(
+            "((A-(0.2*B))**2)/(A+(0.8*B)) * ((A-(0.2*B))>0)",
+            input_params,
+            context,
+            feedback,
+        )
 
         # temp
         results["cn"] = outputs["CN"]["OUTPUT"]
+        results["Q"] = outputs["Q"]["OUTPUT"]
         results["lookup"] = [f.name() for f in lookup_layer.fields()]
         results["desired_outputs"] = desired_outputs
         results["desired_pollutants"] = desired_pollutants
