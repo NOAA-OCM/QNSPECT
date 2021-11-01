@@ -82,11 +82,9 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
             QgsProcessingParameterNumber(
                 "RainyDays",
                 "Number of Rainy Days in a Year",
-                optional=True,
                 type=QgsProcessingParameterNumber.Integer,
                 minValue=1,
                 maxValue=366,
-                defaultValue=None,
             )
         )
         self.addParameter(
@@ -294,7 +292,7 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
         else:
             precip_raster = parameters["PrecipRaster"]
 
-        ## Calculate S (Potential Maximum Retention) (inches)
+        # Calculate S (Potential Maximum Retention) (inches)
         input_params = {
             "input_a": outputs["CN"]["OUTPUT"],
             "band_a": "1",
@@ -303,22 +301,8 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
             "(1000/A)-10", input_params, context, feedback
         )
 
-        ## Calculate Q (Runoff)
-        input_params = {
-            "input_a": precip_raster,
-            "band_a": "1",
-            "input_b": outputs["S"]["OUTPUT"],
-            "band_b": "1",
-        }
-        # (Depth) (feet)
-        outputs["Q"] = self.perform_raster_math(
-            f"(((A-(0.2*B*{rainy_days}))**2)/(A+(0.8*B*{rainy_days})) * ((A-(0.2*B*{rainy_days}))>0))/12",
-            input_params,
-            context,
-            feedback,
-        )
-
-        # Reference Raster Cell Area
+        # Calculate Q (Runoff)
+        # using elev layer here because everything should have same units and crs
         cell_area = (
             elev_raster_layer.rasterUnitsPerPixelY()
             * elev_raster_layer.rasterUnitsPerPixelX()
@@ -327,12 +311,26 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
         d = QgsDistanceArea()
         tr_cont = QgsCoordinateTransformContext()
         d.setSourceCrs(elev_raster_layer.crs(), tr_cont)
-        # d.setEllipsoid(area_layer.crs().ellipsoidAcronym())
         cell_area_sq_feet = d.convertAreaMeasurement(
             cell_area, QgsUnitTypes.AreaSquareFeet
         )
         feedback.pushWarning(str(cell_area))
         feedback.pushWarning(str(cell_area_sq_feet))
+
+        input_params = {
+            "input_a": precip_raster,
+            "band_a": "1",
+            "input_b": outputs["S"]["OUTPUT"],
+            "band_b": "1",
+        }
+        # (Volume) (L)
+        outputs["Q"] = self.perform_raster_math(
+            # (((Precip-(0.2*S*rainy_days))**2)/(Precip+(0.8*S*rainy_days)) * [If (Precip-0.2S)<0, set to 0] * cell area to convert to vol * (28.3168/12) to convert inches to feet and cubic feet to Liters",
+            f"(((A-(0.2*B*{rainy_days}))**2)/(A+(0.8*B*{rainy_days})) * ((A-(0.2*B*{rainy_days}))>0)) * {cell_area_sq_feet} * 2.35973722 ",
+            input_params,
+            context,
+            feedback,
+        )
 
         # temp
         results["cn"] = outputs["CN"]["OUTPUT"]
