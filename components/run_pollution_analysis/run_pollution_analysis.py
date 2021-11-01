@@ -13,6 +13,9 @@ from qgis.core import (
     QgsProcessingParameterFolderDestination,
     QgsProcessingParameterBoolean,
     QgsProcessingParameterDefinition,
+    QgsDistanceArea,
+    QgsCoordinateTransformContext,
+    QgsUnitTypes,
 )
 import processing
 
@@ -63,7 +66,7 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
                 "PrecipRaster",
                 "Precipitation Raster",
                 optional=True,
-                defaultValue=None,
+                defaultValue="C:/Users/asiddiqui/Documents/Projects/NSPECT/HI_SAMPLE_TEST_DATA/drived/precip.tif",
             )
         )
         self.addParameter(
@@ -71,9 +74,8 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
                 "PrecipUnits",
                 "Precipitation Raster Units",
                 options=["Inches", "Millimeters"],
-                optional=True,
                 allowMultiple=False,
-                defaultValue=r"C:\Users\asiddiqui\Documents\Projects\NSPECT\HI_SAMPLE_TEST_DATA\drived\precip.tif",
+                defaultValue=[0],
             )
         )
         self.addParameter(
@@ -178,11 +180,14 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
         ]
         dual_soil_type = self.parameterAsEnum(parameters, "DualSoils", context)
         feedback.pushWarning(str(dual_soil_type))
-        
+
         precip_units = self.parameterAsEnum(parameters, "PrecipUnits", context)
         rainy_days = self.parameterAsInt(parameters, "RainyDays", context)
         feedback.pushWarning(str(rainy_days))
 
+        elev_raster_layer = self.parameterAsRasterLayer(
+            parameters, "ElevatoinRaster", context
+        )  # Elevation
 
         ## Extract Lookup Table
         if parameters["LookupTable"]:
@@ -203,7 +208,6 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
             return {}
         lookup_fields = [f.name().lower() for f in lookup_layer.fields()]
 
-
         ## Assertions
         if not all([pol in lookup_fields for pol in desired_pollutants]):
             feedback.reportError(
@@ -211,9 +215,10 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
                 True,
             )
 
+        # assert all Raster CRS are same and Raster Pixel Units too
+
         ## Build CN Expression
         cn_exprs = self.generate_cn_exprs(lookup_layer)
-
 
         ## Preprocess Soil
         if dual_soil_type in [0, 1]:
@@ -229,7 +234,6 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
             outputs["SoilDrain"] = self.reclass_soil(
                 self.dual_soil_reclass[1], parameters, context, feedback
             )
-
 
         ## Generate CN Raster
         input_params = {
@@ -277,39 +281,58 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
                 feedback,
             )
 
-
         ## Convert Units of Precip to inches
         if precip_units == 1:
             input_params = {
                 "input_a": parameters["PrecipRaster"],
                 "band_a": "1",
             }
-            outputs["P"] = self.perform_raster_math("A/25.4",input_params, context, feedback)
+            outputs["P"] = self.perform_raster_math(
+                "A/25.4", input_params, context, feedback
+            )
             precip_raster = outputs["P"]["OUTPUT"]
         else:
             precip_raster = parameters["PrecipRaster"]
-
 
         ## Calculate S (Potential Maximum Retention) (inches)
         input_params = {
             "input_a": outputs["CN"]["OUTPUT"],
             "band_a": "1",
         }
-        outputs["S"] = self.perform_raster_math("(1000/A)-10",input_params, context, feedback)
+        outputs["S"] = self.perform_raster_math(
+            "(1000/A)-10", input_params, context, feedback
+        )
 
-
-        ## Calculate Q (Runoff Depth) (inches)
+        ## Calculate Q (Runoff)
         input_params = {
             "input_a": precip_raster,
-            "band_a": "1",        
+            "band_a": "1",
             "input_b": outputs["S"]["OUTPUT"],
             "band_b": "1",
         }
-        outputs["Q"] = self.perform_raster_math(f"((A-(0.2*B*{rainy_days}))**2)/(A+(0.8*B*{rainy_days})) * ((A-(0.2*B*{rainy_days}))>0)",input_params, context, feedback)
+        # (Depth) (feet)
+        outputs["Q"] = self.perform_raster_math(
+            f"(((A-(0.2*B*{rainy_days}))**2)/(A+(0.8*B*{rainy_days})) * ((A-(0.2*B*{rainy_days}))>0))/12",
+            input_params,
+            context,
+            feedback,
+        )
 
+        # Reference Raster Cell Area
+        cell_area = (
+            elev_raster_layer.rasterUnitsPerPixelY()
+            * elev_raster_layer.rasterUnitsPerPixelX()
+        )
 
-
-
+        d = QgsDistanceArea()
+        tr_cont = QgsCoordinateTransformContext()
+        d.setSourceCrs(elev_raster_layer.crs(), tr_cont)
+        # d.setEllipsoid(area_layer.crs().ellipsoidAcronym())
+        cell_area_sq_feet = d.convertAreaMeasurement(
+            cell_area, QgsUnitTypes.AreaSquareFeet
+        )
+        feedback.pushWarning(str(cell_area))
+        feedback.pushWarning(str(cell_area_sq_feet))
 
         # temp
         results["cn"] = outputs["CN"]["OUTPUT"]
