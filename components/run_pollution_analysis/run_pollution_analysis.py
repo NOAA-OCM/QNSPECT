@@ -73,7 +73,7 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
                 options=["Inches", "Millimeters"],
                 optional=True,
                 allowMultiple=False,
-                defaultValue=None,
+                defaultValue=r"C:\Users\asiddiqui\Documents\Projects\NSPECT\HI_SAMPLE_TEST_DATA\drived\precip.tif",
             )
         )
         self.addParameter(
@@ -99,7 +99,6 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
             QgsProcessingParameterEnum(
                 "LandUseType",
                 "Land Use Type",
-                optional=True,
                 options=["NLCD", "C-CAP", "Custom"],
                 allowMultiple=False,
                 defaultValue=None,
@@ -179,8 +178,11 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
         ]
         dual_soil_type = self.parameterAsEnum(parameters, "DualSoils", context)
         feedback.pushWarning(str(dual_soil_type))
-
+        
         precip_units = self.parameterAsEnum(parameters, "PrecipUnits", context)
+        rainy_days = self.parameterAsInt(parameters, "RainyDays", context)
+        feedback.pushWarning(str(rainy_days))
+
 
         ## Extract Lookup Table
         if parameters["LookupTable"]:
@@ -200,7 +202,7 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
             )
             return {}
         lookup_fields = [f.name().lower() for f in lookup_layer.fields()]
-        feedback.pushWarning(str(lookup_fields))
+
 
         ## Assertions
         if not all([pol in lookup_fields for pol in desired_pollutants]):
@@ -211,7 +213,7 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
 
         ## Build CN Expression
         cn_exprs = self.generate_cn_exprs(lookup_layer)
-        feedback.pushWarning(cn_exprs)
+
 
         ## Preprocess Soil
         if dual_soil_type in [0, 1]:
@@ -227,6 +229,7 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
             outputs["SoilDrain"] = self.reclass_soil(
                 self.dual_soil_reclass[1], parameters, context, feedback
             )
+
 
         ## Generate CN Raster
         input_params = {
@@ -274,44 +277,43 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
                 feedback,
             )
 
+
         ## Convert Units of Precip to inches
-        if precip_units == 1:  # millimeter
+        if precip_units == 1:
             input_params = {
                 "input_a": parameters["PrecipRaster"],
                 "band_a": "1",
             }
-            outputs["P"] = self.perform_raster_math(
-                "A/25.4", input_params, context, feedback
-            )
+            outputs["P"] = self.perform_raster_math("A/25.4",input_params, context, feedback)
             precip_raster = outputs["P"]["OUTPUT"]
         else:
             precip_raster = parameters["PrecipRaster"]
+
 
         ## Calculate S (Potential Maximum Retention) (inches)
         input_params = {
             "input_a": outputs["CN"]["OUTPUT"],
             "band_a": "1",
         }
-        outputs["S"] = self.perform_raster_math(
-            "(1000/A)-10", input_params, context, feedback
-        )
+        outputs["S"] = self.perform_raster_math("(1000/A)-10",input_params, context, feedback)
+
 
         ## Calculate Q (Runoff Depth) (inches)
         input_params = {
             "input_a": precip_raster,
-            "band_a": "1",
+            "band_a": "1",        
             "input_b": outputs["S"]["OUTPUT"],
             "band_b": "1",
         }
-        outputs["Q"] = self.perform_raster_math(
-            "((A-(0.2*B))**2)/(A+(0.8*B)) * ((A-(0.2*B))>0)",
-            input_params,
-            context,
-            feedback,
-        )
+        outputs["Q"] = self.perform_raster_math(f"((A-(0.2*B*{rainy_days}))**2)/(A+(0.8*B*{rainy_days})) * ((A-(0.2*B*{rainy_days}))>0)",input_params, context, feedback)
+
+
+
+
 
         # temp
         results["cn"] = outputs["CN"]["OUTPUT"]
+        results["S"] = outputs["S"]["OUTPUT"]
         results["Q"] = outputs["Q"]["OUTPUT"]
         results["lookup"] = [f.name() for f in lookup_layer.fields()]
         results["desired_outputs"] = desired_outputs
