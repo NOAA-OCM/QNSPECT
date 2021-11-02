@@ -6,7 +6,7 @@ from qgis.core import (
 import processing
 
 
-class CurveNumberRaster:
+class Curve_Number:
     """Class to generate and store Curve Number Raster"""
 
     outputs = {}

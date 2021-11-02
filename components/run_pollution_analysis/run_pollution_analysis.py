@@ -17,7 +17,7 @@ from qgis.core import (
     QgsUnitTypes,
 )
 import processing
-from . import CurveNumberRaster
+from .Curve_Number import Curve_Number
 
 
 def filter_matrix(matrix: list) -> list:
@@ -223,7 +223,7 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
         # assert all Raster CRS are same and Raster Pixel Units too
 
         ## Generate CN Raster
-        CN_Class = CurveNumberRaster(
+        CN_Class = Curve_Number(
             parameters["LandUseRaster"],
             parameters["SoilRaster"],
             dual_soil_type,
