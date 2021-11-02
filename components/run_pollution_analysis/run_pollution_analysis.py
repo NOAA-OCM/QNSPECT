@@ -213,6 +213,10 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
         lookup_fields = [f.name().lower() for f in lookup_layer.fields()]
 
         ## Assertions
+
+        if not desired_outputs:
+            feedback.reportWarning("No output desired. \n")
+            return {}
         if not all([pol in lookup_fields for pol in desired_pollutants]):
             feedback.reportError(
                 "One or more of the Pollutants is not a column in the Land Use Lookup Table. Either remove the pollutants from Desired Outputs or provide a custom lookup table with desired pollutants. \n",
@@ -222,7 +226,7 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
         # assert all Raster CRS are same and Raster Pixel Units too
 
         ## Generate CN Raster
-        CN = Curve_Number(
+        cn = Curve_Number(
             parameters["LandUseRaster"],
             parameters["SoilRaster"],
             dual_soil_type,
@@ -230,11 +234,11 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
             context,
             feedback,
         )
-        outputs["CN"] = Curve_Number.generate_cn_raster()
+        outputs["CN"] = cn.generate_cn_raster()
 
         # Calculate Q (Runoff)
         # using elev layer here because everything should have same units and crs
-        Runoff_Vol = Runoff_Volume(
+        runoff_vol = Runoff_Volume(
             parameters["PrecipRaster"],
             outputs["CN"]["OUTPUT"],
             elev_raster_layer,
@@ -243,9 +247,9 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
             context,
             feedback,
         )
-        outputs["Q"] = Runoff_Vol.calculate_Q()
+        outputs["Q"] = runoff_vol.calculate_Q()
 
-        ## Calculate Local Pollutants Rasters
+        ## Calculate pollutant per LU
 
         # temp
         results["cn"] = outputs["CN"]["OUTPUT"]
