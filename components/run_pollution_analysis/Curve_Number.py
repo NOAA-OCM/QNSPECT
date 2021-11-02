@@ -118,3 +118,21 @@ class Curve_Number:
             feedback=self.feedback,
             is_child_algorithm=True,
         )
+
+    def average_rasters(self, rasters):
+        # Cell statistics
+        alg_params = {
+            "IGNORE_NODATA": True,
+            "INPUT": rasters,
+            "OUTPUT_NODATA_VALUE": -9999,
+            "REFERENCE_LAYER": rasters[0],
+            "STATISTIC": 2,
+            "OUTPUT": QgsProcessing.TEMPORARY_OUTPUT,
+        }
+        return processing.run(
+            "native:cellstatistics",
+            alg_params,
+            context=self.context,
+            feedback=self.feedback,
+            is_child_algorithm=True,
+        )
