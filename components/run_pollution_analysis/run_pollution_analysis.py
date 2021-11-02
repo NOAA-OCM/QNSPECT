@@ -1,3 +1,4 @@
+from components.run_pollution_analysis.Runoff_Volume import Runoff_Volume
 from qgis.core import (
     QgsProcessing,
     QgsProcessingAlgorithm,
@@ -12,12 +13,10 @@ from qgis.core import (
     QgsProcessingParameterFolderDestination,
     QgsProcessingParameterBoolean,
     QgsProcessingParameterDefinition,
-    QgsDistanceArea,
-    QgsCoordinateTransformContext,
-    QgsUnitTypes,
 )
 import processing
 from .Curve_Number import Curve_Number
+from .Runoff_Volume import Runoff_Volume
 
 
 def filter_matrix(matrix: list) -> list:
@@ -223,7 +222,7 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
         # assert all Raster CRS are same and Raster Pixel Units too
 
         ## Generate CN Raster
-        CN_Class = Curve_Number(
+        CN = Curve_Number(
             parameters["LandUseRaster"],
             parameters["SoilRaster"],
             dual_soil_type,
@@ -231,60 +230,20 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
             context,
             feedback,
         )
-        outputs["CN"] = CN_Class.generate_cn_raster()
-
-        ## Convert Units of Precip to inches
-        if precip_units == 1:
-            input_params = {
-                "input_a": parameters["PrecipRaster"],
-                "band_a": "1",
-            }
-            outputs["P"] = self.perform_raster_math(
-                "A/25.4", input_params, context, feedback
-            )
-            precip_raster = outputs["P"]["OUTPUT"]
-        else:
-            precip_raster = parameters["PrecipRaster"]
-
-        # Calculate S (Potential Maximum Retention) (inches)
-        input_params = {
-            "input_a": outputs["CN"]["OUTPUT"],
-            "band_a": "1",
-        }
-        outputs["S"] = self.perform_raster_math(
-            "(1000/A)-10", input_params, context, feedback
-        )
+        outputs["CN"] = Curve_Number.generate_cn_raster()
 
         # Calculate Q (Runoff)
         # using elev layer here because everything should have same units and crs
-        cell_area = (
-            elev_raster_layer.rasterUnitsPerPixelY()
-            * elev_raster_layer.rasterUnitsPerPixelX()
-        )
-
-        d = QgsDistanceArea()
-        tr_cont = QgsCoordinateTransformContext()
-        d.setSourceCrs(elev_raster_layer.crs(), tr_cont)
-        cell_area_sq_feet = d.convertAreaMeasurement(
-            cell_area, QgsUnitTypes.AreaSquareFeet
-        )
-        feedback.pushWarning(str(cell_area))
-        feedback.pushWarning(str(cell_area_sq_feet))
-
-        input_params = {
-            "input_a": precip_raster,
-            "band_a": "1",
-            "input_b": outputs["S"]["OUTPUT"],
-            "band_b": "1",
-        }
-        # (Volume) (L)
-        outputs["Q"] = self.perform_raster_math(
-            # (((Precip-(0.2*S*rainy_days))**2)/(Precip+(0.8*S*rainy_days)) * [If (Precip-0.2S)<0, set to 0] * cell area to convert to vol * (28.3168/12) to convert inches to feet and cubic feet to Liters",
-            f"(((A-(0.2*B*{rainy_days}))**2)/(A+(0.8*B*{rainy_days})) * ((A-(0.2*B*{rainy_days}))>0)) * {cell_area_sq_feet} * 2.35973722 ",
-            input_params,
+        Runoff_Vol = Runoff_Volume(
+            parameters["PrecipRaster"],
+            outputs["CN"]["OUTPUT"],
+            elev_raster_layer,
+            precip_units,
+            rainy_days,
             context,
             feedback,
         )
+        outputs["Q"] = Runoff_Vol.calculate_Q()
 
         ## Calculate Local Pollutants Rasters
 
@@ -297,92 +256,6 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
         results["desired_pollutants"] = desired_pollutants
 
         return results
-
-    def reclass_soil(self, table, parameters, context, feedback):
-        alg_params = {
-            "DATA_TYPE": 0,
-            "INPUT_RASTER": parameters["SoilRaster"],
-            "NODATA_FOR_MISSING": False,
-            "NO_DATA": 255,
-            "RANGE_BOUNDARIES": 2,
-            "RASTER_BAND": 1,
-            "TABLE": table,
-            "OUTPUT": QgsProcessing.TEMPORARY_OUTPUT,
-        }
-        return processing.run(
-            "native:reclassifybytable",
-            alg_params,
-            context=context,
-            feedback=feedback,
-            is_child_algorithm=True,
-        )
-
-    def generate_cn_exprs(self, lookup_layer) -> str:
-        """Generate generic CN expression"""
-        # Build CN Expression
-        cn_calc_expr = []
-        for feat in lookup_layer.getFeatures():
-            lu = feat.attribute("lu_value")
-            for i, hsg in enumerate(["a", "b", "c", "d"]):
-                cn = feat.attribute(f"cn_{hsg}")
-                cn_calc_expr.append(f"logical_and(A=={lu},B=={i+1})*{cn}")
-
-        return " + ".join(cn_calc_expr)
-
-    def perform_raster_math(
-        self,
-        exprs,
-        input_dict,
-        context,
-        feedback,
-        output=QgsProcessing.TEMPORARY_OUTPUT,
-    ):
-        # Raster calculator
-        alg_params = {
-            "BAND_A": input_dict.get("band_a", None),
-            "BAND_B": input_dict.get("band_b", None),
-            "BAND_C": input_dict.get("band_c", None),
-            "BAND_D": input_dict.get("band_d", None),
-            "BAND_E": input_dict.get("band_e", None),
-            "BAND_F": input_dict.get("band_f", None),
-            "EXTRA": "",
-            "FORMULA": exprs,
-            "INPUT_A": input_dict.get("input_a", None),
-            "INPUT_B": input_dict.get("input_b", None),
-            "INPUT_C": input_dict.get("input_c", None),
-            "INPUT_D": input_dict.get("input_d", None),
-            "INPUT_E": input_dict.get("input_e", None),
-            "INPUT_F": input_dict.get("input_f", None),
-            "NO_DATA": -9999,
-            "OPTIONS": "",
-            "RTYPE": 5,
-            "OUTPUT": output,
-        }
-        return processing.run(
-            "gdal:rastercalculator",
-            alg_params,
-            context=context,
-            feedback=feedback,
-            is_child_algorithm=True,
-        )
-
-    def average_rasters(self, rasters, parameters, context, feedback):
-        # Cell statistics
-        alg_params = {
-            "IGNORE_NODATA": True,
-            "INPUT": rasters,
-            "OUTPUT_NODATA_VALUE": -9999,
-            "REFERENCE_LAYER": parameters[self.reference_raster],
-            "STATISTIC": 2,
-            "OUTPUT": QgsProcessing.TEMPORARY_OUTPUT,
-        }
-        return processing.run(
-            "native:cellstatistics",
-            alg_params,
-            context=context,
-            feedback=feedback,
-            is_child_algorithm=True,
-        )
 
     def name(self):
         return "Run Pollution Analysis"
