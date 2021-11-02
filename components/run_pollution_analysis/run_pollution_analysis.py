@@ -3,7 +3,6 @@ from qgis.core import (
     QgsProcessingAlgorithm,
     QgsProcessingMultiStepFeedback,
     QgsProcessingParameterString,
-    QgsProcessingParameterFile,
     QgsProcessingParameterRasterLayer,
     QgsProcessingParameterEnum,
     QgsProcessingParameterNumber,
@@ -18,6 +17,7 @@ from qgis.core import (
     QgsUnitTypes,
 )
 import processing
+from . import CurveNumberRaster
 
 
 def filter_matrix(matrix: list) -> list:
@@ -32,7 +32,6 @@ def filter_matrix(matrix: list) -> list:
 class RunPollutionAnalysis(QgsProcessingAlgorithm):
     lookup_tables = {0: "NLCD", 1: "CCAP"}
     default_lookup_path = r"file:///C:\Users\asiddiqui\Documents\github_repos\QNSPECT\resources\coefficients\{0}.csv"
-    dual_soil_reclass = {0: [5, 9, 4], 1: [5, 5, 1, 6, 6, 2, 7, 7, 3, 8, 9, 4]}
     reference_raster = "Elevation Raster"
 
     def initAlgorithm(self, config=None):
@@ -136,6 +135,11 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
             )
         )
         param = QgsProcessingParameterBoolean(
+            "NoAccuOutputs", "Do not Output Accumulated Rasters", defaultValue=False
+        )
+        param.setFlags(param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
+        self.addParameter(param)
+        param = QgsProcessingParameterBoolean(
             "MDF", "Use Multi Direction Flow [MDF] Routing", defaultValue=False
         )
         param.setFlags(param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
@@ -183,6 +187,9 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
         rainy_days = self.parameterAsInt(parameters, "RainyDays", context)
         feedback.pushWarning(str(rainy_days))
 
+        mfd = self.parameterAsBool(parameters, "MFD", context)
+        no_accu_out = self.parameterAsBool(parameters, "NoAccuOutputs", context)
+
         elev_raster_layer = self.parameterAsRasterLayer(
             parameters, "ElevatoinRaster", context
         )  # Elevation
@@ -215,69 +222,16 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
 
         # assert all Raster CRS are same and Raster Pixel Units too
 
-        ## Build CN Expression
-        cn_exprs = self.generate_cn_exprs(lookup_layer)
-
-        ## Preprocess Soil
-        if dual_soil_type in [0, 1]:
-            # replace soil type 5 to 9 per chosen option
-            outputs["Soil"] = self.reclass_soil(
-                self.dual_soil_reclass[dual_soil_type], parameters, context, feedback
-            )
-
-        elif dual_soil_type == 2:
-            outputs["SoilUndrain"] = self.reclass_soil(
-                self.dual_soil_reclass[0], parameters, context, feedback
-            )
-            outputs["SoilDrain"] = self.reclass_soil(
-                self.dual_soil_reclass[1], parameters, context, feedback
-            )
-
         ## Generate CN Raster
-        input_params = {
-            "input_a": parameters["LandUseRaster"],
-            "band_a": "1",
-        }
-
-        if dual_soil_type in [0, 1]:
-            feedback.pushInfo(str((outputs["Soil"])))
-            input_params.update(
-                {
-                    "input_b": outputs["Soil"]["OUTPUT"],
-                    "band_b": "1",
-                }
-            )
-            outputs["CN"] = self.perform_raster_math(
-                cn_exprs, input_params, context, feedback
-            )
-
-        elif dual_soil_type == 2:
-            input_params.update(
-                {
-                    "input_b": outputs["SoilUndrain"]["OUTPUT"],
-                    "band_b": "1",
-                }
-            )
-            outputs["CNUndrain"] = self.perform_raster_math(
-                cn_exprs, input_params, context, feedback
-            )
-            input_params.update(
-                {
-                    "input_b": outputs["SoilDrain"]["OUTPUT"],
-                    "band_b": "1",
-                }
-            )
-            outputs["CNDrain"] = self.perform_raster_math(
-                cn_exprs, input_params, context, feedback
-            )
-
-            # average undrain and drain CN rasters
-            outputs["CN"] = self.average_rasters(
-                [outputs["CNUndrain"]["OUTPUT"], outputs["CNDrain"]["OUTPUT"]],
-                parameters,
-                context,
-                feedback,
-            )
+        CN_Class = CurveNumberRaster(
+            parameters["LandUseRaster"],
+            parameters["SoilRaster"],
+            dual_soil_type,
+            lookup_layer,
+            context,
+            feedback,
+        )
+        outputs["CN"] = CN_Class.generate_cn_raster()
 
         ## Convert Units of Precip to inches
         if precip_units == 1:
@@ -331,6 +285,8 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
             context,
             feedback,
         )
+
+        ## Calculate Local Pollutants Rasters
 
         # temp
         results["cn"] = outputs["CN"]["OUTPUT"]
