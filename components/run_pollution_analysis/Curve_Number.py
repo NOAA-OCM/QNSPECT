@@ -2,8 +2,15 @@ from qgis.core import (
     QgsProcessing,
     QgsVectorLayer,
     QgsProcessingMultiStepFeedback,
+    QgsProcessingContext,
 )
 import processing
+import sys
+
+sys.path.append(
+    r"C:\Users\asiddiqui\Documents\github_repos\QNSPECT\components\run_pollution_analysis"
+)
+from qnspect_utils import perform_raster_math
 
 
 class Curve_Number:
@@ -18,17 +25,16 @@ class Curve_Number:
         soil_raster: str,
         dual_soil_type: int,
         lookup_layer: QgsVectorLayer,
-        context,
+        context: QgsProcessingContext,
         feedback: QgsProcessingMultiStepFeedback,
     ):
         self.lookup_layer = lookup_layer
         self.lu_raster = lu_raster
-        self.lu_raster = soil_raster
+        self.soil_raster = soil_raster
         self.dual_soil_type = dual_soil_type
         self.context = context
         self.feedback = feedback
         self._cn_expression = ""
-        self.feedback.reprotError(str(type(context)))
 
     def generate_cn_exprs(self) -> None:
         """Generate generic CN expression"""
@@ -58,7 +64,8 @@ class Curve_Number:
     def generate_cn_raster(self) -> dict:
         """Generate and return CN Raster"""
 
-        self.generate_cn_exprs(self.lookup_layer)
+        self.generate_cn_exprs()
+        self.preprocess_soil()
 
         input_params = {
             "input_a": self.lu_raster,
@@ -72,7 +79,9 @@ class Curve_Number:
                     "band_b": "1",
                 }
             )
-            self.outputs["CN"] = self.perform_raster_math(input_params)
+            self.outputs["CN"] = perform_raster_math(
+                self._cn_expression, input_params, self.context, self.feedback
+            )
 
         elif self.dual_soil_type == 2:
             input_params.update(
@@ -81,7 +90,9 @@ class Curve_Number:
                     "band_b": "1",
                 }
             )
-            self.outputs["CNUndrain"] = self.perform_raster_math(input_params)
+            self.outputs["CNUndrain"] = perform_raster_math(
+                self._cn_expression, input_params, self.context, self.feedback
+            )
 
             input_params.update(
                 {
@@ -89,7 +100,9 @@ class Curve_Number:
                     "band_b": "1",
                 }
             )
-            self.outputs["CNDrain"] = self.perform_raster_math(input_params)
+            self.outputs["CNDrain"] = perform_raster_math(
+                self._cn_expression, input_params, self.context, self.feedback
+            )
 
             # average undrain and drain CN rasters
             self.outputs["CN"] = self.average_rasters(

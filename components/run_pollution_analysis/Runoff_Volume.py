@@ -4,8 +4,16 @@ from qgis.core import (
     QgsDistanceArea,
     QgsCoordinateTransformContext,
     QgsUnitTypes,
+    QgsProcessing,
+    QgsProcessingContext,
 )
-from .qnspect_utils import perform_raster_math
+import sys
+
+sys.path.append(
+    r"C:\Users\asiddiqui\Documents\github_repos\QNSPECT\components\run_pollution_analysis"
+)
+
+from qnspect_utils import perform_raster_math
 
 
 class Runoff_Volume:
@@ -20,7 +28,7 @@ class Runoff_Volume:
         ref_raster: QgsRasterLayer,
         precip_units: int,
         rainy_days: int,
-        context,
+        context: QgsProcessingContext,
         feedback: QgsProcessingMultiStepFeedback,
     ):
         self.precip_raster = precip_raster
@@ -37,7 +45,12 @@ class Runoff_Volume:
                 "input_a": self.precip_raster,
                 "band_a": "1",
             }
-            self.outputs["P"] = perform_raster_math("A/25.4", input_params)
+            self.outputs["P"] = perform_raster_math(
+                "A/25.4",
+                input_params,
+                self.context,
+                self.feedback,
+            )
             self.precip_raster_in = self.outputs["P"]["OUTPUT"]
         else:
             self.precip_raster_in = self.precip_raster
@@ -51,10 +64,15 @@ class Runoff_Volume:
         self.outputs["S"] = perform_raster_math(
             "(1000/A)-10",
             input_params,
+            self.context,
+            self.feedback,
         )
 
-    def calculate_Q(self) -> dict:
+    def calculate_Q(self, output=QgsProcessing.TEMPORARY_OUTPUT) -> dict:
         """Calculate runoff volume in Liters"""
+
+        self.preprocess_precipitation()
+        self.calculate_S()
 
         cell_area = (
             self.ref_raster.rasterUnitsPerPixelY()
@@ -80,6 +98,9 @@ class Runoff_Volume:
             # (((Precip-(0.2*S*rainy_days))**2)/(Precip+(0.8*S*rainy_days)) * [If (Precip-0.2S)<0, set to 0] * cell area to convert to vol * (28.3168/12) to convert inches to feet and cubic feet to Liters",
             f"(((A-(0.2*B*{self.rainy_days}))**2)/(A+(0.8*B*{self.rainy_days})) * ((A-(0.2*B*{self.rainy_days}))>0)) * {cell_area_sq_feet} * 2.35973722 ",
             input_params,
+            self.context,
+            self.feedback,
+            output=output,
         )
 
         self.runoff_vol_raster = self.outputs["Q"]["OUTPUT"]
