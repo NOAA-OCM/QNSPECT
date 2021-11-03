@@ -1,4 +1,3 @@
-from components.run_pollution_analysis.Runoff_Volume import Runoff_Volume
 from qgis.core import (
     QgsProcessing,
     QgsProcessingAlgorithm,
@@ -15,8 +14,17 @@ from qgis.core import (
     QgsProcessingParameterDefinition,
 )
 import processing
-from .Curve_Number import Curve_Number
-from .Runoff_Volume import Runoff_Volume
+import os
+
+import sys
+
+sys.path.append(
+    r"C:\Users\asiddiqui\Documents\github_repos\QNSPECT\components\run_pollution_analysis"
+)
+
+from Curve_Number import Curve_Number
+from Runoff_Volume import Runoff_Volume
+from qnspect_utils import perform_raster_math
 
 
 def filter_matrix(matrix: list) -> list:
@@ -31,12 +39,11 @@ def filter_matrix(matrix: list) -> list:
 class RunPollutionAnalysis(QgsProcessingAlgorithm):
     lookup_tables = {0: "NLCD", 1: "CCAP"}
     default_lookup_path = r"file:///C:\Users\asiddiqui\Documents\github_repos\QNSPECT\resources\coefficients\{0}.csv"
-    reference_raster = "Elevation Raster"
 
     def initAlgorithm(self, config=None):
         self.addParameter(
             QgsProcessingParameterString(
-                "ProjectName",
+                "RunName",
                 "Run Name",
                 multiLine=False,
                 optional=True,
@@ -176,9 +183,7 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
         desired_outputs = filter_matrix(
             self.parameterAsMatrix(parameters, "DesiredOutputs", context)
         )
-        desired_pollutants = [
-            pol.lower() for pol in desired_outputs if pol.lower() != "runoff"
-        ]
+        desired_pollutants = [pol for pol in desired_outputs if pol.lower() != "runoff"]
         dual_soil_type = self.parameterAsEnum(parameters, "DualSoils", context)
         feedback.pushWarning(str(dual_soil_type))
 
@@ -188,6 +193,9 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
 
         mfd = self.parameterAsBool(parameters, "MFD", context)
         no_accu_out = self.parameterAsBool(parameters, "NoAccuOutputs", context)
+
+        run_name = self.parameterAsString(parameters, "RunName", context)
+        proj_loc = self.parameterAsString(parameters, "ProjectLocation", context)
 
         elev_raster_layer = self.parameterAsRasterLayer(
             parameters, "ElevatoinRaster", context
@@ -210,20 +218,26 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
                 True,
             )
             return {}
-        lookup_fields = [f.name().lower() for f in lookup_layer.fields()]
+
+        # handle different cases in input matrix and lookup layer
+        lookup_fields = {f.name().lower(): f.name() for f in lookup_layer.fields()}
 
         ## Assertions
 
         if not desired_outputs:
-            feedback.reportWarning("No output desired. \n")
+            feedback.pushWarning("No output desired. \n")
             return {}
-        if not all([pol in lookup_fields for pol in desired_pollutants]):
+        if not all([pol.lower() in lookup_fields.keys() for pol in desired_pollutants]):
             feedback.reportError(
                 "One or more of the Pollutants is not a column in the Land Use Lookup Table. Either remove the pollutants from Desired Outputs or provide a custom lookup table with desired pollutants. \n",
                 True,
             )
 
         # assert all Raster CRS are same and Raster Pixel Units too
+
+        # Folder I/O
+        run_out_dir = os.path.join(proj_loc, run_name)
+        os.makedirs(run_out_dir, exist_ok=True)
 
         ## Generate CN Raster
         cn = Curve_Number(
@@ -236,7 +250,7 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
         )
         outputs["CN"] = cn.generate_cn_raster()
 
-        # Calculate Q (Runoff)
+        # Calculate Q (Runoff) (Liters)
         # using elev layer here because everything should have same units and crs
         runoff_vol = Runoff_Volume(
             parameters["PrecipRaster"],
@@ -247,17 +261,44 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
             context,
             feedback,
         )
-        outputs["Q"] = runoff_vol.calculate_Q()
+        # not putting (L) in the name because special characs don't go well in file names
+        # should be handled in post processor through display name
+        outputs["Runoff Local"] = runoff_vol.calculate_Q(
+            os.path.join(run_out_dir, f"Runoff Local.tif")
+        )
+        results["Runoff Local"] = outputs["Runoff Local"]["OUTPUT"]
 
-        ## Calculate pollutant per LU
+        ## Pollutant rasters
+        for pol in desired_pollutants:
+            # Calculate pollutant per LU (mg/L)
+            outputs[pol + "_lu"] = self.create_pollutant_raster(
+                parameters["LandUseRaster"],
+                lookup_layer,
+                lookup_fields[pol.lower()],
+                context,
+                feedback,
+            )
+            # multiply by Runoff Liters to get local effect (mg)
+            input_params = {
+                "input_a": outputs["Runoff Local"]["OUTPUT"],
+                "band_a": "1",
+                "input_b": outputs[pol + "_lu"]["OUTPUT"],
+                "band_b": "1",
+            }
+            outputs[pol + " Local"] = perform_raster_math(
+                "(A*B)",
+                input_params,
+                context,
+                feedback,
+                os.path.join(run_out_dir, f"{pol} Local.tif"),
+            )
+            results[pol + " Local"] = outputs[pol + " Local"]["OUTPUT"]
+
+        if no_accu_out:
+            return results
 
         # temp
-        results["cn"] = outputs["CN"]["OUTPUT"]
-        results["S"] = outputs["S"]["OUTPUT"]
-        results["Q"] = outputs["Q"]["OUTPUT"]
-        results["lookup"] = [f.name() for f in lookup_layer.fields()]
-        results["desired_outputs"] = desired_outputs
-        results["desired_pollutants"] = desired_pollutants
+        results["CN"] = outputs["CN"]["OUTPUT"]
 
         return results
 
@@ -305,3 +346,33 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
 
     def createInstance(self):
         return RunPollutionAnalysis()
+
+    def create_pollutant_raster(
+        self,
+        lu_raster: str,
+        lookup_layer: QgsVectorLayer,
+        pollutant: str,
+        context,
+        feedback,
+    ):
+        """Wrapper around QGIS Reclassify by Layer"""
+        alg_params = {
+            "DATA_TYPE": 5,
+            "INPUT_RASTER": lu_raster,
+            "INPUT_TABLE": lookup_layer,
+            "MAX_FIELD": "lu_value",
+            "MIN_FIELD": "lu_value",
+            "NODATA_FOR_MISSING": True,
+            "NO_DATA": -9999,
+            "RANGE_BOUNDARIES": 2,
+            "RASTER_BAND": 1,
+            "VALUE_FIELD": pollutant,
+            "OUTPUT": QgsProcessing.TEMPORARY_OUTPUT,
+        }
+        return processing.run(
+            "native:reclassifybylayer",
+            alg_params,
+            context=context,
+            feedback=feedback,
+            is_child_algorithm=True,
+        )
