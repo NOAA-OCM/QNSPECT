@@ -126,8 +126,10 @@ class AlignRasters(QgsProcessingAlgorithm):
             units = QgsUnitTypes.toString(crs.mapUnits())
             if units.lower() == "degrees":
                 if buffer_distance > 1:
+                    feedback.pushWarning(
+                        "Clip buffer was set to above 1. The buffer was changed to 1 degree."
+                    )
                     buffer_distance = 1.0
-            feedback.reportError(str(buffer_distance))
 
             # Buffer
             alg_params = {
