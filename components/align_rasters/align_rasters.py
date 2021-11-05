@@ -9,6 +9,7 @@ from qgis.core import (
     QgsProcessingParameterExtent,
     QgsProcessingParameterFolderDestination,
     QgsProcessingContext,
+    QgsUnitTypes,
 )
 import processing
 import os
@@ -118,10 +119,20 @@ class AlignRasters(QgsProcessingAlgorithm):
             if feedback.isCanceled():
                 return {}
 
+            # Check if the degrees is set beyond a reasonable buffer and lower it if it is
+            buffer_distance = parameters["ClipBuffer"]
+            raster = self.parameterAsRasterLayer(parameters, "ReferenceRaster", context)
+            crs = raster.crs()
+            units = QgsUnitTypes.toString(crs.mapUnits())
+            if units.lower() == "degrees":
+                if buffer_distance > 1:
+                    buffer_distance = 1.0
+            feedback.reportError(str(buffer_distance))
+
             # Buffer
             alg_params = {
                 "DISSOLVE": False,
-                "DISTANCE": parameters["ClipBuffer"],
+                "DISTANCE": buffer_distance,
                 "END_CAP_STYLE": 0,
                 "INPUT": outputs["CreateLayerFromExtent"]["OUTPUT"],
                 "JOIN_STYLE": 0,
