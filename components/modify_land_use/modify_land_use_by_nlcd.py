@@ -1,33 +1,50 @@
-from qgis.core import QgsProcessing
-from qgis.core import QgsProcessingAlgorithm
-from qgis.core import QgsProcessingMultiStepFeedback
-from qgis.core import QgsProcessingParameterVectorLayer
-from qgis.core import QgsProcessingParameterRasterLayer
-from qgis.core import QgsProcessingParameterField
-from qgis.core import QgsProcessingParameterRasterDestination
+from qgis.core import (
+    QgsProcessing,
+    QgsProcessingAlgorithm,
+    QgsProcessingMultiStepFeedback,
+    QgsProcessingParameterEnum,
+    QgsProcessingParameterVectorLayer,
+    QgsProcessingParameterRasterLayer,
+    QgsProcessingParameterRasterDestination,
+)
+from typing import Dict
+import csv
 import processing
+from pathlib import Path
 
 
-class ModifyLandUse(QgsProcessingAlgorithm):
+class ModifyLandUseByNLCD(QgsProcessingAlgorithm):
     inputVector = "InputVector"
-    field = "Field"
     inputRaster = "InputRaster"
     output = "OutputRaster"
+    landUse = "LandUse"
+    coefficientType = "NLCD"
 
     def initAlgorithm(self, config=None):
+        root = Path(__file__).parent.parent.parent
+        csvfile = root / "resources" / "coefficients" / f"{self.coefficientType}.csv"
+        lookup = {}
+        with csvfile.open(newline="") as file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                lookup[row["lu_name"]] = int(row["lu_value"])
+        self.coefficients: Dict[str, int] = lookup
+        self.choices = sorted(self.coefficients)
+
         self.addParameter(
-            QgsProcessingParameterVectorLayer(
-                self.inputVector, "Areas to Modify", defaultValue=None
+            QgsProcessingParameterEnum(
+                self.landUse,
+                "Land Use",
+                options=self.choices,
+                allowMultiple=False,
+                defaultValue=[],
             )
         )
         self.addParameter(
-            QgsProcessingParameterField(
-                self.field,
-                "Land Use Value Field",
-                optional=True,
-                type=QgsProcessingParameterField.Numeric,
-                parentLayerParameterName=self.inputVector,
-                allowMultiple=False,
+            QgsProcessingParameterVectorLayer(
+                self.inputVector,
+                "Area to Change",
+                types=[QgsProcessing.TypeVectorPolygon],
                 defaultValue=None,
             )
         )
@@ -45,14 +62,12 @@ class ModifyLandUse(QgsProcessingAlgorithm):
     def processAlgorithm(self, parameters, context, model_feedback):
         # Use a multi-step feedback, so that individual child algorithm progress reports are adjusted for the
         # overall progress through the model
-        # Rasterize with overwrite was the best method for accomplishing this. Since it directly changes the input, the original needs to be copied prior to execution
-        feedback = QgsProcessingMultiStepFeedback(0, model_feedback)
+        feedback = QgsProcessingMultiStepFeedback(2, model_feedback)
         results = {}
         outputs = {}
 
         # Uses clip raster to get a copy of the original raster
         # Some other method of copying in a way that allows for temporary output would be better for this part
-        parameters[self.output].destinationName = "Modified Land Use"
         alg_params = {
             "DATA_TYPE": 0,
             "EXTRA": "",
@@ -74,29 +89,30 @@ class ModifyLandUse(QgsProcessingAlgorithm):
         if feedback.isCanceled():
             return {}
 
-        # Rasterize (overwrite with attribute)
+        enum_value = self.parameterAsInt(parameters, self.landUse, context)
+        land_use_name = self.choices[enum_value]
+        # Rasterize (overwrite with fixed value)
         alg_params = {
             "ADD": False,
+            "BURN": self.coefficients[land_use_name],
             "EXTRA": "",
-            "FIELD": parameters[self.field],
             "INPUT": parameters[self.inputVector],
             "INPUT_RASTER": outputs["ClipRasterByExtent"]["OUTPUT"],
         }
-        outputs["RasterizeOverwriteWithAttribute"] = processing.run(
-            "gdal:rasterize_over",
+        outputs["RasterizeOverwriteWithFixedValue"] = processing.run(
+            "gdal:rasterize_over_fixed_value",
             alg_params,
             context=context,
             feedback=feedback,
             is_child_algorithm=True,
         )
-
         return results
 
     def name(self):
-        return "Modify Land Use"
+        return f"Modify Land Use by {self.coefficientType}"
 
     def displayName(self):
-        return "Modify Land Use"
+        return f"Modify Land Use by {self.coefficientType}"
 
     def group(self):
         return "QNSPECT"
@@ -105,4 +121,4 @@ class ModifyLandUse(QgsProcessingAlgorithm):
         return "QNSPECT"
 
     def createInstance(self):
-        return ModifyLandUse()
+        return ModifyLandUseByNLCD()
