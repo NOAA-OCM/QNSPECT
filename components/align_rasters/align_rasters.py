@@ -102,6 +102,9 @@ class AlignRasters(QgsProcessingAlgorithm):
                 parameters["ClipBuffer"] != 0,
             ]
         ):
+            raster = self.parameterAsRasterLayer(parameters, "ReferenceRaster", context)
+            raster_crs = raster.crs()
+
             # Create layer from extent to buffer later
             alg_params = {
                 "INPUT": parameters["ClippingExtent"],
@@ -114,6 +117,20 @@ class AlignRasters(QgsProcessingAlgorithm):
                 feedback=feedback,
                 is_child_algorithm=True,
             )
+            # Reproject layer
+            alg_params = {
+                "INPUT": outputs["CreateLayerFromExtent"]["OUTPUT"],
+                "OPERATION": "",
+                "TARGET_CRS": raster_crs,
+                "OUTPUT": QgsProcessing.TEMPORARY_OUTPUT,
+            }
+            outputs["ReprojectLayer"] = processing.run(
+                "native:reprojectlayer",
+                alg_params,
+                context=context,
+                feedback=feedback,
+                is_child_algorithm=True,
+            )
 
             feedback.setCurrentStep(1)
             if feedback.isCanceled():
@@ -121,9 +138,7 @@ class AlignRasters(QgsProcessingAlgorithm):
 
             # Check if the degrees is set beyond a reasonable buffer and lower it if it is
             buffer_distance = parameters["ClipBuffer"]
-            raster = self.parameterAsRasterLayer(parameters, "ReferenceRaster", context)
-            crs = raster.crs()
-            units = QgsUnitTypes.toString(crs.mapUnits())
+            units = QgsUnitTypes.toString(raster_crs.mapUnits())
             if units.lower() == "degrees":
                 if buffer_distance > 1:
                     feedback.pushWarning(
@@ -136,7 +151,7 @@ class AlignRasters(QgsProcessingAlgorithm):
                 "DISSOLVE": False,
                 "DISTANCE": buffer_distance,
                 "END_CAP_STYLE": 0,
-                "INPUT": outputs["CreateLayerFromExtent"]["OUTPUT"],
+                "INPUT": outputs["ReprojectLayer"]["OUTPUT"],
                 "JOIN_STYLE": 0,
                 "MITER_LIMIT": 2,
                 "SEGMENTS": 5,
