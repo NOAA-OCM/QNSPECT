@@ -5,6 +5,7 @@ from qgis.core import QgsProcessingParameterVectorLayer
 from qgis.core import QgsProcessingParameterRasterLayer
 from qgis.core import QgsProcessingParameterField
 from qgis.core import QgsProcessingParameterRasterDestination
+from qgis.core import QgsVectorLayer
 import processing
 
 
@@ -73,12 +74,28 @@ class ModifyLandUse(QgsProcessingAlgorithm):
         if feedback.isCanceled():
             return {}
 
+        # Use only the selected features of the vector layer
+        vector_layer = self.parameterAsVectorLayer(
+            parameters, self.inputVector, context
+        )
+        if len(vector_layer.selectedFeatures()):
+            selected_features = QgsVectorLayer(
+                f"Polygon?crs={vector_layer.crs().toWkt()}",
+                "selected_features",
+                "memory",
+            )
+            data_provider = selected_features.dataProvider()
+            data_provider.addFeatures(vector_layer.selectedFeatures())
+            selected_features.commitChanges()
+            selected_features.updateExtents()
+            vector_layer = selected_features
+
         # Rasterize (overwrite with attribute)
         alg_params = {
             "ADD": False,
             "EXTRA": "",
             "FIELD": parameters[self.field],
-            "INPUT": parameters[self.inputVector],
+            "INPUT": vector_layer,
             "INPUT_RASTER": outputs["ClipRasterByExtent"]["OUTPUT"],
         }
         outputs["RasterizeOverwriteWithAttribute"] = processing.run(

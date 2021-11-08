@@ -6,6 +6,7 @@ from qgis.core import (
     QgsProcessingParameterVectorLayer,
     QgsProcessingParameterRasterLayer,
     QgsProcessingParameterRasterDestination,
+    QgsVectorLayer,
 )
 from typing import Dict
 import csv
@@ -25,7 +26,7 @@ class ModifyLandUseByNLCDCCAP(QgsProcessingAlgorithm):
         coef_dir = root / "resources" / "coefficients"
         for csvfile in coef_dir.iterdir():
             if csvfile.suffix.lower() == ".csv":
-                coef_type = csvfile.name
+                coef_type = csvfile.stem
                 with csvfile.open(newline="") as file:
                     reader = csv.DictReader(file)
                     for row in reader:
@@ -93,12 +94,29 @@ class ModifyLandUseByNLCDCCAP(QgsProcessingAlgorithm):
 
         enum_value = self.parameterAsInt(parameters, self.landUse, context)
         land_use_name = self.choices[enum_value]
+
+        # Use only the selected features of the vector layer
+        vector_layer = self.parameterAsVectorLayer(
+            parameters, self.inputVector, context
+        )
+        if len(vector_layer.selectedFeatures()):
+            selected_features = QgsVectorLayer(
+                f"Polygon?crs={vector_layer.crs().toWkt()}",
+                "selected_features",
+                "memory",
+            )
+            data_provider = selected_features.dataProvider()
+            data_provider.addFeatures(vector_layer.selectedFeatures())
+            selected_features.commitChanges()
+            selected_features.updateExtents()
+            vector_layer = selected_features
+
         # Rasterize (overwrite with fixed value)
         alg_params = {
             "ADD": False,
             "BURN": self.coefficients[land_use_name],
             "EXTRA": "",
-            "INPUT": parameters[self.inputVector],
+            "INPUT": vector_layer,
             "INPUT_RASTER": outputs["ClipRasterByExtent"]["OUTPUT"],
         }
         outputs["RasterizeOverwriteWithFixedValue"] = processing.run(
