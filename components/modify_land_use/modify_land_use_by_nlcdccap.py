@@ -13,22 +13,22 @@ import processing
 from pathlib import Path
 
 
-class ModifyLandUseByNLCD(QgsProcessingAlgorithm):
+class ModifyLandUseByNLCDCCAP(QgsProcessingAlgorithm):
     inputVector = "InputVector"
     inputRaster = "InputRaster"
     output = "OutputRaster"
     landUse = "LandUse"
-    coefficientType = "NLCD"
 
     def initAlgorithm(self, config=None):
+        self.coefficients: Dict[str, int] = {}
         root = Path(__file__).parent.parent.parent
-        csvfile = root / "resources" / "coefficients" / f"{self.coefficientType}.csv"
-        lookup = {}
-        with csvfile.open(newline="") as file:
-            reader = csv.DictReader(file)
-            for row in reader:
-                lookup[row["lu_name"]] = int(row["lu_value"])
-        self.coefficients: Dict[str, int] = lookup
+        for coef_type in ["NLCD", "CCAP"]:
+            csvfile = root / "resources" / "coefficients" / f"{coef_type}.csv"
+            with csvfile.open(newline="") as file:
+                reader = csv.DictReader(file)
+                for row in reader:
+                    name = f"""{coef_type} - {row["lu_name"]}"""
+                    self.coefficients[name] = int(row["lu_value"])
         self.choices = sorted(self.coefficients)
 
         self.addParameter(
@@ -109,10 +109,10 @@ class ModifyLandUseByNLCD(QgsProcessingAlgorithm):
         return results
 
     def name(self):
-        return f"Modify Land Use by {self.coefficientType}"
+        return f"Modify Land Use by NLCD/CCAP"
 
     def displayName(self):
-        return f"Modify Land Use by {self.coefficientType}"
+        return f"Modify Land Use by NLCD/CCAP"
 
     def group(self):
         return "QNSPECT"
@@ -121,4 +121,4 @@ class ModifyLandUseByNLCD(QgsProcessingAlgorithm):
         return "QNSPECT"
 
     def createInstance(self):
-        return ModifyLandUseByNLCD()
+        return ModifyLandUseByNLCDCCAP()
