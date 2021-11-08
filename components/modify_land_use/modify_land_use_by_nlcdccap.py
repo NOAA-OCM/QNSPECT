@@ -22,13 +22,15 @@ class ModifyLandUseByNLCDCCAP(QgsProcessingAlgorithm):
     def initAlgorithm(self, config=None):
         self.coefficients: Dict[str, int] = {}
         root = Path(__file__).parent.parent.parent
-        for coef_type in ["NLCD", "CCAP"]:
-            csvfile = root / "resources" / "coefficients" / f"{coef_type}.csv"
-            with csvfile.open(newline="") as file:
-                reader = csv.DictReader(file)
-                for row in reader:
-                    name = f"""{coef_type} - {row["lu_name"]}"""
-                    self.coefficients[name] = int(row["lu_value"])
+        coef_dir = root / "resources" / "coefficients"
+        for csvfile in coef_dir.iterdir():
+            if csvfile.suffix.lower() == ".csv":
+                coef_type = csvfile.name
+                with csvfile.open(newline="") as file:
+                    reader = csv.DictReader(file)
+                    for row in reader:
+                        name = f"""{coef_type} - {row["lu_name"]}"""
+                        self.coefficients[name] = int(row["lu_value"])
         self.choices = sorted(self.coefficients)
 
         self.addParameter(
