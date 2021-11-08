@@ -87,10 +87,10 @@ class CreateLookupTableTemplate(QgsProcessingAlgorithm):
         return "Create Lookup Table Template"
 
     def group(self):
-        return ""
+        return "QNSPECT"
 
     def groupId(self):
-        return ""
+        return "QNSPECT"
 
     def createInstance(self):
         return CreateLookupTableTemplate()
