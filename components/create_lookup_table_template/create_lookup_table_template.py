@@ -11,21 +11,23 @@ from qgis.core import (
 )
 import processing
 import os
-
-COEFFICIENTS_PATH = (
-    r"file:///C:\Projects\work\nspect\QNSPECT\resources\coefficients\{0}.csv"
-)
+from pathlib import Path
 
 
 class CreateLookupTableTemplate(QgsProcessingAlgorithm):
-    outputTable = "OutputTable"
     landCoverIndex = "LandCoverType"
-    landCoverTypes = ["NLCD", "CCAP"]
+    landCoverParam = "LandCoverType"
+    output = "OutputTable"
 
     def initAlgorithm(self, config=None):
+        self.landCoverTypes = []
+        for csvfile in self.coefficient_dir().iterdir():
+            if csvfile.suffix.lower() == ".csv":
+                self.landCoverTypes.append(csvfile.stem)
+
         self.addParameter(
             QgsProcessingParameterEnum(
-                self.landCoverIndex,
+                self.landCoverParam,
                 "Land Cover Type",
                 options=self.landCoverTypes,
                 allowMultiple=False,
@@ -36,7 +38,7 @@ class CreateLookupTableTemplate(QgsProcessingAlgorithm):
         try:  ## Account for changes in the constructor parameters between QGIS 3.x versions
             self.addParameter(
                 QgsProcessingParameterFeatureSink(
-                    self.outputTable,
+                    self.output,
                     "Output Table",
                     type=QgsProcessing.TypeVector,
                     createByDefault=True,
@@ -47,7 +49,7 @@ class CreateLookupTableTemplate(QgsProcessingAlgorithm):
         except TypeError:
             self.addParameter(
                 QgsProcessingParameterFeatureSink(
-                    self.outputTable,
+                    self.output,
                     "Output Table",
                     type=QgsProcessing.TypeVector,
                     defaultValue=None,
@@ -59,26 +61,31 @@ class CreateLookupTableTemplate(QgsProcessingAlgorithm):
     def processAlgorithm(self, parameters, context, model_feedback):
         # Use a multi-step feedback, so that individual child algorithm progress reports are adjusted for the
         # overall progress through the model
-        feedback = QgsProcessingMultiStepFeedback(3, model_feedback)
+        feedback = QgsProcessingMultiStepFeedback(0, model_feedback)
         results = {}
         outputs = {}
 
         index = self.parameterAsInt(parameters, self.landCoverIndex, context)
         land_cover = self.landCoverTypes[index]
 
-        template_path = COEFFICIENTS_PATH.format(land_cover)
+        coef_dir = self.coefficient_dir()
+        template_path = f"file:///{coef_dir / land_cover}.csv"
         template_layer = QgsVectorLayer(
             template_path, "template_layer", "delimitedtext"
         )
 
+        feedback.setCurrentStep(1)
+        if feedback.isCanceled():
+            return {}
+
         sink, dest_id = self.parameterAsSink(
-            parameters, self.outputTable, context, template_layer.fields()
+            parameters, self.output, context, template_layer.fields()
         )
         for feature in template_layer.getFeatures():
             insert_feature = QgsFeature(feature)
             sink.addFeature(insert_feature, QgsFeatureSink.FastInsert)
 
-        return {self.outputTable: dest_id}
+        return {self.output: dest_id}
 
     def name(self):
         return "Create Lookup Table Template"
@@ -87,10 +94,25 @@ class CreateLookupTableTemplate(QgsProcessingAlgorithm):
         return "Create Lookup Table Template"
 
     def group(self):
-        return ""
+        return "QNSPECT"
 
     def groupId(self):
-        return ""
+        return "QNSPECT"
+
+    def shortHelpString(self):
+        return """<html><body><h2>Algorithm description</h2>
+<p>This algorithm creates a copy of the land characteristics packaged with QNSPECT. The spreadsheet output will have the necessary fields needed for running the pollution and erosion analysis tools. The intent of this tool is to create a copy that can be edited to include any custom land use types and coefficients necessary for your analysis.</p>
+<h2>Input parameters</h2>
+<h3>Land Cover Type</h3>
+<p>The name of the land cover characteristics.</p>
+<h2>Outputs</h2>
+<h3>Output Table</h3>
+<p>A copy of the default land characteristics in a spreadsheet format (CSV, Geopackage, etc.)</p>
+<br></body></html>"""
 
     def createInstance(self):
         return CreateLookupTableTemplate()
+
+    def coefficient_dir(self):
+        root = Path(__file__).parent.parent.parent
+        return root / "resources" / "coefficients"
