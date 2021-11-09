@@ -232,6 +232,7 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
                 "One or more of the Pollutants is not a column in the Land Use Lookup Table. Either remove the pollutants from Desired Outputs or provide a custom lookup table with desired pollutants. \n",
                 True,
             )
+            return {}
 
         # assert all Raster CRS are same and Raster Pixel Units too
 
