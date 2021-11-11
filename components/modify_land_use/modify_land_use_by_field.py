@@ -1,11 +1,10 @@
 from qgis.core import QgsProcessing
 from qgis.core import QgsProcessingAlgorithm
 from qgis.core import QgsProcessingMultiStepFeedback
-from qgis.core import QgsProcessingParameterVectorLayer
+from qgis.core import QgsProcessingParameterFeatureSource
 from qgis.core import QgsProcessingParameterRasterLayer
 from qgis.core import QgsProcessingParameterField
 from qgis.core import QgsProcessingParameterRasterDestination
-from qgis.core import QgsVectorLayer
 import processing
 
 
@@ -17,8 +16,11 @@ class ModifyLandUse(QgsProcessingAlgorithm):
 
     def initAlgorithm(self, config=None):
         self.addParameter(
-            QgsProcessingParameterVectorLayer(
-                self.inputVector, "Areas to Modify", defaultValue=None
+            QgsProcessingParameterFeatureSource(
+                self.inputVector,
+                "Area to Modify",
+                types=[QgsProcessing.TypeVectorPolygon],
+                defaultValue=None,
             )
         )
         self.addParameter(
@@ -39,7 +41,10 @@ class ModifyLandUse(QgsProcessingAlgorithm):
         )
         self.addParameter(
             QgsProcessingParameterRasterDestination(
-                self.output, "Modified Raster", createByDefault=True, defaultValue=None
+                self.output,
+                "Modified Land Use",
+                createByDefault=True,
+                defaultValue=None,
             )
         )
 
@@ -74,28 +79,12 @@ class ModifyLandUse(QgsProcessingAlgorithm):
         if feedback.isCanceled():
             return {}
 
-        # Use only the selected features of the vector layer
-        vector_layer = self.parameterAsVectorLayer(
-            parameters, self.inputVector, context
-        )
-        if len(vector_layer.selectedFeatures()):
-            selected_features = QgsVectorLayer(
-                f"Polygon?crs={vector_layer.crs().toWkt()}",
-                "selected_features",
-                "memory",
-            )
-            data_provider = selected_features.dataProvider()
-            data_provider.addFeatures(vector_layer.selectedFeatures())
-            selected_features.commitChanges()
-            selected_features.updateExtents()
-            vector_layer = selected_features
-
         # Rasterize (overwrite with attribute)
         alg_params = {
             "ADD": False,
             "EXTRA": "",
             "FIELD": parameters[self.field],
-            "INPUT": vector_layer,
+            "INPUT": parameters[self.inputVector],
             "INPUT_RASTER": outputs["ClipRasterByExtent"]["OUTPUT"],
         }
         outputs["RasterizeOverwriteWithAttribute"] = processing.run(

@@ -5,7 +5,7 @@ from qgis.core import QgsProcessingParameterVectorLayer
 from qgis.core import QgsProcessingParameterRasterLayer
 from qgis.core import QgsProcessingParameterRasterDestination
 from qgis.core import QgsProcessingParameterString
-from qgis.core import QgsVectorLayer
+from qgis.core import QgsProcessingParameterFeatureSource
 import processing
 
 
@@ -20,7 +20,7 @@ class ModifyLandUseByName(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterVectorLayer(
                 self.inputTable,
-                "Coefficients Table",
+                "Land Use Lookup Table",
                 types=[QgsProcessing.TypeVector],
                 defaultValue=None,
             )
@@ -31,9 +31,9 @@ class ModifyLandUseByName(QgsProcessingAlgorithm):
             )
         )
         self.addParameter(
-            QgsProcessingParameterVectorLayer(
+            QgsProcessingParameterFeatureSource(
                 self.inputVector,
-                "Area to Change",
+                "Area to Modify",
                 types=[QgsProcessing.TypeVectorPolygon],
                 defaultValue=None,
             )
@@ -45,7 +45,10 @@ class ModifyLandUseByName(QgsProcessingAlgorithm):
         )
         self.addParameter(
             QgsProcessingParameterRasterDestination(
-                self.output, "Modified Raster", createByDefault=True, defaultValue=None
+                self.output,
+                "Modified Land Use",
+                createByDefault=True,
+                defaultValue=None,
             )
         )
 
@@ -99,22 +102,6 @@ class ModifyLandUseByName(QgsProcessingAlgorithm):
         feedback.setCurrentStep(1)
         if feedback.isCanceled():
             return {}
-
-        # Use only the selected features of the vector layer
-        vector_layer = self.parameterAsVectorLayer(
-            parameters, self.inputVector, context
-        )
-        if len(vector_layer.selectedFeatures()):
-            selected_features = QgsVectorLayer(
-                f"Polygon?crs={vector_layer.crs().toWkt()}",
-                "selected_features",
-                "memory",
-            )
-            data_provider = selected_features.dataProvider()
-            data_provider.addFeatures(vector_layer.selectedFeatures())
-            selected_features.commitChanges()
-            selected_features.updateExtents()
-            vector_layer = selected_features
 
         # Rasterize (overwrite with fixed value)
         alg_params = {

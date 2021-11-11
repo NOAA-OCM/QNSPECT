@@ -3,10 +3,10 @@ from qgis.core import (
     QgsProcessingAlgorithm,
     QgsProcessingMultiStepFeedback,
     QgsProcessingParameterEnum,
-    QgsProcessingParameterVectorLayer,
+    QgsProcessingParameterFeatureSource,
     QgsProcessingParameterRasterLayer,
     QgsProcessingParameterRasterDestination,
-    QgsVectorLayer,
+    QgsProcessingParameterFeatureSource,
 )
 from typing import Dict
 import csv
@@ -37,16 +37,16 @@ class ModifyLandUseByNLCDCCAP(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterEnum(
                 self.landUse,
-                "Land Use",
+                "Name of Land Use to Apply",
                 options=self.choices,
                 allowMultiple=False,
                 defaultValue=[],
             )
         )
         self.addParameter(
-            QgsProcessingParameterVectorLayer(
+            QgsProcessingParameterFeatureSource(
                 self.inputVector,
-                "Area to Change",
+                "Area to Modify",
                 types=[QgsProcessing.TypeVectorPolygon],
                 defaultValue=None,
             )
@@ -95,22 +95,6 @@ class ModifyLandUseByNLCDCCAP(QgsProcessingAlgorithm):
         enum_value = self.parameterAsInt(parameters, self.landUse, context)
         land_use_name = self.choices[enum_value]
 
-        # Use only the selected features of the vector layer
-        vector_layer = self.parameterAsVectorLayer(
-            parameters, self.inputVector, context
-        )
-        if len(vector_layer.selectedFeatures()):
-            selected_features = QgsVectorLayer(
-                f"Polygon?crs={vector_layer.crs().toWkt()}",
-                "selected_features",
-                "memory",
-            )
-            data_provider = selected_features.dataProvider()
-            data_provider.addFeatures(vector_layer.selectedFeatures())
-            selected_features.commitChanges()
-            selected_features.updateExtents()
-            vector_layer = selected_features
-
         # Rasterize (overwrite with fixed value)
         alg_params = {
             "ADD": False,
@@ -129,10 +113,10 @@ class ModifyLandUseByNLCDCCAP(QgsProcessingAlgorithm):
         return results
 
     def name(self):
-        return f"Modify Land Use by NLCD/CCAP"
+        return f"Modify Land Use (NLCD/CCAP)"
 
     def displayName(self):
-        return f"Modify Land Use by NLCD/CCAP"
+        return f"Modify Land Use (NLCD/CCAP)"
 
     def group(self):
         return "QNSPECT"
