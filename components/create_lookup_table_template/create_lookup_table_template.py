@@ -5,7 +5,6 @@ from qgis.core import (
     QgsProcessingParameterEnum,
     QgsVectorLayer,
     QgsProcessingParameterFeatureSink,
-    QgsVectorFileWriter,
     QgsFeatureSink,
     QgsFeature,
 )
