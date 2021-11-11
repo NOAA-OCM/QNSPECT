@@ -100,7 +100,7 @@ class ModifyLandUseByNLCDCCAP(QgsProcessingAlgorithm):
             "ADD": False,
             "BURN": self.coefficients[land_use_name],
             "EXTRA": "",
-            "INPUT": vector_layer,
+            "INPUT": parameters[self.inputVector],
             "INPUT_RASTER": outputs["ClipRasterByExtent"]["OUTPUT"],
         }
         outputs["RasterizeOverwriteWithFixedValue"] = processing.run(
