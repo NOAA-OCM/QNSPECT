@@ -94,6 +94,18 @@ class AlignRasters(QgsProcessingAlgorithm):
         extent = parameters.get("ClippingExtent", "")
         ref_layer = self.parameterAsRasterLayer(parameters, "ReferenceRaster", context)
 
+        # Check if the reference raster is in a geographic CRS and terminate if it is
+        # This will:
+        # (a) prevent known errors in output when using a geographic CRS, and
+        # (b) better reflect expected inputs for how the analysis tools are processed.
+        ref_layer_crs = ref_layer.crs()
+        units = QgsUnitTypes.toString(ref_layer_crs.mapUnits())
+        if units.lower() == "degrees":
+            feedback.reportError(
+                "The reference raster must be in a projected coordinate system."
+            )
+            return {}
+
         # Get buffered extents
         # Use QGIS algorithms so as to handle unit conversion and projection per context
         if all(
@@ -103,8 +115,6 @@ class AlignRasters(QgsProcessingAlgorithm):
                 parameters["ClipBuffer"] != 0,
             ]
         ):
-            ref_layer_crs = ref_layer.crs()
-
             # Create layer from extent to buffer later
             alg_params = {
                 "INPUT": parameters["ClippingExtent"],
@@ -138,15 +148,6 @@ class AlignRasters(QgsProcessingAlgorithm):
             feedback.setCurrentStep(1)
             if feedback.isCanceled():
                 return {}
-
-            # Check if the the reference raster is in degrees and prevent large buffers (which is most likely user error)
-            units = QgsUnitTypes.toString(ref_layer_crs.mapUnits())
-            if units.lower() == "degrees":
-                if parameters["ClipBuffer"] > 1:
-                    feedback.reportError(
-                        "The buffer was set to more than 1 degree. Large geographic buffers may take excessive amounts of time to compute."
-                    )
-                    return {}
 
             # Buffer
             alg_params = {
