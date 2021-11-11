@@ -92,6 +92,7 @@ class AlignRasters(QgsProcessingAlgorithm):
 
         output_dir = self.parameterAsString(parameters, "OutputDirectory", context)
         extent = parameters.get("ClippingExtent", "")
+        ref_layer = self.parameterAsRasterLayer(parameters, "ReferenceRaster", context)
 
         # Get buffered extents
         # Use QGIS algorithms so as to handle unit conversion and projection per context
@@ -102,8 +103,7 @@ class AlignRasters(QgsProcessingAlgorithm):
                 parameters["ClipBuffer"] != 0,
             ]
         ):
-            raster = self.parameterAsRasterLayer(parameters, "ReferenceRaster", context)
-            raster_crs = raster.crs()
+            ref_layer_crs = ref_layer.crs()
 
             # Create layer from extent to buffer later
             alg_params = {
@@ -117,11 +117,14 @@ class AlignRasters(QgsProcessingAlgorithm):
                 feedback=feedback,
                 is_child_algorithm=True,
             )
-            # Reproject layer
+            # Reprojecting Buffer Extent Layer to Reference Raster CRS because
+            # Clipping extent and Buffer distance can be in different CRS
+            # If the distance is in projected units (meters etc) and Clipping Extent in Geographic (degrees)
+            # the buffer algorithm will treat distance in degrees ignoring actual buffer distance units
             alg_params = {
                 "INPUT": outputs["CreateLayerFromExtent"]["OUTPUT"],
                 "OPERATION": "",
-                "TARGET_CRS": raster_crs,
+                "TARGET_CRS": ref_layer_crs,
                 "OUTPUT": QgsProcessing.TEMPORARY_OUTPUT,
             }
             outputs["ReprojectLayer"] = processing.run(
@@ -136,20 +139,19 @@ class AlignRasters(QgsProcessingAlgorithm):
             if feedback.isCanceled():
                 return {}
 
-            # Check if the degrees is set beyond a reasonable buffer and lower it if it is
-            buffer_distance = parameters["ClipBuffer"]
-            units = QgsUnitTypes.toString(raster_crs.mapUnits())
+            # Check if the the reference raster is in degrees and prevent large buffers (which is most likely user error)
+            units = QgsUnitTypes.toString(ref_layer_crs.mapUnits())
             if units.lower() == "degrees":
-                if buffer_distance > 1:
-                    feedback.pushWarning(
-                        "Clip buffer was set to above 1. The buffer was changed to 1 degree."
+                if parameters["ClipBuffer"] > 1:
+                    feedback.reportError(
+                        "The buffer was set to more than 1 degree. Large geographic buffers may take excessive amounts of time to compute."
                     )
-                    buffer_distance = 1.0
+                    return {}
 
             # Buffer
             alg_params = {
                 "DISSOLVE": False,
-                "DISTANCE": buffer_distance,
+                "DISTANCE": parameters["ClipBuffer"],
                 "END_CAP_STYLE": 0,
                 "INPUT": outputs["ReprojectLayer"]["OUTPUT"],
                 "JOIN_STYLE": 0,
@@ -171,7 +173,6 @@ class AlignRasters(QgsProcessingAlgorithm):
             return {}
 
         os.makedirs(output_dir, exist_ok=True)
-        ref_layer = self.parameterAsRasterLayer(parameters, "ReferenceRaster", context)
         size_x = ref_layer.rasterUnitsPerPixelX()
         size_y = ref_layer.rasterUnitsPerPixelY()
 
