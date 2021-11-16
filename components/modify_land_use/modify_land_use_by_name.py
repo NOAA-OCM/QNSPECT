@@ -27,7 +27,10 @@ class ModifyLandUseByName(QgsProcessingAlgorithm):
         )
         self.addParameter(
             QgsProcessingParameterString(
-                self.landUse, "Land Use Name", multiLine=False, defaultValue=""
+                self.landUse,
+                "Name of Land Use to Apply",
+                multiLine=False,
+                defaultValue="",
             )
         )
         self.addParameter(
@@ -121,10 +124,10 @@ class ModifyLandUseByName(QgsProcessingAlgorithm):
         return results
 
     def name(self):
-        return "Modify Land Use by Name"
+        return "Modify Land Use (Custom Name)"
 
     def displayName(self):
-        return "Modify Land Use by Name"
+        return "Modify Land Use (Custom Name)"
 
     def group(self):
         return "QNSPECT"
