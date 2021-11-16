@@ -15,6 +15,7 @@ from qgis.core import (
 )
 import processing
 import os
+from datetime import datetime
 
 import sys
 
@@ -39,6 +40,7 @@ def filter_matrix(matrix: list) -> list:
 class RunPollutionAnalysis(QgsProcessingAlgorithm):
     lookup_tables = {0: "NLCD", 1: "CCAP"}
     default_lookup_path = r"file:///C:\Users\asiddiqui\Documents\github_repos\QNSPECT\resources\coefficients\{0}.csv"
+    run_dict = {}
 
     def initAlgorithm(self, config=None):
         self.addParameter(
@@ -46,7 +48,7 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
                 "RunName",
                 "Run Name",
                 multiLine=False,
-                optional=True,
+                optional=False,
                 defaultValue="",
             )
         )
@@ -54,24 +56,24 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
             QgsProcessingParameterRasterLayer(
                 "ElevatoinRaster",
                 "Elevation Raster",
-                optional=True,
-                defaultValue="C:/Users/asiddiqui/Documents/Projects/NSPECT/HI_SAMPLE_TEST_DATA/drived/aligned_DEM.tif",
+                optional=False,
+                defaultValue=None,
             )
         )
         self.addParameter(
             QgsProcessingParameterRasterLayer(
                 "SoilRaster",
                 "Soil Raster",
-                optional=True,
-                defaultValue="C:/Users/asiddiqui/Documents/Projects/NSPECT/HI_SAMPLE_TEST_DATA/drived/HSG.tif",
+                optional=False,
+                defaultValue=None,
             )
         )
         self.addParameter(
             QgsProcessingParameterRasterLayer(
                 "PrecipRaster",
                 "Precipitation Raster",
-                optional=True,
-                defaultValue="C:/Users/asiddiqui/Documents/Projects/NSPECT/HI_SAMPLE_TEST_DATA/drived/precip.tif",
+                optional=False,
+                defaultValue=None,
             )
         )
         self.addParameter(
@@ -96,8 +98,8 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
             QgsProcessingParameterRasterLayer(
                 "LandUseRaster",
                 "Land Use Raster",
-                optional=True,
-                defaultValue="C:/Users/asiddiqui/Documents/Projects/NSPECT/HI_SAMPLE_TEST_DATA/drived/HI_CCAP05.tif",
+                optional=False,
+                defaultValue=None,
             )
         )
         self.addParameter(
@@ -146,6 +148,11 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
         param.setFlags(param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(param)
         param = QgsProcessingParameterBoolean(
+            "NoConcOutputs", "Do not Output Concentration Rasters", defaultValue=True
+        )
+        param.setFlags(param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
+        self.addParameter(param)
+        param = QgsProcessingParameterBoolean(
             "MDF", "Use Multi Direction Flow [MDF] Routing", defaultValue=False
         )
         param.setFlags(param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
@@ -176,6 +183,8 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
         results = {}
         outputs = {}
 
+        self.run_dict["Inputs"] = parameters
+
         ## Extract inputs
         land_use_type = self.parameterAsEnum(parameters, "LandUseType", context)
         feedback.pushWarning(str(land_use_type))
@@ -193,6 +202,7 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
 
         mfd = self.parameterAsBool(parameters, "MFD", context)
         no_accu_out = self.parameterAsBool(parameters, "NoAccuOutputs", context)
+        no_conc_out = self.parameterAsBool(parameters, "NoConcOutputs", context)
 
         run_name = self.parameterAsString(parameters, "RunName", context)
         proj_loc = self.parameterAsString(parameters, "ProjectLocation", context)
@@ -295,12 +305,13 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
             )
             results[pol + " Local"] = outputs[pol + " Local"]["OUTPUT"]
 
-        if no_accu_out:
-            return results
+        if not no_accu_out or not no_conc_out:
+            pass
 
-        # temp
-        results["CN"] = outputs["CN"]["OUTPUT"]
 
+
+        self.run_dict["Outputs"] = results
+        self.run_dict["Time"] = str(datetime.now())
         return results
 
     def name(self):
