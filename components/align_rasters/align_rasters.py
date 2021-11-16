@@ -9,6 +9,7 @@ from qgis.core import (
     QgsProcessingParameterExtent,
     QgsProcessingParameterFolderDestination,
     QgsProcessingContext,
+    QgsUnitTypes,
 )
 import processing
 import os
@@ -91,6 +92,19 @@ class AlignRasters(QgsProcessingAlgorithm):
 
         output_dir = self.parameterAsString(parameters, "OutputDirectory", context)
         extent = parameters.get("ClippingExtent", "")
+        ref_layer = self.parameterAsRasterLayer(parameters, "ReferenceRaster", context)
+
+        # Check if the reference raster is in a geographic CRS and terminate if it is
+        # This will:
+        # (a) prevent known errors in output when using a geographic CRS, and
+        # (b) better reflect expected inputs for how the analysis tools are processed.
+        ref_layer_crs = ref_layer.crs()
+        units = QgsUnitTypes.toString(ref_layer_crs.mapUnits())
+        if units.lower() == "degrees":
+            feedback.reportError(
+                "The reference raster must be in a projected coordinate system."
+            )
+            return {}
 
         # Get buffered extents
         # Use QGIS algorithms so as to handle unit conversion and projection per context
@@ -113,6 +127,23 @@ class AlignRasters(QgsProcessingAlgorithm):
                 feedback=feedback,
                 is_child_algorithm=True,
             )
+            # Reprojecting Buffer Extent Layer to Reference Raster CRS because
+            # Clipping extent and Buffer distance can be in different CRS
+            # If the distance is in projected units (meters etc) and Clipping Extent in Geographic (degrees)
+            # the buffer algorithm will treat distance in degrees ignoring actual buffer distance units
+            alg_params = {
+                "INPUT": outputs["CreateLayerFromExtent"]["OUTPUT"],
+                "OPERATION": "",
+                "TARGET_CRS": ref_layer_crs,
+                "OUTPUT": QgsProcessing.TEMPORARY_OUTPUT,
+            }
+            outputs["ReprojectLayer"] = processing.run(
+                "native:reprojectlayer",
+                alg_params,
+                context=context,
+                feedback=feedback,
+                is_child_algorithm=True,
+            )
 
             feedback.setCurrentStep(1)
             if feedback.isCanceled():
@@ -123,7 +154,7 @@ class AlignRasters(QgsProcessingAlgorithm):
                 "DISSOLVE": False,
                 "DISTANCE": parameters["ClipBuffer"],
                 "END_CAP_STYLE": 0,
-                "INPUT": outputs["CreateLayerFromExtent"]["OUTPUT"],
+                "INPUT": outputs["ReprojectLayer"]["OUTPUT"],
                 "JOIN_STYLE": 0,
                 "MITER_LIMIT": 2,
                 "SEGMENTS": 5,
@@ -143,7 +174,6 @@ class AlignRasters(QgsProcessingAlgorithm):
             return {}
 
         os.makedirs(output_dir, exist_ok=True)
-        ref_layer = self.parameterAsRasterLayer(parameters, "ReferenceRaster", context)
         size_x = ref_layer.rasterUnitsPerPixelX()
         size_y = ref_layer.rasterUnitsPerPixelY()
 
