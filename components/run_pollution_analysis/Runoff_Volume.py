@@ -61,6 +61,21 @@ class Runoff_Volume:
             "input_a": self.cn_raster,
             "band_a": "1",
         }
+
+        # replace 0 CNs with 1 for avoid division by 0 error
+        # will later the Q raster to 0 for these values
+        self.outputs["CN_NON_ZERO"] = perform_raster_math(
+            "(A==0) * 1 + (A != 0) * A",
+            input_params,
+            self.context,
+            self.feedback,
+        )
+
+        input_params = {
+            "input_a": self.outputs["CN_NON_ZERO"]["OUTPUT"],
+            "band_a": "1",
+        }
+
         self.outputs["S"] = perform_raster_math(
             "(1000/A)-10",
             input_params,
@@ -94,7 +109,7 @@ class Runoff_Volume:
         }
 
         # (Volume) (L)
-        self.outputs["Q"] = perform_raster_math(
+        self.outputs["Q_TEMP"] = perform_raster_math(
             # (((Precip-(0.2*S*rainy_days))**2)/(Precip+(0.8*S*rainy_days)) * [If (Precip-0.2S)<0, set to 0] * cell area to convert to vol * (28.3168/12) to convert inches to feet and cubic feet to Liters",
             f"(((A-(0.2*B*{self.rainy_days}))**2)/(A+(0.8*B*{self.rainy_days})) * ((A-(0.2*B*{self.rainy_days}))>0)) * {cell_area_sq_feet} * 2.35973722 ",
             input_params,
@@ -102,6 +117,23 @@ class Runoff_Volume:
             self.feedback,
             output=output,
         )
+
+        input_params = {
+            "input_a": self.outputs["Q_TEMP"]["OUTPUT"],
+            "band_a": "1",
+            "input_b": self.cn_raster,
+            "band_b": "1",
+        }
+
+        # Set Q 0 for CN = 0
+        self.outputs["Q"] = perform_raster_math(
+            "(B!=0) * A",
+            input_params,
+            self.context,
+            self.feedback,
+            output=output,
+        )
+
 
         self.runoff_vol_raster = self.outputs["Q"]["OUTPUT"]
 
