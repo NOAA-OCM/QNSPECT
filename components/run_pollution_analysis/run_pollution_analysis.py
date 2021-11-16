@@ -12,10 +12,12 @@ from qgis.core import (
     QgsProcessingParameterFolderDestination,
     QgsProcessingParameterBoolean,
     QgsProcessingParameterDefinition,
+    QgsProcessingContext
 )
 import processing
 import os
 from datetime import datetime
+from json import dumps
 
 import sys
 
@@ -40,7 +42,6 @@ def filter_matrix(matrix: list) -> list:
 class RunPollutionAnalysis(QgsProcessingAlgorithm):
     lookup_tables = {0: "NLCD", 1: "CCAP"}
     default_lookup_path = r"file:///C:\Users\asiddiqui\Documents\github_repos\QNSPECT\resources\coefficients\{0}.csv"
-    run_dict = {}
 
     def initAlgorithm(self, config=None):
         self.addParameter(
@@ -142,13 +143,11 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
                 ],
             )
         )
+        self.addParameter(QgsProcessingParameterBoolean(
+            "LoadOutputs", "Open output files after running algorithm", defaultValue=True
+        ))
         param = QgsProcessingParameterBoolean(
-            "NoAccuOutputs", "Do not Output Accumulated Rasters", defaultValue=False
-        )
-        param.setFlags(param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
-        self.addParameter(param)
-        param = QgsProcessingParameterBoolean(
-            "NoConcOutputs", "Do not Output Concentration Rasters", defaultValue=True
+            "ConcOutputs", "Output Concentration Rasters", defaultValue=False
         )
         param.setFlags(param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(param)
@@ -182,34 +181,41 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
         feedback = QgsProcessingMultiStepFeedback(0, model_feedback)
         results = {}
         outputs = {}
-
-        self.run_dict["Inputs"] = parameters
+        run_dict = {}
 
         ## Extract inputs
         land_use_type = self.parameterAsEnum(parameters, "LandUseType", context)
-        feedback.pushWarning(str(land_use_type))
 
         desired_outputs = filter_matrix(
             self.parameterAsMatrix(parameters, "DesiredOutputs", context)
         )
         desired_pollutants = [pol for pol in desired_outputs if pol.lower() != "runoff"]
         dual_soil_type = self.parameterAsEnum(parameters, "DualSoils", context)
-        feedback.pushWarning(str(dual_soil_type))
 
         precip_units = self.parameterAsEnum(parameters, "PrecipUnits", context)
         rainy_days = self.parameterAsInt(parameters, "RainyDays", context)
-        feedback.pushWarning(str(rainy_days))
 
         mfd = self.parameterAsBool(parameters, "MFD", context)
-        no_accu_out = self.parameterAsBool(parameters, "NoAccuOutputs", context)
-        no_conc_out = self.parameterAsBool(parameters, "NoConcOutputs", context)
+        conc_out = self.parameterAsBool(parameters, "ConcOutputs", context)
+        load_outputs = self.parameterAsBool(parameters, "LoadOutputs", context)
+
 
         run_name = self.parameterAsString(parameters, "RunName", context)
         proj_loc = self.parameterAsString(parameters, "ProjectLocation", context)
 
-        elev_raster_layer = self.parameterAsRasterLayer(
+        elev_raster = self.parameterAsRasterLayer(
             parameters, "ElevatoinRaster", context
-        )  # Elevation
+        )
+        soil_raster = self.parameterAsRasterLayer(
+            parameters, "SoilRaster", context
+        )
+        lu_raster = self.parameterAsRasterLayer(
+            parameters, "LandUseRaster", context
+        )
+        precip_raster = self.parameterAsRasterLayer(
+            parameters, "PrecipRaster", context
+        )
+
 
         ## Extract Lookup Table
         if parameters["LookupTable"]:
@@ -266,7 +272,7 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
         runoff_vol = Runoff_Volume(
             parameters["PrecipRaster"],
             outputs["CN"]["OUTPUT"],
-            elev_raster_layer,
+            elev_raster,
             precip_units,
             rainy_days,
             context,
@@ -274,10 +280,21 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
         )
         # not putting (L) in the name because special characs don't go well in file names
         # should be handled in post processor through display name
-        outputs["Runoff Local"] = runoff_vol.calculate_Q(
-            os.path.join(run_out_dir, f"Runoff Local.tif")
-        )
-        results["Runoff Local"] = outputs["Runoff Local"]["OUTPUT"]
+        if "runoff" in [out.lower() for out in desired_outputs]:
+            runoff_output = os.path.join(run_out_dir, f"Runoff Local.tif")
+            outputs["Runoff Local"] = runoff_vol.calculate_Q(runoff_output)
+            results["Runoff Local"] = outputs["Runoff Local"]["OUTPUT"]
+            if load_outputs:
+                context.addLayerToLoadOnCompletion(
+                    outputs["Runoff Local"]["OUTPUT"],
+                    QgsProcessingContext.LayerDetails(
+                        f"Runoff Local (L) ", context.project(), "Runoff Local"
+                    ),
+                )
+        else:
+            runoff_output = QgsProcessing.TEMPORARY_OUTPUT
+            outputs["Runoff Local"] = runoff_vol.calculate_Q(runoff_output)
+
 
         ## Pollutant rasters
         for pol in desired_pollutants:
@@ -304,14 +321,34 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
                 os.path.join(run_out_dir, f"{pol} Local.tif"),
             )
             results[pol + " Local"] = outputs[pol + " Local"]["OUTPUT"]
+            if load_outputs:
+                context.addLayerToLoadOnCompletion(
+                    outputs[pol + " Local"]["OUTPUT"],
+                    QgsProcessingContext.LayerDetails(
+                        f"{pol} Local (mg) ", context.project(), f"{pol} Local"
+                    ),
+                )
 
-        if not no_accu_out or not no_conc_out:
+        # Accumulated Rasters Calculation
+
+
+        # Concentration Calculations
+        if conc_out:
             pass
 
+        # Configuration file
+        run_dict["Inputs"] = parameters
+        run_dict["Inputs"]["ElevatoinRaster"] = elev_raster.source()
+        run_dict["Inputs"]["LandUseRaster"] = lu_raster.source()
+        run_dict["Inputs"]["PrecipRaster"] = precip_raster.source()
+        run_dict["Inputs"]["SoilRaster"] = soil_raster.source()
+        if parameters["LookupTable"]:
+            run_dict["Inputs"]["LookupTable"] = lookup_layer.source()
+        run_dict["Outputs"] = results
+        run_dict["RunTime"] = str(datetime.now())
+        with open(os.path.join(proj_loc, f"{run_name}.pol.json"), "w") as f:
+            f.write(dumps(run_dict, indent=4))
 
-
-        self.run_dict["Outputs"] = results
-        self.run_dict["Time"] = str(datetime.now())
         return results
 
     def name(self):
