@@ -116,10 +116,10 @@ class ModifyLandUseByNLCDCCAP(QgsProcessingAlgorithm):
         return results
 
     def name(self):
-        return f"Modify Land Use (NLCD/CCAP)"
+        return f"Modify Land Use (NLCD/C-CAP)"
 
     def displayName(self):
-        return f"Modify Land Use (NLCD/CCAP)"
+        return f"Modify Land Use (NLCD/C-CAP)"
 
     def group(self):
         return "QNSPECT"
