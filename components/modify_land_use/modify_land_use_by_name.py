@@ -124,10 +124,10 @@ class ModifyLandUseByName(QgsProcessingAlgorithm):
         return results
 
     def name(self):
-        return "Modify Land Use (Custom Name)"
+        return "Modify Land Use (Custom Lookup Table)"
 
     def displayName(self):
-        return "Modify Land Use (Custom Name)"
+        return "Modify Land Use (Custom Lookup Table)"
 
     def group(self):
         return "QNSPECT"
