@@ -46,7 +46,7 @@ class ModifyLandUseByNLCDCCAP(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterFeatureSource(
                 self.inputVector,
-                "Area to Modify",
+                "Areas to Modify",
                 types=[QgsProcessing.TypeVectorPolygon],
                 defaultValue=None,
             )
@@ -58,7 +58,10 @@ class ModifyLandUseByNLCDCCAP(QgsProcessingAlgorithm):
         )
         self.addParameter(
             QgsProcessingParameterRasterDestination(
-                self.output, "Modified Raster", createByDefault=True, defaultValue=None
+                self.output,
+                "Modified Land Use",
+                createByDefault=True,
+                defaultValue=None,
             )
         )
 

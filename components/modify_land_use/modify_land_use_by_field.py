@@ -18,7 +18,7 @@ class ModifyLandUse(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterFeatureSource(
                 self.inputVector,
-                "Area to Modify",
+                "Areas to Modify",
                 types=[QgsProcessing.TypeVectorPolygon],
                 defaultValue=None,
             )
