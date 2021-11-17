@@ -10,7 +10,7 @@ from qgis.core import (
 import sys
 
 sys.path.append(
-    r"C:\Users\asiddiqui\Documents\github_repos\QNSPECT\components\run_pollution_analysis"
+    r"C:\Users\asiddiqui\Documents\github_repos\QNSPECT\components\run_analysis"
 )
 
 from qnspect_utils import perform_raster_math

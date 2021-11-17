@@ -22,7 +22,7 @@ from json import dumps
 import sys
 
 sys.path.append(
-    r"C:\Users\asiddiqui\Documents\github_repos\QNSPECT\components\run_pollution_analysis"
+    r"C:\Users\asiddiqui\Documents\github_repos\QNSPECT\components\run_analysis"
 )
 
 from Curve_Number import Curve_Number
