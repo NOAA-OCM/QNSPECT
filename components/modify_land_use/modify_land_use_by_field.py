@@ -98,10 +98,10 @@ class ModifyLandUse(QgsProcessingAlgorithm):
         return results
 
     def name(self):
-        return "Modify Land Use (Custom Field)"
+        return "Modify Land Use (Vector Field)"
 
     def displayName(self):
-        return "Modify Land Use (Custom Field)"
+        return "Modify Land Use (Vector Field)"
 
     def group(self):
         return "QNSPECT"
