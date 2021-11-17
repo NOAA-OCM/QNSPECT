@@ -8,10 +8,12 @@ from qgis.core import (
     QgsProcessingContext,
 )
 import sys
+import os
+import inspect
 
-sys.path.append(
-    r"C:\Users\asiddiqui\Documents\github_repos\QNSPECT\components\run_analysis"
-)
+cmd_folder = os.path.split(inspect.getfile(inspect.currentframe()))[0]
+sys.path.append(cmd_folder)
+
 
 from qnspect_utils import perform_raster_math
 

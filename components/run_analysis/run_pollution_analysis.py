@@ -18,12 +18,14 @@ import processing
 import os
 from datetime import datetime
 from json import dumps
+from pathlib import Path
 
 import sys
+import os
+import inspect
 
-sys.path.append(
-    r"C:\Users\asiddiqui\Documents\github_repos\QNSPECT\components\run_analysis"
-)
+cmd_folder = os.path.split(inspect.getfile(inspect.currentframe()))[0]
+sys.path.append(cmd_folder)
 
 from Curve_Number import Curve_Number
 from Runoff_Volume import Runoff_Volume
@@ -40,8 +42,8 @@ def filter_matrix(matrix: list) -> list:
 
 
 class RunPollutionAnalysis(QgsProcessingAlgorithm):
-    lookup_tables = {0: "NLCD", 1: "CCAP"}
-    default_lookup_path = r"file:///C:\Users\asiddiqui\Documents\github_repos\QNSPECT\resources\coefficients\{0}.csv"
+    lookup_tables = {0: "NLCD", 1: "C-CAP"}
+    default_lookup_path = f"file:///{Path(__file__).parent.parent.parent / 'resources' / 'coefficients'}"
 
     def initAlgorithm(self, config=None):
         self.addParameter(
@@ -224,7 +226,7 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
             )
         elif land_use_type in [0, 1]:  # create lookup table from default
             lookup_layer = QgsVectorLayer(
-                self.default_lookup_path.format(self.lookup_tables[land_use_type]),
+                f"{self.default_lookup_path}/{self.lookup_tables[land_use_type]}.csv",
                 "Land Use Lookup Table",
                 "delimitedtext",
             )
