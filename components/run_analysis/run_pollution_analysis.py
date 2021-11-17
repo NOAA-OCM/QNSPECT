@@ -159,7 +159,7 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
         param = QgsProcessingParameterEnum(
             "DualSoils",
             "Treat Dual Category Soils as",
-            optional=True,
+            optional=False,
             options=["Undrained [Default]", "Drained", "Average"],
             allowMultiple=False,
             defaultValue=[0],
@@ -288,7 +288,7 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
                 context.addLayerToLoadOnCompletion(
                     outputs["Runoff Local"]["OUTPUT"],
                     QgsProcessingContext.LayerDetails(
-                        f"Runoff Local (L) ", context.project(), "Runoff Local"
+                        f"Runoff Local (L) ", context.project(), "Runoff Local (L) "
                     ),
                 )
         else:
@@ -325,7 +325,7 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
                 context.addLayerToLoadOnCompletion(
                     outputs[pol + " Local"]["OUTPUT"],
                     QgsProcessingContext.LayerDetails(
-                        f"{pol} Local (mg) ", context.project(), f"{pol} Local"
+                        f"{pol} Local (mg) ", context.project(), f"{pol} Local (mg) "
                     ),
                 )
 
