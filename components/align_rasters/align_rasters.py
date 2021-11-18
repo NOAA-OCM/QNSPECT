@@ -338,6 +338,6 @@ class AlignRasters(QgsProcessingAlgorithm):
             ref_size_x = ref_layer.rasterUnitsPerPixelX()
             ref_size_y = ref_layer.rasterUnitsPerPixelY()
             if ref_size_x < ref_size_y:
-                return round(ref_size_x)
+                return ref_size_x
             else:
-                return round(ref_size_y)
+                return ref_size_y
