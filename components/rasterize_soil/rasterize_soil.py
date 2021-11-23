@@ -51,7 +51,10 @@ class RasterizeSoil(QgsProcessingAlgorithm):
         )
         self.addParameter(
             QgsProcessingParameterRasterDestination(
-                "Hsg", "HSG Raster", createByDefault=True, defaultValue=None
+                "Hsg",
+                "Hydrologic Soil Group Raster",
+                createByDefault=True,
+                defaultValue=None,
             )
         )
         self.addParameter(
@@ -88,8 +91,7 @@ class RasterizeSoil(QgsProcessingAlgorithm):
                 ]:
                     error_message = f"""Field {hsg_field} contain value(s) other than allowed Hydrologic Soil Groups [Null, 'A', 'B', 'C' , 'D', 'A/D', 'B/D', 'C/D', 'W']"""
                     feedback.reportError(
-                        error_message,
-                        True,
+                        error_message, True,
                     )
                     return {}
 
@@ -198,21 +200,23 @@ class RasterizeSoil(QgsProcessingAlgorithm):
 
     def shortHelpString(self):
         return """<html><body><h2>Algorithm description</h2>
-<p></p>
+<p>The algorithm converts a vector polygon layer into Hydrologic Soul Group and/or K-Factor rasters. The value of the raster pixels is determined by the vector layer's attributes.</p>
+<p>Two soil parameters are needed: the hydrologic soils group, which is a measure of how permeable the soils are; and the K-factor, which is a measure of how erodible the soils are.</p>
 <h2>Input parameters</h2>
 <h3>Soil Layer</h3>
-<p></p>
+<p>Vector layer representing the soil properties.</p>
 <h3>Hydrologic Soil Group Field</h3>
-<p></p>
+<p>Field of the Soil Layer representing the hydrologic soil group (HSG). The picklist values comes from the fields in the Soil Layer. If this is left emtpy, no HSG raster will be created.</p>
+<p>The only valid values for this field are 'A', 'B', 'C' , 'D', 'A/D', 'B/D', 'C/D', 'W', and Null. If the field contains any values other than these, the tool will terminate without output.</p>
 <h3>K-Factor Field</h3>
-<p></p>
+<p>Field of the Soil Layer representing the K-Factor. The picklist values comes from the fields in the Soil Layer. This will default to 'kffact' if it is present in the Soil Layer. If this is left emtpy, no K-Factor raster will be created.</p>
 <h3>Raster Cell Size</h3>
-<p></p>
+<p>The cell size of the output raster(s). The units will default to the units of the CRS of the Soil Layer.</p>
 <h2>Outputs</h2>
-<h3>HSG Raster</h3>
-<p></p>
+<h3>Hydrologic Soil Group Raster</h3>
+<p>The output path of the Hydrologic Soil Group raster. The raster will inherit the CRS of the Soil Layer if no other units are specified.</p>
 <h3>K-Factor Raster</h3>
-<p></p>
+<p>The output path of the K-Factor raster. The raster will inherit the CRS of the Soil Layer.</p>
 <br></body></html>"""
 
     def createInstance(self):
