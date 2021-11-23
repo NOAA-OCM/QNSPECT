@@ -76,8 +76,8 @@ class AlignRasters(QgsProcessingAlgorithm):
                 self.rasterCellSize,
                 "Output Cell Size",
                 optional=True,
-                type=QgsProcessingParameterNumber.Integer,
-                minValue=1,
+                type=QgsProcessingParameterNumber.Double,
+                minValue=0.000001,
                 defaultValue=None,
             )
         )
