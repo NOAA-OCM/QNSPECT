@@ -10,12 +10,15 @@ from qgis.core import (
     QgsProcessingParameterFolderDestination,
     QgsProcessingContext,
     QgsUnitTypes,
+    QgsProcessingParameterNumber,
 )
 import processing
 import os
 
 
 class AlignRasters(QgsProcessingAlgorithm):
+    rasterCellSize: str = "RasterCellSize"
+
     def initAlgorithm(self, config=None):
         self.addParameter(
             QgsProcessingParameterRasterLayer(
@@ -66,6 +69,16 @@ class AlignRasters(QgsProcessingAlgorithm):
                 parentParameterName="ReferenceRaster",
                 minValue=0,
                 defaultValue=100,
+            )
+        )
+        self.addParameter(
+            QgsProcessingParameterNumber(
+                self.rasterCellSize,
+                "Output Cell Size",
+                optional=True,
+                type=QgsProcessingParameterNumber.Double,
+                minValue=0.000001,
+                defaultValue=None,
             )
         )
         self.addParameter(
@@ -174,14 +187,8 @@ class AlignRasters(QgsProcessingAlgorithm):
             return {}
 
         os.makedirs(output_dir, exist_ok=True)
-        size_x = ref_layer.rasterUnitsPerPixelX()
-        size_y = ref_layer.rasterUnitsPerPixelY()
 
-        # select lowest resolution
-        if size_x < size_y:
-            resolution = size_x
-        else:
-            resolution = size_y
+        resolution = self.find_pixel_size(ref_layer, parameters, context)
 
         if extent:
             # if extent is provided then clip raster to get new updated clip extents
@@ -302,7 +309,7 @@ class AlignRasters(QgsProcessingAlgorithm):
 <p>The algorithm aligns one or more rasters to a reference raster. The aligned rasters will adopt the CRS, cell size, and origin of the reference raster. The aligned rasters will be saved as TIFF files.</p>
 <h2>Input parameters</h2>
 <h3>Reference Raster</h3>
-<p>The raster used for determining the CRS, cell size, and origin coordinates of the output rasters. If the reference raster has non-square pixels, the aligned raster pixel sizes will be the smallest length.</p>
+<p>The raster used for determining the CRS and origin coordinates of the output rasters.</p>
 <h3>Rasters to Align</h3>
 <p>The rasters that will be aligned to the reference raster.</p>
 <h3>Resampling Method</h3>
@@ -313,6 +320,8 @@ class AlignRasters(QgsProcessingAlgorithm):
 <h3>Clip Buffer [optional]</h3>
 <p>Buffer added around the Clipping Extent. A small buffer around the project area of interest may increase the accuracy of drainage algorithms.</p>
 <p>If the Clipping Extent is not set, no buffer will be applied.</p>
+<h3>Output Cell Size [optional]</h3>
+<p>The raster cell size of the output rasters. If this is not set, the cell size will be the same as the reference raster. If the reference raster has non-square pixels, the aligned raster(s) pixel size will be the smallest length.</p>
 <h2>Outputs</h2>
 <h3>Output Directory</h3>
 <p>The output directory the aligned rasters will be saved to. The aligned rasters will share the name of their source files. If more than one raster share the same source name, numbers will be added to the end in the order they are processed.</p>
@@ -320,3 +329,15 @@ class AlignRasters(QgsProcessingAlgorithm):
 
     def createInstance(self):
         return AlignRasters()
+
+    def find_pixel_size(self, ref_layer, parameters, context):
+        user_size = self.parameterAsInt(parameters, self.rasterCellSize, context)
+        if user_size:
+            return user_size
+        else:
+            ref_size_x = ref_layer.rasterUnitsPerPixelX()
+            ref_size_y = ref_layer.rasterUnitsPerPixelY()
+            if ref_size_x < ref_size_y:
+                return ref_size_x
+            else:
+                return ref_size_y
