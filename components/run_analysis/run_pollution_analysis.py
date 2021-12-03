@@ -29,7 +29,7 @@ sys.path.append(cmd_folder)
 
 from Curve_Number import Curve_Number
 from Runoff_Volume import Runoff_Volume
-from qnspect_utils import perform_raster_math
+from qnspect_utils import perform_raster_math, grass_material_transport
 
 
 def filter_matrix(matrix: list) -> list:
@@ -154,7 +154,7 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
         param.setFlags(param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(param)
         param = QgsProcessingParameterBoolean(
-            "MDF", "Use Multi Direction Flow [MDF] Routing", defaultValue=False
+            "MFD", "Use Multi Flow Direction [MFD] Routing", defaultValue=False
         )
         param.setFlags(param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(param)
@@ -287,15 +287,9 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
             outputs["Runoff Local"] = runoff_vol.calculate_Q(runoff_output)
             results["Runoff Local"] = outputs["Runoff Local"]["OUTPUT"]
             if load_outputs:
-                context.addLayerToLoadOnCompletion(
-                    outputs["Runoff Local"]["OUTPUT"],
-                    QgsProcessingContext.LayerDetails(
-                        f"Runoff Local (L) ", context.project(), "Runoff Local (L) "
-                    ),
-                )
+                self.handle_post_processing(outputs["Runoff Local"]["OUTPUT"], "Runoff Local (L)", context)
         else:
-            runoff_output = QgsProcessing.TEMPORARY_OUTPUT
-            outputs["Runoff Local"] = runoff_vol.calculate_Q(runoff_output)
+            outputs["Runoff Local"] = runoff_vol.calculate_Q()
 
 
         ## Pollutant rasters
@@ -324,15 +318,42 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
             )
             results[pol + " Local"] = outputs[pol + " Local"]["OUTPUT"]
             if load_outputs:
-                context.addLayerToLoadOnCompletion(
-                    outputs[pol + " Local"]["OUTPUT"],
-                    QgsProcessingContext.LayerDetails(
-                        f"{pol} Local (mg) ", context.project(), f"{pol} Local (mg) "
-                    ),
-                )
+                self.handle_post_processing(outputs[pol + " Local"]["OUTPUT"], f"{pol} Local (mg)", context)
 
-        # Accumulated Rasters Calculation
+        feedback.pushWarning(str(mfd))
 
+        # Accumulated Runoff Calculation (L)
+        if "runoff" in [out.lower() for out in desired_outputs]:
+            runoff_output = os.path.join(run_out_dir, f"Runoff Accumulated.tif")
+            # to do: add output with (local * 0) so as to remove nodata values, mutliply -ve values with +ve but first check if it makes scientific sense
+            outputs["Runoff Accumulated"] = grass_material_transport(parameters["ElevatoinRaster"], outputs["Runoff Local"]["OUTPUT"], context, feedback, mfd, runoff_output)
+            results["Runoff Accumulated"] = outputs["Runoff Accumulated"]["accumulation"]
+            if load_outputs:
+                self.handle_post_processing(outputs["Runoff Accumulated"]["accumulation"], "Runoff Accumulated (L)", context)
+        else:
+            outputs["Runoff Accumulated"] = grass_material_transport(parameters["ElevatoinRaster"], outputs["Runoff Local"]["OUTPUT"], context, feedback, mfd)
+
+        # Accumulated Pollutants
+        for pol in desired_pollutants:
+            # Accumulated Pollutant (mg)
+            outputs[pol + "accum_mg"] = grass_material_transport(parameters["ElevatoinRaster"], outputs[pol + " Local"]["OUTPUT"], context, feedback, mfd)
+            
+            # convert to kg
+            input_params = {
+                "input_a": outputs[pol + "accum_mg"]["accumulation"],
+                "band_a": "1",
+            }
+            outputs[pol + " Accumulated"] = perform_raster_math(
+                "(A / 1000000)",
+                input_params,
+                context,
+                feedback,
+                os.path.join(run_out_dir, f"{pol} Accumulated.tif"),
+            )            
+            # to do: add output with (local * 0) so as to remove nodata values, mutliply -ve values with +ve but first check if it makes scientific sense
+            results[pol + " Accumulated"] = outputs[pol + " Accumulated"]["OUTPUT"]
+            if load_outputs:
+                self.handle_post_processing(outputs[pol + " Accumulated"]["OUTPUT"], f"{pol} Accumulated (kg)", context)
 
         # Concentration Calculations
         if conc_out:
@@ -427,3 +448,11 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
             feedback=feedback,
             is_child_algorithm=True,
         )
+
+    def handle_post_processing(self, layer, display_name, context):
+        context.addLayerToLoadOnCompletion(
+            layer,
+            QgsProcessingContext.LayerDetails(
+                display_name, context.project(), display_name
+            ),
+        )               

@@ -45,3 +45,30 @@ def perform_raster_math(
         feedback=feedback,
         is_child_algorithm=True,
     )
+
+def grass_material_transport(elevation, weight, context, feedback, mfd = True, output=QgsProcessing.TEMPORARY_OUTPUT, threshold = 500):
+    feedback.pushWarning(str(mfd))
+    # r.watershed
+    alg_params = {
+        '-4': False,
+        '-a': False, 
+        '-b': False,
+        '-m': False,
+        '-s': not mfd, # single flow direction
+        'GRASS_RASTER_FORMAT_META': '',
+        'GRASS_RASTER_FORMAT_OPT': '',
+        'GRASS_REGION_CELLSIZE_PARAMETER': 0,
+        'GRASS_REGION_PARAMETER': None,
+        'blocking': None,
+        'convergence': 5,
+        'depression': None,
+        'disturbed_land': None,
+        'elevation': elevation,
+        'flow': weight, 
+        'max_slope_length': None,
+        'memory': 300,
+        'threshold': threshold, # can be an input advanced parameter
+        'accumulation': output
+    }
+    feedback.pushWarning(str(alg_params["-s"]))
+    return processing.run('grass7:r.watershed', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
