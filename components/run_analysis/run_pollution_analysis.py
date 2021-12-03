@@ -12,7 +12,7 @@ from qgis.core import (
     QgsProcessingParameterFolderDestination,
     QgsProcessingParameterBoolean,
     QgsProcessingParameterDefinition,
-    QgsProcessingContext
+    QgsProcessingContext,
 )
 import processing
 import os
@@ -26,33 +26,23 @@ import inspect
 
 cmd_folder = os.path.split(inspect.getfile(inspect.currentframe()))[0]
 sys.path.append(cmd_folder)
+sys.path.append(os.path.dirname(cmd_folder))
 
 from Curve_Number import Curve_Number
 from Runoff_Volume import Runoff_Volume
-from qnspect_utils import perform_raster_math
-
-
-def filter_matrix(matrix: list) -> list:
-    matrix_filtered = [
-        matrix[i]
-        for i in range(0, len(matrix), 2)
-        if matrix[i + 1].lower() in ["y", "yes"]
-    ]
-    return matrix_filtered
+from qnspect_utils import perform_raster_math, filter_matrix
 
 
 class RunPollutionAnalysis(QgsProcessingAlgorithm):
     lookup_tables = {0: "NLCD", 1: "C-CAP"}
-    default_lookup_path = f"file:///{Path(__file__).parent.parent.parent / 'resources' / 'coefficients'}"
+    default_lookup_path = (
+        f"file:///{Path(__file__).parent.parent.parent / 'resources' / 'coefficients'}"
+    )
 
     def initAlgorithm(self, config=None):
         self.addParameter(
             QgsProcessingParameterString(
-                "RunName",
-                "Run Name",
-                multiLine=False,
-                optional=False,
-                defaultValue="",
+                "RunName", "Run Name", multiLine=False, optional=False, defaultValue="",
             )
         )
         self.addParameter(
@@ -65,10 +55,7 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
         )
         self.addParameter(
             QgsProcessingParameterRasterLayer(
-                "SoilRaster",
-                "Soil Raster",
-                optional=False,
-                defaultValue=None,
+                "SoilRaster", "Soil Raster", optional=False, defaultValue=None,
             )
         )
         self.addParameter(
@@ -99,10 +86,7 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
         )
         self.addParameter(
             QgsProcessingParameterRasterLayer(
-                "LandUseRaster",
-                "Land Use Raster",
-                optional=False,
-                defaultValue=None,
+                "LandUseRaster", "Land Use Raster", optional=False, defaultValue=None,
             )
         )
         self.addParameter(
@@ -145,9 +129,13 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
                 ],
             )
         )
-        self.addParameter(QgsProcessingParameterBoolean(
-            "LoadOutputs", "Open output files after running algorithm", defaultValue=True
-        ))
+        self.addParameter(
+            QgsProcessingParameterBoolean(
+                "LoadOutputs",
+                "Open output files after running algorithm",
+                defaultValue=True,
+            )
+        )
         param = QgsProcessingParameterBoolean(
             "ConcOutputs", "Output Concentration Rasters", defaultValue=False
         )
@@ -201,23 +189,15 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
         conc_out = self.parameterAsBool(parameters, "ConcOutputs", context)
         load_outputs = self.parameterAsBool(parameters, "LoadOutputs", context)
 
-
         run_name = self.parameterAsString(parameters, "RunName", context)
         proj_loc = self.parameterAsString(parameters, "ProjectLocation", context)
 
         elev_raster = self.parameterAsRasterLayer(
             parameters, "ElevatoinRaster", context
         )
-        soil_raster = self.parameterAsRasterLayer(
-            parameters, "SoilRaster", context
-        )
-        lu_raster = self.parameterAsRasterLayer(
-            parameters, "LandUseRaster", context
-        )
-        precip_raster = self.parameterAsRasterLayer(
-            parameters, "PrecipRaster", context
-        )
-
+        soil_raster = self.parameterAsRasterLayer(parameters, "SoilRaster", context)
+        lu_raster = self.parameterAsRasterLayer(parameters, "LandUseRaster", context)
+        precip_raster = self.parameterAsRasterLayer(parameters, "PrecipRaster", context)
 
         ## Extract Lookup Table
         if parameters["LookupTable"]:
@@ -297,7 +277,6 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
             runoff_output = QgsProcessing.TEMPORARY_OUTPUT
             outputs["Runoff Local"] = runoff_vol.calculate_Q(runoff_output)
 
-
         ## Pollutant rasters
         for pol in desired_pollutants:
             # Calculate pollutant per LU (mg/L)
@@ -332,7 +311,6 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
                 )
 
         # Accumulated Rasters Calculation
-
 
         # Concentration Calculations
         if conc_out:
