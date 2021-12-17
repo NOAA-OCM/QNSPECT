@@ -15,6 +15,9 @@ from qgis.core import (
     QgsProcessingContext,
     QgsProcessingLayerPostProcessorInterface
 )
+from qgis.utils import iface
+
+
 import processing
 import os
 from datetime import datetime
@@ -415,6 +418,11 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
             f.write(dumps(run_dict, indent=4))
 
         return results
+
+
+    def postProcessAlgorithm(self, context, feedback):
+        iface.mapCanvas().refreshAllLayers()
+        return {}
 
     def name(self):
         return "Run Pollution Analysis"
