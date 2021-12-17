@@ -30,19 +30,11 @@ import inspect
 
 cmd_folder = os.path.split(inspect.getfile(inspect.currentframe()))[0]
 sys.path.append(cmd_folder)
+sys.path.append(os.path.dirname(cmd_folder))
 
 from Curve_Number import Curve_Number
 from Runoff_Volume import Runoff_Volume
-from qnspect_utils import perform_raster_math, grass_material_transport
-
-
-def filter_matrix(matrix: list) -> list:
-    matrix_filtered = [
-        matrix[i]
-        for i in range(0, len(matrix), 2)
-        if matrix[i + 1].lower() in ["y", "yes"]
-    ]
-    return matrix_filtered
+from qnspect_utils import perform_raster_math, grass_material_transport, filter_matrix
 
 
 # class LayerGrouper(QgsProcessingLayerPostProcessorInterface):

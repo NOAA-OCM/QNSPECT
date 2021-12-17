@@ -9,6 +9,15 @@ from qgis.core import (
 import processing
 
 
+def filter_matrix(matrix: list) -> list:
+    matrix_filtered = [
+        matrix[i]
+        for i in range(0, len(matrix), 2)
+        if matrix[i + 1].lower() in ["y", "yes"]
+    ]
+    return matrix_filtered
+
+
 def perform_raster_math(
     exprs,
     input_dict,
@@ -45,6 +54,7 @@ def perform_raster_math(
         feedback=feedback,
         is_child_algorithm=True,
     )
+
 
 def grass_material_transport(elevation, weight, context, feedback, mfd = True, output=QgsProcessing.TEMPORARY_OUTPUT, threshold = 500):
     # r.watershed
