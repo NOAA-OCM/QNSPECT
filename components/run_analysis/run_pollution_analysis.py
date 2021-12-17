@@ -13,7 +13,8 @@ from qgis.core import (
     QgsProcessingParameterBoolean,
     QgsProcessingParameterDefinition,
     QgsProcessingContext,
-    QgsProcessingLayerPostProcessorInterface
+    QgsProcessingLayerPostProcessorInterface,
+    QgsProcessingException,
 )
 from qgis.utils import iface
 
@@ -251,11 +252,9 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
                 "delimitedtext",
             )
         else:
-            feedback.reportError(
-                "Land Use Lookup Table must be provided with Custom Land Use Type.\n",
-                True,
+            raise QgsProcessingException(
+                "Land Use Lookup Table must be provided with Custom Land Use Type.\n"
             )
-            return {}
 
         # handle different cases in input matrix and lookup layer
         lookup_fields = {f.name().lower(): f.name() for f in lookup_layer.fields()}
@@ -266,12 +265,10 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
             feedback.pushWarning("No output desired. \n")
             return {}
         if not all([pol.lower() in lookup_fields.keys() for pol in desired_pollutants]):
-            feedback.reportError(
+            raise QgsProcessingException(
                 "One or more of the Pollutants is not a column in the Land Use Lookup Table. Either remove the pollutants from Desired Outputs or provide a custom lookup table with desired pollutants.\n"
-                + f"Missing Pollutants:\n{[pol.lower() for pol in desired_pollutants if not pol.lower() in lookup_fields.keys()]}\n",
-                True,
+                + f"Missing Pollutants:\n{[pol.lower() for pol in desired_pollutants if not pol.lower() in lookup_fields.keys()]}\n"
             )    
-            return {}
 
         # assert all Raster CRS are same and Raster Pixel Units too
 
