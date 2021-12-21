@@ -24,12 +24,10 @@ def filter_matrix(matrix: list) -> list:
 
 
 def convert_raster_data_type_to_float(
-    raster_layer, context, feedback, outputs, output=None
+    raster_layer: QgsRasterLayer, context, feedback, outputs, output=None
 ):
     if output is None:
         output = QgsProcessing.TEMPORARY_OUTPUT
-    if isinstance(raster_layer, str) and os.path.isfile(raster_layer):
-        raster_layer = QgsRasterLayer(f"file:///{raster_layer}", "Raster Convert Layer")
     data_type = raster_layer.dataProvider().dataType(1)
     if data_type not in [Qgis.Float32, Qgis.Float64, Qgis.CFloat32, Qgis.CFloat64]:
         # Rearrange bands
@@ -133,3 +131,42 @@ def extract_lookup_table(alg, parameters, context):
             "Land Use Lookup Table",
             "delimitedtext",
         )
+
+
+def grass_material_transport(
+    elevation, weight, context, feedback, mfd=True, output=None, threshold=500,
+):
+    if output is None:
+        output = QgsProcessing.TEMPORARY_OUTPUT
+    # r.watershed
+    alg_params = {
+        "-4": False,
+        "-a": True,
+        "-b": False,
+        "-m": False,
+        "-s": not mfd,  # single flow direction
+        "GRASS_RASTER_FORMAT_META": "",
+        "GRASS_RASTER_FORMAT_OPT": "",
+        "GRASS_REGION_CELLSIZE_PARAMETER": 0,
+        "GRASS_REGION_PARAMETER": None,
+        "blocking": None,
+        "convergence": 5,
+        "depression": None,
+        "disturbed_land": None,
+        "elevation": elevation,
+        "flow": weight,
+        "max_slope_length": None,
+        "memory": 300,
+        "threshold": threshold,  # can be an input advanced parameter
+        "accumulation": output,
+    }
+    feedback.pushInfo("Input parameters:")
+    feedback.pushCommandInfo(str(alg_params))
+    return processing.run(
+        "grass7:r.watershed",
+        alg_params,
+        context=context,
+        feedback=None,
+        is_child_algorithm=True,
+    )
+

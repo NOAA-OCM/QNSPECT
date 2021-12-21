@@ -9,7 +9,9 @@ from analysis_utils import (
     assign_land_use_field_to_raster,
     perform_raster_math,
     convert_raster_data_type_to_float,
+    grass_material_transport,
 )
+from Curve_Number import Curve_Number
 
 DEFAULT_URBAN_K_FACTOR_VALUE = 0.3
 
@@ -22,6 +24,8 @@ from qgis.core import (
     QgsProcessingParameterEnum,
     QgsProcessingParameterFolderDestination,
     Qgis,
+    QgsProcessingParameterDefinition,
+    QgsUnitTypes,
 )
 import processing
 
@@ -29,6 +33,7 @@ import processing
 class RunErosionAnalysis(QgsProcessingAlgorithm):
     lookupTable = "LookupTable"
     landUseType = "LandUseType"
+    soilsRasterRaw = "SoilsRasterNotKfactor"
     soilsRaster = "SoilsRaster"
     elevationRaster = "ElevationRaster"
     rainfallRaster = "RainfallRaster"
@@ -43,7 +48,7 @@ class RunErosionAnalysis(QgsProcessingAlgorithm):
             QgsProcessingParameterRasterLayer(
                 self.elevationRaster,
                 "Elevation Raster",
-                defaultValue=str(test_folder / "HI_dem_30.tif"),
+                defaultValue=r"C:\NSPECT\wsdelin\HI_SampleWS\demfill.tif",
             )
         )
         self.addParameter(
@@ -62,6 +67,13 @@ class RunErosionAnalysis(QgsProcessingAlgorithm):
         )
         self.addParameter(
             QgsProcessingParameterRasterLayer(
+                self.soilsRasterRaw,
+                "Soils Raster",
+                defaultValue=str(test_folder / "soils1.tif"),
+            )
+        )
+        self.addParameter(
+            QgsProcessingParameterRasterLayer(
                 self.soilsRaster,
                 "K-factor Raster (Soils)",
                 defaultValue=str(test_folder / "soilsk1.tif"),
@@ -73,7 +85,7 @@ class RunErosionAnalysis(QgsProcessingAlgorithm):
                 "Land Use Type",
                 options=["Custom", "C-CAP", "NLCD"],
                 allowMultiple=False,
-                defaultValue=None,
+                defaultValue=1,
             )
         )
         self.addParameter(
@@ -93,6 +105,15 @@ class RunErosionAnalysis(QgsProcessingAlgorithm):
                 defaultValue=None,
             )
         )
+        param = QgsProcessingParameterEnum(
+            "DualSoils",
+            "Treat Dual Category Soils as",
+            optional=False,
+            options=["Undrained [Default]", "Drained", "Average"],
+            allowMultiple=False,
+            defaultValue=[0],
+        )
+        param.setFlags(param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
 
     def processAlgorithm(self, parameters, context, model_feedback):
         # Use a multi-step feedback, so that individual child algorithm progress reports are adjusted for the
@@ -109,17 +130,17 @@ class RunErosionAnalysis(QgsProcessingAlgorithm):
             )
             return {}
 
-        # R-factor
+        # R-factor - rainfall
         rainfall_raster = self.parameterAsRasterLayer(
             parameters, self.rainfallRaster, context
         )
 
-        # K-factor
+        # K-factor - soil erodability
         erodability_raster = self.fill_zero_k_factor_cells(
             parameters, outputs, feedback, context
         )
 
-        # C-factor
+        # C-factor - land cover
         c_factor_raster = self.create_c_factor_raster(
             lookup_layer=lookup_layer,
             parameters=parameters,
@@ -128,17 +149,17 @@ class RunErosionAnalysis(QgsProcessingAlgorithm):
             outputs=outputs,
         )
 
-        # LS-factor
+        # LS-factor - length-slope
         feedback.reportError("ls-factor")
-        length_slope_raster = self.create_length_slope_raster(
-            parameters, outputs, results, context, feedback
-        )
+        # length_slope_raster = self.create_length_slope_raster(
+        #     parameters, outputs, results, context, feedback
+        # )
 
         raster_math_params = {
             "input_a": c_factor_raster,
             "input_b": r"C:\NSPECT\wsdelin\HI_SampleWS\lsgrid.tif",
-            "input_c": erodability_raster,
-            "input_d": rainfall_raster,
+            "input_c": r"C:\NSPECT\HI_Sample_Data\soilsk1.tif",
+            "input_d": r"C:\NSPECT\HI_Sample_Data\HI_rfactor.tif",  # rainfall_raster,
             "band_a": 1,
             "band_b": 1,
             "band_c": 1,
@@ -151,6 +172,26 @@ class RunErosionAnalysis(QgsProcessingAlgorithm):
             feedback,
             output=r"C:\Users\itodd\Downloads\sample\output.tif",
         )
+
+        ## Sediment Delivery Ratio
+        drainage_area = self.get_drainage_area(parameters, context)
+        if drainage_area is None:
+            feedback.pushError("Invalid Land Use Raster CRS.")
+            return {}
+
+        cn = Curve_Number(
+            lu_raster=self.parameterAsRasterLayer(
+                parameters, self.landUseRaster, context
+            ),
+            soil_raster=self.parameterAsRasterLayer(
+                parameters, self.soilsRasterRaw, context
+            ),
+            dual_soil_type=0,
+            lookup_layer=extract_lookup_table(self, parameters, context),
+            context=context,
+            feedback=feedback,
+        )
+        outputs["CN"] = cn.generate_cn_raster()
 
         return results
 
@@ -169,9 +210,7 @@ class RunErosionAnalysis(QgsProcessingAlgorithm):
     def createInstance(self):
         return RunErosionAnalysis()
 
-    def create_length_slope_raster(
-        self, parameters, outputs, results, context, feedback
-    ):
+    def create_length_slope_raster(self, parameters, outputs, context, feedback):
         # r.watershed
         elevation_raster = self.parameterAsRasterLayer(
             parameters, self.elevationRaster, context
@@ -190,7 +229,7 @@ class RunErosionAnalysis(QgsProcessingAlgorithm):
             "convergence": 5,
             "depression": None,
             "disturbed_land": None,
-            "elevation": elevation_raster,
+            "elevation": parameters[self.elevationRaster],
             "flow": None,
             "max_slope_length": None,
             "memory": 300,
@@ -205,7 +244,6 @@ class RunErosionAnalysis(QgsProcessingAlgorithm):
             is_child_algorithm=True,
         )
         length_slope = outputs["Rwatershed"]["length_slope"]
-        results[self.lengthSlopeRaster] = length_slope
         return length_slope
 
     def fill_zero_k_factor_cells(self, parameters, outputs, feedback, context):
@@ -256,3 +294,37 @@ class RunErosionAnalysis(QgsProcessingAlgorithm):
             output=str(self.testOutFolder / "c_factor.tif"),
         )["OUTPUT"]
         return c_factor_raster
+
+    def get_drainage_area(self, parameters, context):
+        """Returns None if an invalid crs is found."""
+        lu_raster = self.parameterAsRasterLayer(parameters, self.landUseRaster, context)
+        size_x = lu_raster.rasterUnitsPerPixelX()
+        size_y = lu_raster.rasterUnitsPerPixelY()
+        # Convert size into square kilometers
+        raster_units = lu_raster.dataProvider().mapUnits()
+        if raster_units == QgsUnitTypes.AreaSquareKilometers:
+            multiplier = 1
+        elif raster_units == QgsUnitTypes.AreaSquareMeters:
+            multiplier = 1000
+        elif raster_units == QgsUnitTypes.AreaSquareMiles:
+            multiplier = 0.621371
+        elif raster_units == QgsUnitTypes.AreaSquareFeet:
+            multiplier = 3280.84
+        else:
+            return None
+        return size_x * size_y * (multiplier ** 2)
+
+    def get_curve_number(self, parameters, context, feedback):
+        cn = Curve_Number(
+            lu_raster=self.parameterAsRasterLayer(
+                parameters, self.landUseRaster, context
+            ),
+            soil_raster=self.parameterAsRasterLayer(
+                parameters, self.soilsRasterRaw, context
+            ),
+            dual_soil_type=0,
+            lookup_layer=extract_lookup_table(self, parameters, context),
+            context=context,
+            feedback=feedback,
+        )
+
