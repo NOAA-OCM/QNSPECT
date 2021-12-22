@@ -15,15 +15,6 @@ sys.path.append(str(Path(__file__).parent.parent))
 from comparison_utils import run_direct_and_percent_comparisons
 
 
-def type_in_dir(scenario_dir: Path, compare_type: str) -> bool:
-    compare_lower = compare_type.lower()
-    for file in scenario_dir.iterdir():
-        if file.suffix.lower() == ".tif":
-            if compare_lower in file.stem.lower():
-                return True
-    return False
-
-
 class ComparisonErosion(QgsProcessingAlgorithm):
     scenarioA = "ScenarioA"
     scenarioB = "ScenarioB"
@@ -104,7 +95,6 @@ class ComparisonErosion(QgsProcessingAlgorithm):
         feedback.pushInfo("Comparing outputs...")
         if compare_local:
             self.compare_outputs(
-                parameters=parameters,
                 feedback=feedback,
                 context=context,
                 outputs=outputs,
@@ -116,7 +106,6 @@ class ComparisonErosion(QgsProcessingAlgorithm):
             )
         if compare_acc:
             self.compare_outputs(
-                parameters=parameters,
                 feedback=feedback,
                 context=context,
                 outputs=outputs,
@@ -146,7 +135,6 @@ class ComparisonErosion(QgsProcessingAlgorithm):
 
     def compare_outputs(
         self,
-        parameters,
         feedback,
         context,
         outputs,
@@ -156,14 +144,15 @@ class ComparisonErosion(QgsProcessingAlgorithm):
         output_dir: Path,
         load_outputs: bool,
     ):
-        raster_a = type_in_dir(scenario_dir_a, compare_type)
-        raster_b = type_in_dir(scenario_dir_b, compare_type)
+        compare_name = f"Erosion {compare_type}"
+        raster_a = (scenario_dir_a / f"{compare_name}.tif").is_file()
+        raster_b = (scenario_dir_b / f"{compare_name}.tif").is_file()
         if raster_a and raster_b:
             run_direct_and_percent_comparisons(
                 scenario_dir_a=scenario_dir_a,
                 scenario_dir_b=scenario_dir_b,
                 output_dir=output_dir,
-                name=f"Erosion {compare_type}",
+                name=compare_name,
                 feedback=feedback,
                 context=context,
                 outputs=outputs,
