@@ -8,9 +8,6 @@ import sys
 sys.path.append(Path(__file__).parent.parent)
 from qnspect_utils import perform_raster_math
 
-EXPRESSION_DIRECT = "A - B"
-EXPRESSION_PERCENT = "100 * ((A - B) / A)"
-
 
 def run_direct_and_percent_comparisons(
     scenario_dir_a: Path,
@@ -20,6 +17,7 @@ def run_direct_and_percent_comparisons(
     feedback,
     context,
     outputs,
+    load_outputs: bool,
 ):
     input_dict = {
         "band_a": 1,
@@ -32,20 +30,22 @@ def run_direct_and_percent_comparisons(
         input_dict=input_dict,
         name=name,
         compare_type="Direct",
-        expression=EXPRESSION_DIRECT,
+        expression="A - B",
         feedback=feedback,
         context=context,
         outputs=outputs,
+        load_outputs=load_outputs,
     )
     _run_comparison_type(
         output_dir=output_dir,
         input_dict=input_dict,
         name=name,
         compare_type="Percent",
-        expression=EXPRESSION_PERCENT,
+        expression="100 * ((A - B) / A)",
         feedback=feedback,
         context=context,
         outputs=outputs,
+        load_outputs=load_outputs,
     )
 
 
@@ -58,6 +58,7 @@ def _run_comparison_type(
     feedback,
     context,
     outputs,
+    load_outputs: bool,
 ):
     type_name = f"{name} {compare_type}"
     output = outputs[type_name] = perform_raster_math(
@@ -68,7 +69,10 @@ def _run_comparison_type(
         output=str(output_dir / f"{type_name}.tif"),
     )
     layer_name = f"{type_name} "
-    context.addLayerToLoadOnCompletion(
-        output["OUTPUT"],
-        QgsProcessingContext.LayerDetails(layer_name, context.project(), layer_name),
-    )
+    if load_outputs:
+        context.addLayerToLoadOnCompletion(
+            output["OUTPUT"],
+            QgsProcessingContext.LayerDetails(
+                layer_name, context.project(), layer_name
+            ),
+        )

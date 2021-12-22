@@ -5,6 +5,7 @@ from qgis.core import QgsProcessingParameterFile
 from qgis.core import QgsProcessingParameterBoolean
 from qgis.core import QgsProcessingParameterMatrix
 from qgis.core import QgsProcessingParameterFolderDestination
+from qgis.core import QgsProcessingException
 import processing
 from pathlib import Path
 
@@ -42,12 +43,13 @@ class ComparisonPollution(QgsProcessingAlgorithm):
     compareConcentration = "Concentration"
     compareGrid = "Grid"
     outputDir = "Output"
+    loadOutputs = "LoadOutputs"
 
     def initAlgorithm(self, config=None):
         self.addParameter(
             QgsProcessingParameterFile(
                 self.scenarioA,
-                "Scenario A",
+                "Scenario A Folder",
                 behavior=QgsProcessingParameterFile.Folder,
                 fileFilter="All files (*.*)",
                 defaultValue=None,
@@ -56,7 +58,7 @@ class ComparisonPollution(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterFile(
                 self.scenarioB,
-                "Scenario B",
+                "Scenario B Folder",
                 behavior=QgsProcessingParameterFile.Folder,
                 fileFilter="All files (*.*)",
                 defaultValue=None,
@@ -106,6 +108,13 @@ class ComparisonPollution(QgsProcessingAlgorithm):
             )
         )
         self.addParameter(
+            QgsProcessingParameterBoolean(
+                self.loadOutputs,
+                "Open output files after running algorithm",
+                defaultValue=True,
+            )
+        )
+        self.addParameter(
             QgsProcessingParameterFolderDestination(
                 self.outputDir,
                 "Output Directory",
@@ -127,6 +136,7 @@ class ComparisonPollution(QgsProcessingAlgorithm):
         scenario_dir_b = Path(
             self.parameterAsString(parameters, self.scenarioB, context)
         )
+        load_outputs = self.parameterAsBool(parameters, self.loadOutputs, context)
         output_dir = Path(self.parameterAsString(parameters, self.outputDir, context))
         output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -140,8 +150,7 @@ class ComparisonPollution(QgsProcessingAlgorithm):
         if self.parameterAsBool(parameters, self.compareConcentration, context):
             comparison_types.append(self.compareConcentration)
         if not comparison_types:
-            feedback.reportError("No comparison types were checked.")
-            return {}
+            raise QgsProcessingException("No comparison types were checked.")
 
         feedback.pushInfo("Filtering matrix...")
         pollutants = filter_matrix(
@@ -161,6 +170,7 @@ class ComparisonPollution(QgsProcessingAlgorithm):
                     feedback=feedback,
                     context=context,
                     outputs=outputs,
+                    load_outputs=load_outputs,
                 )
         else:
             scenario_a_names = retrieve_scenario_file_stems(
@@ -190,15 +200,16 @@ class ComparisonPollution(QgsProcessingAlgorithm):
                         feedback=feedback,
                         context=context,
                         outputs=outputs,
+                        load_outputs=load_outputs,
                     )
 
         return results
 
     def name(self):
-        return "Comparison Analysis (Pollution)"
+        return "Compare Scenarios (Pollution)"
 
     def displayName(self):
-        return "Comparison Analysis (Pollution)"
+        return "Compare Scenarios (Pollution)"
 
     def group(self):
         return "QNSPECT"

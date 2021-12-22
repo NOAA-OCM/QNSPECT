@@ -4,6 +4,7 @@ from qgis.core import QgsProcessingMultiStepFeedback
 from qgis.core import QgsProcessingParameterFile
 from qgis.core import QgsProcessingParameterBoolean
 from qgis.core import QgsProcessingParameterFolderDestination
+from qgis.core import QgsProcessingException
 import processing
 from pathlib import Path
 
@@ -28,13 +29,14 @@ class ComparisonErosion(QgsProcessingAlgorithm):
     scenarioB = "ScenarioB"
     compareLocal = "Local"
     compareAccumulate = "Accumulated"
+    loadOutputs = "LoadOutputs"
     outputDir = "Output"
 
     def initAlgorithm(self, config=None):
         self.addParameter(
             QgsProcessingParameterFile(
                 self.scenarioA,
-                "Scenario A",
+                "Scenario A Folder",
                 behavior=QgsProcessingParameterFile.Folder,
                 fileFilter="All files (*.*)",
                 defaultValue=None,
@@ -43,7 +45,7 @@ class ComparisonErosion(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterFile(
                 self.scenarioB,
-                "Scenario B",
+                "Scenario B Folder",
                 behavior=QgsProcessingParameterFile.Folder,
                 fileFilter="All files (*.*)",
                 defaultValue=None,
@@ -59,6 +61,13 @@ class ComparisonErosion(QgsProcessingAlgorithm):
                 self.compareAccumulate,
                 "Compare Accumulated Outputs",
                 defaultValue=False,
+            )
+        )
+        self.addParameter(
+            QgsProcessingParameterBoolean(
+                self.loadOutputs,
+                "Open output files after running algorithm",
+                defaultValue=True,
             )
         )
         self.addParameter(
@@ -83,37 +92,48 @@ class ComparisonErosion(QgsProcessingAlgorithm):
         scenario_dir_b = Path(
             self.parameterAsString(parameters, self.scenarioB, context)
         )
+        load_outputs = self.parameterAsBool(parameters, self.loadOutputs, context)
         output_dir = Path(self.parameterAsString(parameters, self.outputDir, context))
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        compare_local = self.parameterAsBool(parameters, self.compareLocal, context)
+        compare_acc = self.parameterAsBool(parameters, self.compareAccumulate, context)
+        if not any([compare_local, compare_acc]):
+            raise QgsProcessingException("Neither local nor accumulate were selected.")
 
         feedback.pushInfo("Comparing outputs...")
-        self.compare_outputs(
-            parameters=parameters,
-            feedback=feedback,
-            context=context,
-            outputs=outputs,
-            compare_type=self.compareLocal,
-            scenario_dir_a=scenario_dir_a,
-            scenario_dir_b=scenario_dir_b,
-            output_dir=output_dir,
-        )
-        self.compare_outputs(
-            parameters=parameters,
-            feedback=feedback,
-            context=context,
-            outputs=outputs,
-            compare_type=self.compareAccumulate,
-            scenario_dir_a=scenario_dir_a,
-            scenario_dir_b=scenario_dir_b,
-            output_dir=output_dir,
-        )
+        if compare_local:
+            self.compare_outputs(
+                parameters=parameters,
+                feedback=feedback,
+                context=context,
+                outputs=outputs,
+                compare_type=self.compareLocal,
+                scenario_dir_a=scenario_dir_a,
+                scenario_dir_b=scenario_dir_b,
+                output_dir=output_dir,
+                load_outputs=load_outputs,
+            )
+        if compare_acc:
+            self.compare_outputs(
+                parameters=parameters,
+                feedback=feedback,
+                context=context,
+                outputs=outputs,
+                compare_type=self.compareAccumulate,
+                scenario_dir_a=scenario_dir_a,
+                scenario_dir_b=scenario_dir_b,
+                output_dir=output_dir,
+                load_outputs=load_outputs,
+            )
 
         return results
 
     def name(self):
-        return "Comparison Analysis (Erosion)"
+        return "Compare Scenarios (Erosion)"
 
     def displayName(self):
-        return "Comparison Analysis (Erosion)"
+        return "Compare Scenarios (Erosion)"
 
     def group(self):
         return "QNSPECT"
@@ -134,21 +154,22 @@ class ComparisonErosion(QgsProcessingAlgorithm):
         scenario_dir_a: Path,
         scenario_dir_b: Path,
         output_dir: Path,
+        load_outputs: bool,
     ):
-        if self.parameterAsBool(parameters, compare_type, context):
-            raster_a = type_in_dir(scenario_dir_a, compare_type)
-            raster_b = type_in_dir(scenario_dir_b, compare_type)
-            if raster_a and raster_b:
-                run_direct_and_percent_comparisons(
-                    scenario_dir_a=scenario_dir_a,
-                    scenario_dir_b=scenario_dir_b,
-                    output_dir=output_dir,
-                    name=f"Erosion {compare_type}",
-                    feedback=feedback,
-                    context=context,
-                    outputs=outputs,
-                )
-            else:
-                feedback.pushWarning(
-                    f"Comparison type {compare_type} was selected but one or more scenarios does not contain a related file."
-                )
+        raster_a = type_in_dir(scenario_dir_a, compare_type)
+        raster_b = type_in_dir(scenario_dir_b, compare_type)
+        if raster_a and raster_b:
+            run_direct_and_percent_comparisons(
+                scenario_dir_a=scenario_dir_a,
+                scenario_dir_b=scenario_dir_b,
+                output_dir=output_dir,
+                name=f"Erosion {compare_type}",
+                feedback=feedback,
+                context=context,
+                outputs=outputs,
+                load_outputs=load_outputs,
+            )
+        else:
+            feedback.pushWarning(
+                f"Comparison type {compare_type} was selected but one or more scenarios do not contain a related file."
+            )
