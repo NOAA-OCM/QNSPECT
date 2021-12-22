@@ -64,7 +64,7 @@ from qnspect_utils import perform_raster_math, grass_material_transport, filter_
 class RunPollutionAnalysis(QgsProcessingAlgorithm):
     lookup_tables = {1: "C-CAP", 2: "NLCD"}
     default_lookup_path = f"file:///{Path(__file__).parent.parent.parent / 'resources' / 'coefficients'}"
-    grouper = None
+#     grouper = None
 
     def initAlgorithm(self, config=None):
         self.addParameter(
