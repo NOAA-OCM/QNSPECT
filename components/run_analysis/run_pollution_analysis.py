@@ -498,4 +498,3 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
             layer,
             layer_details,
         )       
-
