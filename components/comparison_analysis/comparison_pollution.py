@@ -164,7 +164,7 @@ class ComparisonPollution(QgsProcessingAlgorithm):
             self.parameterAsMatrix(parameters, self.compareGrid, context)
         )
         if not pollutants:
-            raise QgsProcessingException("No pollutants were selected in the matrix.")
+            raise QgsProcessingException("No pollutants were selected in the 'Desired Outputs' parameter.")
 
         if "everything" in [pol.lower() for pol in pollutants]:
             feedback.pushInfo("Running everything...")

@@ -90,7 +90,7 @@ class ComparisonErosion(QgsProcessingAlgorithm):
         compare_local = self.parameterAsBool(parameters, self.compareLocal, context)
         compare_acc = self.parameterAsBool(parameters, self.compareAccumulate, context)
         if not any([compare_local, compare_acc]):
-            raise QgsProcessingException("Neither local nor accumulate were selected.")
+            raise QgsProcessingException("Neither local nor accumulated outputs were selected.")
 
         feedback.pushInfo("Comparing outputs...")
         if compare_local:
