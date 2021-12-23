@@ -13,7 +13,12 @@ from qgis.core import (
     QgsProcessingParameterBoolean,
     QgsProcessingParameterDefinition,
     QgsProcessingContext,
+    QgsProcessingLayerPostProcessorInterface,
+    QgsProcessingException,
 )
+from qgis.utils import iface
+
+
 import processing
 import os
 from datetime import datetime
@@ -30,14 +35,36 @@ sys.path.append(os.path.dirname(cmd_folder))
 
 from Curve_Number import Curve_Number
 from Runoff_Volume import Runoff_Volume
-from qnspect_utils import perform_raster_math, filter_matrix
+from qnspect_utils import perform_raster_math, grass_material_transport, filter_matrix
 
+
+# class LayerGrouper(QgsProcessingLayerPostProcessorInterface):
+#     project = None
+#     group = None
+
+#     def __init__(self, group_name):
+#         self.group_name = group_name
+#         super().__init__()
+
+#     def postProcessLayer(self, layer, context, feedback):
+#         if not self.project:
+#             self.project = context.project()
+#         if not self.group:
+#             root = self.project.instance().layerTreeRoot()
+#             self.group = root.addGroup(self.group_name)
+#         self.group.addLayer(layer)
+#         return {}
+
+
+# class LayerPostProcessor(QgsProcessingLayerPostProcessorInterface):
+#     def postProcessLayer (self, layer, context, feedback):
+#         if layer.isValid():
+#             layer.loadNamedStyle('Runoff Local.qml')
 
 class RunPollutionAnalysis(QgsProcessingAlgorithm):
-    lookup_tables = {0: "NLCD", 1: "C-CAP"}
-    default_lookup_path = (
-        f"file:///{Path(__file__).parent.parent.parent / 'resources' / 'coefficients'}"
-    )
+    lookup_tables = {1: "C-CAP", 2: "NLCD"}
+    default_lookup_path = f"file:///{Path(__file__).parent.parent.parent / 'resources' / 'coefficients'}"
+#     grouper = None
 
     def initAlgorithm(self, config=None):
         self.addParameter(
@@ -93,7 +120,7 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
             QgsProcessingParameterEnum(
                 "LandUseType",
                 "Land Use Type",
-                options=["NLCD", "C-CAP", "Custom"],
+                options=["Custom", "C-CAP", "NLCD"],
                 allowMultiple=False,
                 defaultValue=None,
             )
@@ -101,7 +128,7 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterVectorLayer(
                 "LookupTable",
-                "Land Use Lookup Table",
+                "Land Use Lookup Table [*required with Custom Land Use Type]",
                 optional=True,
                 types=[QgsProcessing.TypeVector],
                 defaultValue=None,
@@ -142,7 +169,7 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
         param.setFlags(param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(param)
         param = QgsProcessingParameterBoolean(
-            "MDF", "Use Multi Direction Flow [MDF] Routing", defaultValue=False
+            "MFD", "Use Multi Flow Direction [MFD] Routing", defaultValue=False
         )
         param.setFlags(param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(param)
@@ -204,18 +231,16 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
             lookup_layer = self.parameterAsVectorLayer(
                 parameters, "LookupTable", context
             )
-        elif land_use_type in [0, 1]:  # create lookup table from default
+        elif land_use_type > 0:  # create lookup table from default
             lookup_layer = QgsVectorLayer(
                 f"{self.default_lookup_path}/{self.lookup_tables[land_use_type]}.csv",
                 "Land Use Lookup Table",
                 "delimitedtext",
             )
         else:
-            feedback.reportError(
-                "Land Use Lookup Table must be provided with Custom Land Use Type.\n",
-                True,
+            raise QgsProcessingException(
+                "Land Use Lookup Table must be provided with Custom Land Use Type.\n"
             )
-            return {}
 
         # handle different cases in input matrix and lookup layer
         lookup_fields = {f.name().lower(): f.name() for f in lookup_layer.fields()}
@@ -226,17 +251,18 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
             feedback.pushWarning("No output desired. \n")
             return {}
         if not all([pol.lower() in lookup_fields.keys() for pol in desired_pollutants]):
-            feedback.reportError(
-                "One or more of the Pollutants is not a column in the Land Use Lookup Table. Either remove the pollutants from Desired Outputs or provide a custom lookup table with desired pollutants. \n",
-                True,
-            )
-            return {}
+            raise QgsProcessingException(
+                "One or more of the Pollutants is not a column in the Land Use Lookup Table. Either remove the pollutants from Desired Outputs or provide a custom lookup table with desired pollutants.\n"
+                + f"Missing Pollutants:\n{[pol.lower() for pol in desired_pollutants if not pol.lower() in lookup_fields.keys()]}\n"
+            )    
 
         # assert all Raster CRS are same and Raster Pixel Units too
 
         # Folder I/O
         run_out_dir = os.path.join(proj_loc, run_name)
         os.makedirs(run_out_dir, exist_ok=True)
+
+        # self.grouper = LayerGrouper(run_name)
 
         ## Generate CN Raster
         cn = Curve_Number(
@@ -267,15 +293,9 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
             outputs["Runoff Local"] = runoff_vol.calculate_Q(runoff_output)
             results["Runoff Local"] = outputs["Runoff Local"]["OUTPUT"]
             if load_outputs:
-                context.addLayerToLoadOnCompletion(
-                    outputs["Runoff Local"]["OUTPUT"],
-                    QgsProcessingContext.LayerDetails(
-                        f"Runoff Local (L) ", context.project(), "Runoff Local (L) "
-                    ),
-                )
+                self.handle_post_processing(outputs["Runoff Local"]["OUTPUT"], "Runoff Local (L)", context)
         else:
-            runoff_output = QgsProcessing.TEMPORARY_OUTPUT
-            outputs["Runoff Local"] = runoff_vol.calculate_Q(runoff_output)
+            outputs["Runoff Local"] = runoff_vol.calculate_Q()
 
         ## Pollutant rasters
         for pol in desired_pollutants:
@@ -303,18 +323,60 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
             )
             results[pol + " Local"] = outputs[pol + " Local"]["OUTPUT"]
             if load_outputs:
-                context.addLayerToLoadOnCompletion(
-                    outputs[pol + " Local"]["OUTPUT"],
-                    QgsProcessingContext.LayerDetails(
-                        f"{pol} Local (mg) ", context.project(), f"{pol} Local (mg) "
-                    ),
-                )
+                self.handle_post_processing(outputs[pol + " Local"]["OUTPUT"], f"{pol} Local (mg)", context)
 
-        # Accumulated Rasters Calculation
+        # Accumulated Runoff Calculation (L)
+        if "runoff" in [out.lower() for out in desired_outputs]:
+            runoff_output = os.path.join(run_out_dir, f"Runoff Accumulated.tif")
+            #see this issue for discussion on nodat value issue https://github.com/Dewberry/QNSPECT/issues/29
+            outputs["Runoff Accumulated"] = grass_material_transport(parameters["ElevatoinRaster"], outputs["Runoff Local"]["OUTPUT"], context, feedback, mfd, runoff_output)
+            results["Runoff Accumulated"] = outputs["Runoff Accumulated"]["accumulation"]
+            if load_outputs:
+                self.handle_post_processing(outputs["Runoff Accumulated"]["accumulation"], "Runoff Accumulated (L)", context)
+        else:
+            outputs["Runoff Accumulated"] = grass_material_transport(parameters["ElevatoinRaster"], outputs["Runoff Local"]["OUTPUT"], context, feedback, mfd)
+
+        # Accumulated Pollutants
+        for pol in desired_pollutants:
+            # Accumulated Pollutant (mg)
+            outputs[pol + "accum_mg"] = grass_material_transport(parameters["ElevatoinRaster"], outputs[pol + " Local"]["OUTPUT"], context, feedback, mfd)
+            
+            # convert to kg
+            input_params = {
+                "input_a": outputs[pol + "accum_mg"]["accumulation"],
+                "band_a": "1",
+            }
+            outputs[pol + " Accumulated"] = perform_raster_math(
+                "(A / 1000000)",
+                input_params,
+                context,
+                feedback,
+                os.path.join(run_out_dir, f"{pol} Accumulated.tif"),
+            )            
+            results[pol + " Accumulated"] = outputs[pol + " Accumulated"]["OUTPUT"]
+            if load_outputs:
+                self.handle_post_processing(outputs[pol + " Accumulated"]["OUTPUT"], f"{pol} Accumulated (kg)", context)
 
         # Concentration Calculations
         if conc_out:
-            pass
+            for pol in desired_pollutants:
+                # Concentration Pollutant (mg/L)
+                input_params = {
+                    "input_a": outputs[pol + "accum_mg"]["accumulation"],
+                    "band_a": "1",
+                    "input_b": outputs["Runoff Accumulated"]["accumulation"],
+                    "band_b": "1",                   
+                }
+                outputs[pol + " Concentration"] = perform_raster_math(
+                    "(A / B)",
+                    input_params,
+                    context,
+                    feedback,
+                    os.path.join(run_out_dir, f"{pol} Concentration.tif"),
+                )            
+                results[pol + " Concentration"] = outputs[pol + " Concentration"]["OUTPUT"]
+                if load_outputs:
+                    self.handle_post_processing(outputs[pol + " Concentration"]["OUTPUT"], f"{pol} Concentration (mg/L)", context)
 
         # Configuration file
         run_dict["Inputs"] = parameters
@@ -326,10 +388,15 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
             run_dict["Inputs"]["LookupTable"] = lookup_layer.source()
         run_dict["Outputs"] = results
         run_dict["RunTime"] = str(datetime.now())
-        with open(os.path.join(proj_loc, f"{run_name}.pol.json"), "w") as f:
+        with open(os.path.join(run_out_dir, f"{run_name}.pol.json"), "w") as f:
             f.write(dumps(run_dict, indent=4))
 
         return results
+
+
+    def postProcessAlgorithm(self, context, feedback):
+        iface.mapCanvas().refreshAllLayers()
+        return {}
 
     def name(self):
         return "Run Pollution Analysis"
@@ -405,3 +472,15 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
             feedback=feedback,
             is_child_algorithm=True,
         )
+
+    def handle_post_processing(self, layer, display_name, context):
+        
+        layer_details = context.LayerDetails(
+                display_name, context.project(), display_name
+            )
+        # layer_details.setPostProcessor(self.grouper)
+        context.addLayerToLoadOnCompletion(
+            layer,
+            layer_details,
+        )       
+

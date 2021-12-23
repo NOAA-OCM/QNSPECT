@@ -13,6 +13,7 @@ import inspect
 
 cmd_folder = os.path.split(inspect.getfile(inspect.currentframe()))[0]
 sys.path.append(cmd_folder)
+sys.path.append(os.path.dirname(cmd_folder))
 
 
 from qnspect_utils import perform_raster_math
@@ -65,7 +66,8 @@ class Runoff_Volume:
         }
 
         # replace 0 CNs with 1 for avoid division by 0 error
-        # will later the Q raster to 0 for these values
+        # will later change the Q raster to 0 for these values
+        # there maybe a better way to do this using gdalwarp -srcnodata flag
         self.outputs["CN_NON_ZERO"] = perform_raster_math(
             "(A==0) * 1 + (A != 0) * A",
             input_params,
