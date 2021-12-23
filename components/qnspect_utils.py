@@ -3,7 +3,9 @@ Store common functions that are required by different QNSPECT Modules
 """
 
 
-from qgis.core import QgsProcessing
+from qgis.core import (
+    QgsProcessing,
+)
 import processing
 
 
@@ -17,7 +19,11 @@ def filter_matrix(matrix: list) -> list:
 
 
 def perform_raster_math(
-    exprs, input_dict, context, feedback, output=QgsProcessing.TEMPORARY_OUTPUT,
+    exprs,
+    input_dict,
+    context,
+    feedback,
+    output=QgsProcessing.TEMPORARY_OUTPUT,
 ):
     """Wrapper around QGIS GDAL Raster Calculator"""
 

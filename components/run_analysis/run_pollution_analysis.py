@@ -69,7 +69,11 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
     def initAlgorithm(self, config=None):
         self.addParameter(
             QgsProcessingParameterString(
-                "RunName", "Run Name", multiLine=False, optional=False, defaultValue="",
+                "RunName",
+                "Run Name",
+                multiLine=False,
+                optional=False,
+                defaultValue="",
             )
         )
         self.addParameter(
@@ -82,7 +86,10 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
         )
         self.addParameter(
             QgsProcessingParameterRasterLayer(
-                "SoilRaster", "Soil Raster", optional=False, defaultValue=None,
+                "SoilRaster",
+                "Soil Raster",
+                optional=False,
+                defaultValue=None,
             )
         )
         self.addParameter(
@@ -113,7 +120,10 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
         )
         self.addParameter(
             QgsProcessingParameterRasterLayer(
-                "LandUseRaster", "Land Use Raster", optional=False, defaultValue=None,
+                "LandUseRaster",
+                "Land Use Raster",
+                optional=False,
+                defaultValue=None,
             )
         )
         self.addParameter(
@@ -156,13 +166,9 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
                 ],
             )
         )
-        self.addParameter(
-            QgsProcessingParameterBoolean(
-                "LoadOutputs",
-                "Open output files after running algorithm",
-                defaultValue=True,
-            )
-        )
+        self.addParameter(QgsProcessingParameterBoolean(
+            "LoadOutputs", "Open output files after running algorithm", defaultValue=True
+        ))
         param = QgsProcessingParameterBoolean(
             "ConcOutputs", "Output Concentration Rasters", defaultValue=False
         )
@@ -216,15 +222,23 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
         conc_out = self.parameterAsBool(parameters, "ConcOutputs", context)
         load_outputs = self.parameterAsBool(parameters, "LoadOutputs", context)
 
+
         run_name = self.parameterAsString(parameters, "RunName", context)
         proj_loc = self.parameterAsString(parameters, "ProjectLocation", context)
 
         elev_raster = self.parameterAsRasterLayer(
             parameters, "ElevatoinRaster", context
         )
-        soil_raster = self.parameterAsRasterLayer(parameters, "SoilRaster", context)
-        lu_raster = self.parameterAsRasterLayer(parameters, "LandUseRaster", context)
-        precip_raster = self.parameterAsRasterLayer(parameters, "PrecipRaster", context)
+        soil_raster = self.parameterAsRasterLayer(
+            parameters, "SoilRaster", context
+        )
+        lu_raster = self.parameterAsRasterLayer(
+            parameters, "LandUseRaster", context
+        )
+        precip_raster = self.parameterAsRasterLayer(
+            parameters, "PrecipRaster", context
+        )
+
 
         ## Extract Lookup Table
         if parameters["LookupTable"]:
@@ -296,6 +310,7 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
                 self.handle_post_processing(outputs["Runoff Local"]["OUTPUT"], "Runoff Local (L)", context)
         else:
             outputs["Runoff Local"] = runoff_vol.calculate_Q()
+
 
         ## Pollutant rasters
         for pol in desired_pollutants:
@@ -483,4 +498,3 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
             layer,
             layer_details,
         )       
-
