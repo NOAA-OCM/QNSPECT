@@ -1,11 +1,35 @@
-from qgis.core import QgsProcessing
-from qgis.core import QgsProcessingAlgorithm
-from qgis.core import QgsProcessingMultiStepFeedback
-from qgis.core import QgsProcessingParameterFile
-from qgis.core import QgsProcessingParameterBoolean
-from qgis.core import QgsProcessingParameterMatrix
-from qgis.core import QgsProcessingParameterFolderDestination
-from qgis.core import QgsProcessingException
+# -*- coding: utf-8 -*-
+
+"""
+/***************************************************************************
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ ***************************************************************************/
+"""
+
+__author__ = 'Ian Todd'
+__date__ = '2021-12-29'
+__copyright__ = '(C) 2021 by NOAA'
+
+# This will get replaced with a git SHA1 when you do a git archive
+
+__revision__ = '$Format:%H$'
+
+
+from qgis.core import (
+    QgsProcessing,
+    QgsProcessingAlgorithm,
+    QgsProcessingMultiStepFeedback,
+    QgsProcessingParameterFile,
+    QgsProcessingParameterBoolean,
+    QgsProcessingParameterMatrix,
+    QgsProcessingParameterFolderDestination,
+    QgsProcessingException
+)
 import processing
 from pathlib import Path
 
@@ -41,8 +65,10 @@ def retrieve_scenario_file_stems(scenario_dir: Path, comparison_types: list) -> 
                     stems.append(file.stem)
     return stems
 
+from QNSPECT.qnspect_algorithm import QNSPECTAlgorithm
 
-class ComparisonPollution(QgsProcessingAlgorithm):
+
+class ComparePollution(QNSPECTAlgorithm):
     scenarioA = "ScenarioA"
     scenarioB = "ScenarioB"
     compareLocal = "Local"
@@ -224,16 +250,16 @@ class ComparisonPollution(QgsProcessingAlgorithm):
         return results
 
     def name(self):
-        return "Compare Scenarios (Pollution)"
+        return "compare_scenarios_pollution"
 
     def displayName(self):
-        return "Compare Scenarios (Pollution)"
+        return self.tr("Compare Scenarios (Pollution)")
 
     def group(self):
-        return "QNSPECT"
+        return self.tr("Comparison")
 
     def groupId(self):
-        return "QNSPECT"
+        return "comparison"
 
     def createInstance(self):
-        return ComparisonPollution()
+        return ComparePollution()

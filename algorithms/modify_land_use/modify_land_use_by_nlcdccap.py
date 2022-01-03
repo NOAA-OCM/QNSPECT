@@ -1,3 +1,25 @@
+# -*- coding: utf-8 -*-
+
+"""
+/***************************************************************************
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ ***************************************************************************/
+"""
+
+__author__ = 'Ian Todd'
+__date__ = '2021-12-29'
+__copyright__ = '(C) 2021 by NOAA'
+
+# This will get replaced with a git SHA1 when you do a git archive
+
+__revision__ = '$Format:%H$'
+
+
 from qgis.core import (
     QgsProcessing,
     QgsProcessingAlgorithm,
@@ -13,8 +35,10 @@ import csv
 import processing
 from pathlib import Path
 
+from QNSPECT.qnspect_algorithm import QNSPECTAlgorithm
 
-class ModifyLandUseByNLCDCCAP(QgsProcessingAlgorithm):
+
+class ModifyLandUseByNLCDCCAP(QNSPECTAlgorithm):
     inputVector = "InputVector"
     inputRaster = "InputRaster"
     output = "OutputRaster"
@@ -116,16 +140,16 @@ class ModifyLandUseByNLCDCCAP(QgsProcessingAlgorithm):
         return results
 
     def name(self):
-        return f"Modify Land Use (NLCD/C-CAP)"
+        return "modify_land_use_NLCD_C-CAP"
 
     def displayName(self):
-        return f"Modify Land Use (NLCD/C-CAP)"
+        return self.tr("Modify Land Use (NLCD/C-CAP)")
 
     def group(self):
-        return "QNSPECT"
+        return self.tr("Data Preparation")
 
     def groupId(self):
-        return "QNSPECT"
+        return "data_preparation"
 
     def createInstance(self):
         return ModifyLandUseByNLCDCCAP()

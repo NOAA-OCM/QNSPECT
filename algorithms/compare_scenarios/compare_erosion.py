@@ -1,10 +1,33 @@
-from qgis.core import QgsProcessing
-from qgis.core import QgsProcessingAlgorithm
-from qgis.core import QgsProcessingMultiStepFeedback
-from qgis.core import QgsProcessingParameterFile
-from qgis.core import QgsProcessingParameterBoolean
-from qgis.core import QgsProcessingParameterFolderDestination
-from qgis.core import QgsProcessingException
+# -*- coding: utf-8 -*-
+
+"""
+/***************************************************************************
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ ***************************************************************************/
+"""
+
+__author__ = 'Ian Todd'
+__date__ = '2021-12-29'
+__copyright__ = '(C) 2021 by NOAA'
+
+# This will get replaced with a git SHA1 when you do a git archive
+
+__revision__ = '$Format:%H$'
+
+
+from qgis.core import (
+    QgsProcessingMultiStepFeedback,
+    QgsProcessingParameterFile,
+    QgsProcessingParameterBoolean,
+    QgsProcessingParameterFolderDestination,
+    QgsProcessingException
+)
+
 import processing
 from pathlib import Path
 
@@ -14,8 +37,10 @@ sys.path.append(str(Path(__file__).parent))
 sys.path.append(str(Path(__file__).parent.parent))
 from comparison_utils import run_direct_and_percent_comparisons
 
+from QNSPECT.qnspect_algorithm import QNSPECTAlgorithm
 
-class ComparisonErosion(QgsProcessingAlgorithm):
+
+class CompareErosion(QNSPECTAlgorithm):
     scenarioA = "ScenarioA"
     scenarioB = "ScenarioB"
     compareLocal = "Local"
@@ -119,19 +144,19 @@ class ComparisonErosion(QgsProcessingAlgorithm):
         return results
 
     def name(self):
-        return "Compare Scenarios (Erosion)"
+        return "compare_scenarios_erosion"
 
     def displayName(self):
-        return "Compare Scenarios (Erosion)"
+        return self.tr("Compare Scenarios (Erosion)")
 
     def group(self):
-        return "QNSPECT"
+        return "Comparison"
 
     def groupId(self):
-        return "QNSPECT"
+        return "comparison"
 
     def createInstance(self):
-        return ComparisonErosion()
+        return CompareErosion()
 
     def compare_outputs(
         self,

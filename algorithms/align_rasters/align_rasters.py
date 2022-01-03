@@ -1,6 +1,27 @@
+# -*- coding: utf-8 -*-
+
+"""
+/***************************************************************************
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ ***************************************************************************/
+"""
+
+__author__ = 'Ian Todd'
+__date__ = '2021-12-29'
+__copyright__ = '(C) 2021 by NOAA'
+
+# This will get replaced with a git SHA1 when you do a git archive
+
+__revision__ = '$Format:%H$'
+
+
 from qgis.core import (
     QgsProcessing,
-    QgsProcessingAlgorithm,
     QgsProcessingMultiStepFeedback,
     QgsProcessingParameterRasterLayer,
     QgsProcessingParameterMultipleLayers,
@@ -15,8 +36,9 @@ from qgis.core import (
 import processing
 import os
 
+from QNSPECT.qnspect_algorithm import QNSPECTAlgorithm
 
-class AlignRasters(QgsProcessingAlgorithm):
+class AlignRasters(QNSPECTAlgorithm):
     rasterCellSize: str = "RasterCellSize"
 
     def initAlgorithm(self, config=None):
@@ -292,16 +314,16 @@ class AlignRasters(QgsProcessingAlgorithm):
         return results
 
     def name(self):
-        return "Align Rasters"
+        return "align_rasters"
 
     def displayName(self):
-        return "Align Rasters"
+        return self.tr("Align Rasters")
 
     def group(self):
-        return "QNSPECT"
+        return self.tr("Data Preparation")
 
     def groupId(self):
-        return "QNSPECT"
+        return "data_preparation"
 
     def shortHelpString(self):
         return """<html><body>

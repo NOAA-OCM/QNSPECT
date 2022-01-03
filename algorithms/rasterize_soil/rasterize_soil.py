@@ -1,14 +1,41 @@
-from qgis.core import QgsProcessing
-from qgis.core import QgsProcessingAlgorithm
-from qgis.core import QgsProcessingMultiStepFeedback
-from qgis.core import QgsProcessingParameterVectorLayer
-from qgis.core import QgsProcessingParameterDistance
-from qgis.core import QgsProcessingParameterField
-from qgis.core import QgsProcessingParameterRasterDestination
+# -*- coding: utf-8 -*-
+
+"""
+/***************************************************************************
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ ***************************************************************************/
+"""
+
+__author__ = 'Abdul Raheem Siddiqui'
+__date__ = '2021-12-29'
+__copyright__ = '(C) 2021 by NOAA'
+
+# This will get replaced with a git SHA1 when you do a git archive
+
+__revision__ = '$Format:%H$'
+
+
+from qgis.core import (
+    QgsProcessing,
+    QgsProcessingAlgorithm,
+    QgsProcessingMultiStepFeedback,
+    QgsProcessingParameterVectorLayer,
+    QgsProcessingParameterDistance,
+    QgsProcessingParameterField,
+    QgsProcessingParameterRasterDestination
+)
 import processing
 
+from QNSPECT.qnspect_algorithm import QNSPECTAlgorithm
 
-class RasterizeSoil(QgsProcessingAlgorithm):
+
+class RasterizeSoil(QNSPECTAlgorithm):
+
     def initAlgorithm(self, config=None):
         self.addParameter(
             QgsProcessingParameterVectorLayer(
@@ -187,16 +214,16 @@ class RasterizeSoil(QgsProcessingAlgorithm):
         return results
 
     def name(self):
-        return "Rasterize Soil"
+        return "rasterize_soil"
 
     def displayName(self):
-        return "Rasterize Soil"
+        return self.tr("Rasterize Soil")
 
     def group(self):
-        return "QNSPECT"
+        return self.tr("Data Preparation")
 
     def groupId(self):
-        return "QNSPECT"
+        return "data_preparation"
 
     def shortHelpString(self):
         return """<html><body><h2>Algorithm description</h2>

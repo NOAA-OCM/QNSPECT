@@ -1,6 +1,26 @@
+# -*- coding: utf-8 -*-
+
+"""
+/***************************************************************************
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ ***************************************************************************/
+"""
+
+__author__ = 'Abdul Raheem Siddiqui'
+__date__ = '2021-12-29'
+__copyright__ = '(C) 2021 by NOAA'
+
+# This will get replaced with a git SHA1 when you do a git archive
+
+__revision__ = '$Format:%H$'
+
 from qgis.core import (
     QgsProcessing,
-    QgsProcessingAlgorithm,
     QgsProcessingMultiStepFeedback,
     QgsProcessingParameterString,
     QgsProcessingParameterRasterLayer,
@@ -17,7 +37,6 @@ from qgis.core import (
     QgsProcessingException,
 )
 from qgis.utils import iface
-
 
 import processing
 import os
@@ -36,6 +55,8 @@ sys.path.append(os.path.dirname(cmd_folder))
 from Curve_Number import Curve_Number
 from Runoff_Volume import Runoff_Volume
 from qnspect_utils import perform_raster_math, grass_material_transport, filter_matrix
+
+from QNSPECT.qnspect_algorithm import QNSPECTAlgorithm
 
 
 # class LayerGrouper(QgsProcessingLayerPostProcessorInterface):
@@ -61,7 +82,7 @@ from qnspect_utils import perform_raster_math, grass_material_transport, filter_
 #         if layer.isValid():
 #             layer.loadNamedStyle('Runoff Local.qml')
 
-class RunPollutionAnalysis(QgsProcessingAlgorithm):
+class RunPollutionAnalysis(QNSPECTAlgorithm):
     lookup_tables = {1: "C-CAP", 2: "NLCD"}
     default_lookup_path = f"file:///{Path(__file__).parent.parent.parent / 'resources' / 'coefficients'}"
 #     grouper = None
@@ -408,22 +429,21 @@ class RunPollutionAnalysis(QgsProcessingAlgorithm):
 
         return results
 
-
     def postProcessAlgorithm(self, context, feedback):
         iface.mapCanvas().refreshAllLayers()
         return {}
 
     def name(self):
-        return "Run Pollution Analysis"
+        return "run_pollution_analysis"
 
     def displayName(self):
-        return "Run Pollution Analysis"
+        return self.tr("Run Pollution Analysis")
 
     def group(self):
-        return "QNSPECT"
+        return self.tr("Analysis")
 
     def groupId(self):
-        return "QNSPECT"
+        return "analysis"
 
     def shortHelpString(self):
         return """<html><body><h2>Algorithm description</h2>
