@@ -8,7 +8,7 @@
                               -------------------
         begin                : 2021-12-29
         copyright            : (C) 2021 by NOAA
-        email                : shan dot burkhalter at nooa dot gov
+        email                : shan dot burkhalter at noaa dot gov
  ***************************************************************************/
 
 /***************************************************************************
