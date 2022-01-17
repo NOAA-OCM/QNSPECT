@@ -125,7 +125,7 @@ def extract_lookup_table(alg, parameters, context):
         return alg.parameterAsVectorLayer(parameters, alg.lookupTable, context)
 
     land_use_type = alg.parameterAsEnum(parameters, alg.landUseType, context)
-    if land_use_type in [0, 1]:  # create lookup table from default
+    if land_use_type in LAND_USE_TABLES:  # create lookup table from default
         return QgsVectorLayer(
             os.path.join(LAND_USE_PATH, f"{LAND_USE_TABLES[land_use_type]}.csv"),
             "Land Use Lookup Table",
