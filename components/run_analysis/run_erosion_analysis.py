@@ -13,6 +13,7 @@ from analysis_utils import (
     perform_raster_math,
     convert_raster_data_type_to_float,
     LAND_USE_TABLES,
+    grass_material_transport,
 )
 from Curve_Number import Curve_Number
 from relief_length_ratio import create_relief_length_ratio_raster
@@ -30,10 +31,7 @@ from qgis.core import (
     QgsProcessingParameterBoolean,
     QgsProcessingParameterDefinition,
     QgsUnitTypes,
-    QgsRasterLayer,
-    QgsProcessingParameterRasterDestination,
     QgsProcessingParameterString,
-    QgsProcessingContext,
 )
 import processing
 
@@ -241,33 +239,23 @@ class RunErosionAnalysis(QgsProcessingAlgorithm):
             output=sediment_local,
         )
         if load_outputs:
-            context.addLayerToLoadOnCompletion(
-                sediment_local,
-                QgsProcessingContext.LayerDetails(
-                    "Local Accumulation (kg)",
-                    context.project(),
-                    "Local Accumulation (kg)",
-                ),
+            self.handle_post_processing(
+                sediment_local, "Local Accumulation (kg)", context
             )
 
         sediment_acc = str(run_out_dir / (self.sedimentYieldAccumulated + ".tif"))
-        self.run_sediment_yield_accumulated(
+        acc_results = self.run_sediment_yield_accumulated(
             sediment_yield=sediment_local,
+            watershed=watershed,
             context=context,
             feedback=feedback,
-            parameters=parameters,
             outputs=outputs,
             results=results,
             output=sediment_acc,
         )
         if load_outputs:
-            context.addLayerToLoadOnCompletion(
-                sediment_acc,
-                QgsProcessingContext.LayerDetails(
-                    "Sediment Accumulation (Mg)",
-                    context.project(),
-                    "Sediment Accumulation (Mg)",
-                ),
+            self.handle_post_processing(
+                acc_results, "Sediment Accumulation (Mg)", context
             )
 
         self.create_config_file(
@@ -406,24 +394,26 @@ class RunErosionAnalysis(QgsProcessingAlgorithm):
         results[self.sedimentYieldLocal] = outputs[self.sedimentYieldLocal]["OUTPUT"]
 
     def run_sediment_yield_accumulated(
-        self, sediment_yield, context, feedback, parameters, outputs, results, output
+        self,
+        sediment_yield,
+        watershed: "WatershedCalculator",
+        context,
+        feedback,
+        outputs,
+        results,
+        output,
     ):
-        # convert kg to Mg
-        input_dict = {
-            "input_a": sediment_yield,
-            "band_a": 1,
-        }
-        exprs = "A * 0.001"
-        outputs[self.sedimentYieldAccumulated] = perform_raster_math(
-            exprs=exprs,
-            input_dict=input_dict,
+        gmt = outputs[self.sedimentYieldAccumulated] = grass_material_transport(
+            elevation=watershed.dem,
+            weight=sediment_yield,
             context=context,
             feedback=feedback,
             output=output,
+            mfd=watershed.mdf,
         )
-        results[self.sedimentYieldAccumulated] = outputs[self.sedimentYieldAccumulated][
-            "OUTPUT"
-        ]
+        result = gmt["accumulation"]
+        results[self.sedimentYieldAccumulated] = result
+        return result
 
     def run_rusle(
         self,
@@ -487,6 +477,15 @@ class RunErosionAnalysis(QgsProcessingAlgorithm):
         run_name: str = self.parameterAsString(parameters, self.runName, context)
         config_file = project_loc / f"{run_name}.ero.json"
         json.dump(config, config_file.open("w"), indent=4)
+
+    def handle_post_processing(self, layer, display_name, context):
+        layer_details = context.LayerDetails(
+            display_name, context.project(), display_name
+        )
+        # layer_details.setPostProcessor(self.grouper)
+        context.addLayerToLoadOnCompletion(
+            layer, layer_details,
+        )
 
 
 class WatershedCalculator:
