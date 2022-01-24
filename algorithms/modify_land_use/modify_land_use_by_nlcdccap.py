@@ -1,0 +1,155 @@
+# -*- coding: utf-8 -*-
+
+"""
+/***************************************************************************
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ ***************************************************************************/
+"""
+
+__author__ = 'Ian Todd'
+__date__ = '2021-12-29'
+__copyright__ = '(C) 2021 by NOAA'
+
+# This will get replaced with a git SHA1 when you do a git archive
+
+__revision__ = '$Format:%H$'
+
+
+from qgis.core import (
+    QgsProcessing,
+    QgsProcessingAlgorithm,
+    QgsProcessingMultiStepFeedback,
+    QgsProcessingParameterEnum,
+    QgsProcessingParameterFeatureSource,
+    QgsProcessingParameterRasterLayer,
+    QgsProcessingParameterRasterDestination,
+    QgsProcessingParameterFeatureSource,
+)
+from typing import Dict
+import csv
+import processing
+from pathlib import Path
+
+from QNSPECT.qnspect_algorithm import QNSPECTAlgorithm
+
+
+class ModifyLandUseByNLCDCCAP(QNSPECTAlgorithm):
+    inputVector = "InputVector"
+    inputRaster = "InputRaster"
+    output = "OutputRaster"
+    landUse = "LandUse"
+
+    def initAlgorithm(self, config=None):
+        self.coefficients: Dict[str, int] = {}
+        root = Path(__file__).parent.parent.parent
+        coef_dir = root / "resources" / "coefficients"
+        for csvfile in coef_dir.iterdir():
+            if csvfile.suffix.lower() == ".csv":
+                coef_type = csvfile.stem
+                with csvfile.open(newline="") as file:
+                    reader = csv.DictReader(file)
+                    for row in reader:
+                        name = f"""{coef_type} - {row["lu_name"]}"""
+                        self.coefficients[name] = int(row["lu_value"])
+        self.choices = sorted(self.coefficients)
+
+        self.addParameter(
+            QgsProcessingParameterEnum(
+                self.landUse,
+                "Name of Land Use to Apply",
+                options=self.choices,
+                allowMultiple=False,
+                defaultValue=[],
+            )
+        )
+        self.addParameter(
+            QgsProcessingParameterFeatureSource(
+                self.inputVector,
+                "Areas to Modify",
+                types=[QgsProcessing.TypeVectorPolygon],
+                defaultValue=None,
+            )
+        )
+        self.addParameter(
+            QgsProcessingParameterRasterLayer(
+                self.inputRaster, "Land Use Raster", defaultValue=None
+            )
+        )
+        self.addParameter(
+            QgsProcessingParameterRasterDestination(
+                self.output,
+                "Modified Land Use",
+                createByDefault=True,
+                defaultValue=None,
+            )
+        )
+
+    def processAlgorithm(self, parameters, context, model_feedback):
+        # Use a multi-step feedback, so that individual child algorithm progress reports are adjusted for the
+        # overall progress through the model
+        feedback = QgsProcessingMultiStepFeedback(2, model_feedback)
+        results = {}
+        outputs = {}
+
+        # Uses clip raster to get a copy of the original raster
+        # Some other method of copying in a way that allows for temporary output would be better for this part
+        alg_params = {
+            "DATA_TYPE": 0,
+            "EXTRA": "",
+            "INPUT": parameters[self.inputRaster],
+            "NODATA": None,
+            "OPTIONS": "",
+            "PROJWIN": parameters[self.inputRaster],
+            "OUTPUT": parameters[self.output],
+        }
+        outputs["ClipRasterByExtent"] = processing.run(
+            "gdal:cliprasterbyextent",
+            alg_params,
+            context=context,
+            feedback=feedback,
+            is_child_algorithm=True,
+        )
+
+        feedback.setCurrentStep(1)
+        if feedback.isCanceled():
+            return {}
+
+        enum_value = self.parameterAsInt(parameters, self.landUse, context)
+        land_use_name = self.choices[enum_value]
+
+        # Rasterize (overwrite with fixed value)
+        alg_params = {
+            "ADD": False,
+            "BURN": self.coefficients[land_use_name],
+            "EXTRA": "",
+            "INPUT": parameters[self.inputVector],
+            "INPUT_RASTER": outputs["ClipRasterByExtent"]["OUTPUT"],
+        }
+        outputs["RasterizeOverwriteWithFixedValue"] = processing.run(
+            "gdal:rasterize_over_fixed_value",
+            alg_params,
+            context=context,
+            feedback=feedback,
+            is_child_algorithm=True,
+        )
+        return results
+
+    def name(self):
+        return "modify_land_use_NLCD_C-CAP"
+
+    def displayName(self):
+        return self.tr("Modify Land Use (NLCD/C-CAP)")
+
+    def group(self):
+        return self.tr("Data Preparation")
+
+    def groupId(self):
+        return "data_preparation"
+
+    def createInstance(self):
+        return ModifyLandUseByNLCDCCAP()
