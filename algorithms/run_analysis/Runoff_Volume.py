@@ -134,7 +134,7 @@ class Runoff_Volume:
 
         # (Volume) (L)
         self.outputs["Q_TEMP"] = perform_raster_math(
-            # (((Precip-(0.2*S*rainy_days))**2)/(Precip+(0.8*S*rainy_days)) * [If (Precip-0.2S)<0, set to 0] * cell area to convert to vol * (28.3168/12) to convert inches to feet and cubic feet to Liters",
+            # (((Precip-(0.2*S*rainy_days))**2)/(Precip+(0.8*S*rainy_days))     *  [If (Precip-0.2S)<0, set to 0]    *  cell area to convert to vol * (28.3168/12) to convert inches to feet and cubic feet to Liters",
             f"(((A-(0.2*B*{self.rainy_days}))**2)/(A+(0.8*B*{self.rainy_days})) * ((A-(0.2*B*{self.rainy_days}))>0)) * {cell_area_sq_feet} * 2.35973722 ",
             input_params,
             self.context,

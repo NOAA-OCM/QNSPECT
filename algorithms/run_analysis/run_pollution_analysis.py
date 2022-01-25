@@ -446,34 +446,95 @@ class RunPollutionAnalysis(QNSPECTAlgorithm):
         return "analysis"
 
     def shortHelpString(self):
-        return """<html><body><h2>Algorithm description</h2>
-<p></p>
-<h2>Input parameters</h2>
+        return """<html><body>
+<a href="https://www.noaa.gov/">Documentation</a>
+
+<h2>Algorithm Description</h2>
+
+<p>The `Run Pollution Analysis` algorithm estimates annual runoff volume and pollutant loading for a given area on per cell and accumulated bases. The Runoff Volume is calculated using the NRCS Curve Number method, while pollution loading is calculated using Land Cover as a proxy.</p>
+
+The user must provide Elevation, Land Use, Soil, and Precipitation rasters for the area of interest. The user is also optionally required to provide a lookup table that relates different land use classes in the provided Land Use raster with Curve Number and pollutant loading.
+
+This analysis should be performed on a watershed level to account for all upstream flow at a cell. For accurate results, the area of interest should fully envelop the watershed in consideration.
+
+GRASS `r.watershed`function is used by the algorithm under the hood to calculate runoff and accumulation.</p>
+
+<h2>Input Parameters</h2>
+
 <h3>Run Name</h3>
-<p></p>
-<h3>Location for Run Output</h3>
-<p></p>
+
+<p>Name of the run. The algorithm will create a folder with this name and save all outputs and a configuration file in that folder.</p>
+
 <h3>Elevation Raster</h3>
-<p></p>
+
+<p>Elevation raster for the area of interest. This can be in any elevation unit. The algorithm only uses elevation data to calculate flow direction and flow accumulation throughout a watershed. </p>
+
 <h3>Soil Raster</h3>
-<p></p>
-<h3>Treat Dual Category Soils as</h3>
-<p></p>
+
+<p>Hydrologic Soil Group raster for the area of interest with following mapping <code>{'A': 1, 'B': 2, 'C': 3, 'D':4, 'A/D':5, 'B/D':6, 'C/D':7, 'W':8, Null: 9}</code>. The soil raster is used to generate runoff estimates using NRCS Curve Number method.</p>
+
 <h3>Precipitation Raster</h3>
-<p></p>
-<h3>Rain Units</h3>
-<p></p>
+
+<p>Annual precipitation amounts in inches or millimeters for the area of interest. The precipitation values are used to calculate access runoff.</p>
+
+<h3>Precipitation Raster Units</h3>
+
+<p>Units of the precipitation raster, inches or millimeters.</p>
+
 <h3>Number of Rainy Days in a Year</h3>
-<p></p>
+
+<p>This field indicates the average number of days rain occurs in one year in the area of interest. A rainy day is a day on which there was enough rain to produce runoff. The higher number of rainy days reduces access runoff volume by increasing retention.</p>
+
 <h3>Land Use Raster</h3>
-<p></p>
+
+<p>Land Cover/Classification raster for the area of interest. The algorithm uses Land Use Raster and Lookup Table to determine each cell's runoff and pollution potential.</p>
+
 <h3>Land Use Type</h3>
-<p></p>
-<h3>Land Use Lookup Table</h3>
-<p></p>
-<h3>Select Outputs</h3>
-<p></p>
-<br></body></html>"""
+
+<p>Type of Land Use raster. If the Land Use raster is not of type C-CAP or NCLD, select custom for this field and supply a lookup table in the `Land Use Lookup Table` field.</p>
+
+<h3>Land Use Lookup Table [optional]</h3>
+
+<p>Lookup table to relate each land use class with Curve Number and pollutant load. The user can skip providing a lookup table if the land use
+type is not custom; the algorithm will utilize the default lookup table for the land use type selected in the previous option.
+
+The table must contain all land use classes available in the land use raster and all pollutants that have Output = Y in the `Desired Outputs` parameter.</p>
+
+<h3>Desired Outputs</h3>
+
+<p>In addition to the runoff, the algorithm will output the following rasters for each pollutant added here with Output column as Y:
+
+- Local (per cell) pollutant load [mg]
+- Accumulated (all upstream cell) pollutant load [kg]
+- Concentration (accumulated pollutant mass divided by accumulated runoff volume) [mg/L]. The concentration raster will only be outputted if the Output Concentration Raster option is checked in Advanced Parameters
+
+The user can add more pollutants here as long as the lookup coefficients for each pollutant are supplied in the land use lookup table.
+
+To exclude an output from the analysis, write N in the Output column. You must click Ok after editing to save your changes.</p>
+
+<h2>Advanced Parameters</h2>
+
+<h3>Output Concentration Raster</h3>
+
+<p>The concentration raster will only be outputted if the Output Concentration Raster option is checked in Advanced Parameters. Default is unchecked.</p>
+
+<h3>Use Multi Flow Direction [MFD] Routing</h3>
+
+<p>By default, the Single Flow Direction [SFD] option is used for flow routing. Multi Flow Direction [MFD] routing will be utilized for the whole analysis if this option is checked. The algorithm passes these flags to GRASS `r.watershed` function, which is the computational engine for runoff direction and accumulation calculations.</p>
+
+<h3>Treat Dual Category Soils as</h3>
+
+<p>Certain areas can have dual soil types (A/D, B/D, or C/D). These areas possess characteristics of Hydrologic Soil Group D during undrained conditions and characterstics of Hydrologic Soil Group A/B/C for drained conditions.</p>
+
+<p>In this parameter, user can specify if these areas should be treated as drained, undrained, or average of both conditions. If the average option is selected, the algorithm will use the average of drained and undrained Curve Number for runoff estimations.</p>
+
+<h2>Outputs</h2>
+
+<h3>Folder for Run Outputs</h3>
+
+<p>The algorithm outputs and configuration file will be saved in this directory in a separate folder.</p>
+
+</body></html>"""
 
     def createInstance(self):
         return RunPollutionAnalysis()
