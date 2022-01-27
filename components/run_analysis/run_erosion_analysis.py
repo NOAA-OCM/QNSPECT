@@ -4,16 +4,16 @@ import math
 import datetime
 import json
 
+sys.path.append(str(Path(__file__).parent.parent.parent))
 sys.path.append(str(Path(__file__).parent.parent))
 sys.path.append(str(Path(__file__).parent))
 
+from qnspect_utils import perform_raster_math, grass_material_transport
 from analysis_utils import (
     extract_lookup_table,
-    assign_land_use_field_to_raster,
-    perform_raster_math,
+    reclassify_land_use_raster_by_table_field,
     convert_raster_data_type_to_float,
     LAND_USE_TABLES,
-    grass_material_transport,
 )
 from Curve_Number import Curve_Number
 from relief_length_ratio import create_relief_length_ratio_raster
@@ -32,6 +32,7 @@ from qgis.core import (
     QgsProcessingParameterDefinition,
     QgsUnitTypes,
     QgsProcessingParameterString,
+    QgsProcessingException,
 )
 import processing
 
@@ -39,10 +40,10 @@ import processing
 class RunErosionAnalysis(QgsProcessingAlgorithm):
     lookupTable = "LookupTable"
     landUseType = "LandUseType"
-    soilsRasterRaw = "SoilsRasterNotKfactor"
-    soilsRaster = "SoilsRaster"
+    soilRaster = "SoilsRasterNotKfactor"
+    kFactorRaster = "SoilsRaster"
     elevationRaster = "ElevationRaster"
-    rainfallRaster = "RainfallRaster"
+    rFactorRaster = "RFactorRaster"
     landUseRaster = "LandUseRaster"
     lengthSlopeRaster = "LengthSlopeRaster"
     projectLocation = "ProjectLocation"
@@ -72,7 +73,17 @@ class RunErosionAnalysis(QgsProcessingAlgorithm):
         )
         self.addParameter(
             QgsProcessingParameterRasterLayer(
-                self.rainfallRaster, "R-Factor Raster (Rainfall)", defaultValue=None,
+                self.rFactorRaster, "R-Factor Raster", defaultValue=None,
+            )
+        )
+        self.addParameter(
+            QgsProcessingParameterRasterLayer(
+                self.soilRaster, "Soil Raster", defaultValue=None
+            )
+        )
+        self.addParameter(
+            QgsProcessingParameterRasterLayer(
+                self.kFactorRaster, "K-factor Raster", defaultValue=None
             )
         )
         self.addParameter(
@@ -81,20 +92,10 @@ class RunErosionAnalysis(QgsProcessingAlgorithm):
             )
         )
         self.addParameter(
-            QgsProcessingParameterRasterLayer(
-                self.soilsRasterRaw, "Soils Raster", defaultValue=None
-            )
-        )
-        self.addParameter(
-            QgsProcessingParameterRasterLayer(
-                self.soilsRaster, "K-factor Raster (Soils)", defaultValue=None
-            )
-        )
-        self.addParameter(
             QgsProcessingParameterEnum(
                 self.landUseType,
                 "Land Use Type",
-                options=list(LAND_USE_TABLES.values()) + ["Custom"],
+                options=["Custom"] + list(LAND_USE_TABLES.values()),
                 allowMultiple=False,
                 defaultValue=None,
             )
@@ -148,18 +149,15 @@ class RunErosionAnalysis(QgsProcessingAlgorithm):
 
         load_outputs: bool = self.parameterAsBool(parameters, self.loadOutputs, context)
 
-        cell_size_sq_meters = self.cell_size_in_meters(parameters, context)
+        cell_size_sq_meters = self.cell_size_in_sq_meters(parameters, context)
         if cell_size_sq_meters is None:
-            feedback.pushError("Invalid Elevation Raster CRS units.")
-            return {}
+            raise QgsProcessingException("Invalid Elevation Raster CRS units.")
 
         lookup_layer = extract_lookup_table(self, parameters, context)
         if lookup_layer is None:
-            feedback.reportError(
-                "Land Use Lookup Table must be provided with Custom Land Use Type.\n",
-                True,
+            raise QgsProcessingException(
+                "Land Use Lookup Table must be provided with Custom Land Use Type."
             )
-            return {}
 
         # Folder I/O
         project_loc = Path(
@@ -184,11 +182,11 @@ class RunErosionAnalysis(QgsProcessingAlgorithm):
             outputs=outputs,
         )
 
-        watershed = WatershedCalculator(self, parameters, context, feedback, outputs)
+        ls_factor = self.create_ls_factor(parameters, context, outputs)
 
         rusle = self.run_rusle(
             c_factor=c_factor_raster,
-            ls_factor=watershed.lsFactor,
+            ls_factor=ls_factor,
             erodability=erodability_raster,
             cell_size_sq_meters=cell_size_sq_meters,
             parameters=parameters,
@@ -199,9 +197,11 @@ class RunErosionAnalysis(QgsProcessingAlgorithm):
 
         ## Sediment Delivery Ratio
         rl_raster = create_relief_length_ratio_raster(
-            dem_raster=watershed.dem,
+            dem_raster=self.parameterAsRasterLayer(
+                parameters, self.elevationRaster, context
+            ),
             cell_size_sq_meters=cell_size_sq_meters,
-            output=r"C:\Projects\work\nspect\workspace\scenarios\New folder\rl_raster.tif",
+            output=QgsProcessing.TEMPORARY_OUTPUT,
             context=context,
             feedback=feedback,
             outputs=outputs,
@@ -209,7 +209,7 @@ class RunErosionAnalysis(QgsProcessingAlgorithm):
 
         cn = Curve_Number(
             parameters[self.landUseRaster],
-            parameters[self.soilsRasterRaw],
+            parameters[self.soilRaster],
             dual_soil_type=self.parameterAsEnum(parameters, self.dualSoils, context),
             lookup_layer=extract_lookup_table(self, parameters, context),
             context=context,
@@ -246,7 +246,8 @@ class RunErosionAnalysis(QgsProcessingAlgorithm):
         sediment_acc = str(run_out_dir / (self.sedimentYieldAccumulated + ".tif"))
         acc_results = self.run_sediment_yield_accumulated(
             sediment_yield=sediment_local,
-            watershed=watershed,
+            dem=parameters[self.elevationRaster],
+            mdf=self.parameterAsBool(parameters, self.mdf, context),
             context=context,
             feedback=feedback,
             outputs=outputs,
@@ -284,7 +285,7 @@ class RunErosionAnalysis(QgsProcessingAlgorithm):
 
     def fill_zero_k_factor_cells(self, parameters, outputs, feedback, context):
         """Zero values in the K-Factor grid should be assumed "urban" and given a default value."""
-        input_dict = {"input_a": parameters[self.soilsRaster], "band_a": 1}
+        input_dict = {"input_a": parameters[self.kFactorRaster], "band_a": 1}
         expr = "((A == 0) * 0.3) + ((A > 0) * A)"
         outputs["KFill"] = perform_raster_math(
             exprs=expr, input_dict=input_dict, context=context, feedback=feedback,
@@ -294,6 +295,10 @@ class RunErosionAnalysis(QgsProcessingAlgorithm):
     def create_c_factor_raster(
         self, lookup_layer, parameters, context, feedback, outputs
     ):
+        # The c-factor raster will have floating-point values.
+        # If the land use raster used is an integer type,
+        # the assignment process will convert the c-factor values to integers.
+        # Converting the land use raster to floating point type fixes that.
         land_use_raster = convert_raster_data_type_to_float(
             raster_layer=self.parameterAsRasterLayer(
                 parameters, self.landUseRaster, context
@@ -303,7 +308,7 @@ class RunErosionAnalysis(QgsProcessingAlgorithm):
             outputs=outputs,
             output=QgsProcessing.TEMPORARY_OUTPUT,
         )
-        c_factor_raster = assign_land_use_field_to_raster(
+        c_factor_raster = reclassify_land_use_raster_by_table_field(
             lu_raster=land_use_raster,
             lookup_layer=lookup_layer,
             value_field="c_factor",
@@ -313,7 +318,7 @@ class RunErosionAnalysis(QgsProcessingAlgorithm):
         )["OUTPUT"]
         return c_factor_raster
 
-    def cell_size_in_meters(self, parameters, context):
+    def cell_size_in_sq_meters(self, parameters, context):
         """Converts the cell size of the DEM into meters.
         Returns None if the input raster's CRS is not usable."""
         dem = self.parameterAsRasterLayer(parameters, self.elevationRaster, context)
@@ -394,22 +399,15 @@ class RunErosionAnalysis(QgsProcessingAlgorithm):
         results[self.sedimentYieldLocal] = outputs[self.sedimentYieldLocal]["OUTPUT"]
 
     def run_sediment_yield_accumulated(
-        self,
-        sediment_yield,
-        watershed: "WatershedCalculator",
-        context,
-        feedback,
-        outputs,
-        results,
-        output,
+        self, sediment_yield, dem, mdf, context, feedback, outputs, results, output,
     ):
         gmt = outputs[self.sedimentYieldAccumulated] = grass_material_transport(
-            elevation=watershed.dem,
+            elevation=dem,
             weight=sediment_yield,
             context=context,
             feedback=feedback,
             output=output,
-            mfd=watershed.mdf,
+            mfd=mdf,
         )
         result = gmt["accumulation"]
         results[self.sedimentYieldAccumulated] = result
@@ -434,7 +432,7 @@ class RunErosionAnalysis(QgsProcessingAlgorithm):
             "input_a": c_factor,
             "input_b": ls_factor,
             "input_c": erodability,  # k-factor
-            "input_d": parameters[self.rainfallRaster],  # rainfall_raster,
+            "input_d": parameters[self.rFactorRaster],  # rainfall_raster,
             "band_a": 1,
             "band_b": 1,
             "band_c": 1,
@@ -461,14 +459,14 @@ class RunErosionAnalysis(QgsProcessingAlgorithm):
         config["Inputs"][self.landUseRaster] = self.parameterAsRasterLayer(
             parameters, self.landUseRaster, context
         ).source()
-        config["Inputs"][self.soilsRaster] = self.parameterAsRasterLayer(
-            parameters, self.soilsRaster, context
+        config["Inputs"][self.kFactorRaster] = self.parameterAsRasterLayer(
+            parameters, self.kFactorRaster, context
         ).source()
-        config["Inputs"][self.soilsRasterRaw] = self.parameterAsRasterLayer(
-            parameters, self.soilsRasterRaw, context
+        config["Inputs"][self.soilRaster] = self.parameterAsRasterLayer(
+            parameters, self.soilRaster, context
         ).source()
-        config["Inputs"][self.rainfallRaster] = self.parameterAsRasterLayer(
-            parameters, self.rainfallRaster, context
+        config["Inputs"][self.rFactorRaster] = self.parameterAsRasterLayer(
+            parameters, self.rFactorRaster, context
         ).source()
         if parameters[self.lookupTable]:
             config["Inputs"][self.lookupTable] = lookup_layer.source()
@@ -487,31 +485,13 @@ class RunErosionAnalysis(QgsProcessingAlgorithm):
             layer, layer_details,
         )
 
-
-class WatershedCalculator:
-    """Class for calculating and holding GRASS Watershed outputs"""
-
-    def __init__(self, alg, parameters, context, feedback, outputs: dict) -> None:
-        self.alg: RunErosionAnalysis = alg
-        self.parameters = parameters
-        self.context = context
-        self.feedback = feedback
-        self.outputs = outputs
-        self.mdf: bool = alg.parameterAsBool(parameters, alg.mdf, context)
-        self._run_watershed()
-
-    def _run_watershed(self):
-        if self.mdf:
-            self.dem = self.parameters[self.alg.elevationRaster]
-        else:
-            self.dem = self._fill_elevation_depression()
-
+    def create_ls_factor(self, parameters, context, outputs):
         alg_params = {
             "-4": False,
             "-a": True,
             "-b": False,
             "-m": False,
-            "-s": not self.mdf,
+            "-s": not self.parameterAsBool(parameters, self.mdf, context),
             "GRASS_RASTER_FORMAT_META": "",
             "GRASS_RASTER_FORMAT_OPT": "",
             "GRASS_REGION_CELLSIZE_PARAMETER": 0,
@@ -520,47 +500,18 @@ class WatershedCalculator:
             "convergence": 5,
             "depression": None,
             "disturbed_land": None,
-            "elevation": self.dem,
+            "elevation": parameters[self.elevationRaster],
             "flow": None,
             "max_slope_length": None,
             "memory": 300,
             "threshold": 500,
-            "accumulation": QgsProcessing.TEMPORARY_OUTPUT,
             "length_slope": QgsProcessing.TEMPORARY_OUTPUT,
-            "drainage": QgsProcessing.TEMPORARY_OUTPUT,
-            "slope_steepness": QgsProcessing.TEMPORARY_OUTPUT,
         }
-        self.outputs["RWatershed"] = processing.run(
+        outputs["RWatershed"] = processing.run(
             "grass7:r.watershed",
             alg_params,
-            context=self.context,
-            feedback=self.feedback,
+            context=context,
+            feedback=None,
             is_child_algorithm=True,
         )
-        self.lsFactor = self.outputs["RWatershed"]["length_slope"]
-        self.flowDirection = self.outputs["RWatershed"]["drainage"]
-        self.accumulation = self.outputs["RWatershed"]["accumulation"]
-        self.slope = self.outputs["RWatershed"]["slope_steepness"]
-
-    def _fill_elevation_depression(self):
-        # r.fill.dir
-        alg_params = {
-            "-f": False,
-            "GRASS_RASTER_FORMAT_META": "",
-            "GRASS_RASTER_FORMAT_OPT": "",
-            "GRASS_REGION_CELLSIZE_PARAMETER": 0,
-            "GRASS_REGION_PARAMETER": None,
-            "format": 0,
-            "input": self.parameters[self.alg.elevationRaster],
-            "areas": QgsProcessing.TEMPORARY_OUTPUT,
-            "direction": QgsProcessing.TEMPORARY_OUTPUT,
-            "output": QgsProcessing.TEMPORARY_OUTPUT,
-        }
-        self.outputs["DEMFill"] = processing.run(
-            "grass7:r.fill.dir",
-            alg_params,
-            context=self.context,
-            feedback=self.feedback,
-            is_child_algorithm=True,
-        )
-        return self.outputs["DEMFill"]["output"]
+        return outputs["RWatershed"]["length_slope"]

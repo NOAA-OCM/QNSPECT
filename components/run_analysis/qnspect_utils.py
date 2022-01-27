@@ -3,20 +3,25 @@ Store common functions that are required by different QNSPECT Modules
 """
 
 
-from qgis.core import (
-    QgsProcessing,
-)
+from qgis.core import QgsProcessing
 import processing
 
 
+def filter_matrix(matrix: list) -> list:
+    matrix_filtered = [
+        matrix[i]
+        for i in range(0, len(matrix), 2)
+        if matrix[i + 1].lower() in ["y", "yes"]
+    ]
+    return matrix_filtered
+
+
 def perform_raster_math(
-    exprs,
-    input_dict,
-    context,
-    feedback,
-    output=QgsProcessing.TEMPORARY_OUTPUT,
+    exprs, input_dict, context, feedback, output=None,
 ):
     """Wrapper around QGIS GDAL Raster Calculator"""
+    if output is None:
+        output = QgsProcessing.TEMPORARY_OUTPUT
 
     alg_params = {
         "BAND_A": input_dict.get("band_a", None),
@@ -45,3 +50,42 @@ def perform_raster_math(
         feedback=feedback,
         is_child_algorithm=True,
     )
+
+
+def grass_material_transport(
+    elevation, weight, context, feedback, mfd=True, output=None, threshold=500,
+):
+    if output is None:
+        output = QgsProcessing.TEMPORARY_OUTPUT
+    # r.watershed
+    alg_params = {
+        "-4": False,
+        "-a": True,
+        "-b": False,
+        "-m": False,
+        "-s": not mfd,  # single flow direction
+        "GRASS_RASTER_FORMAT_META": "",
+        "GRASS_RASTER_FORMAT_OPT": "",
+        "GRASS_REGION_CELLSIZE_PARAMETER": 0,
+        "GRASS_REGION_PARAMETER": None,
+        "blocking": None,
+        "convergence": 5,
+        "depression": None,
+        "disturbed_land": None,
+        "elevation": elevation,
+        "flow": weight,
+        "max_slope_length": None,
+        "memory": 300,
+        "threshold": threshold,  # can be an input advanced parameter
+        "accumulation": output,
+    }
+    feedback.pushInfo("Input parameters:")
+    feedback.pushCommandInfo(str(alg_params))
+    return processing.run(
+        "grass7:r.watershed",
+        alg_params,
+        context=context,
+        feedback=None,
+        is_child_algorithm=True,
+    )
+
