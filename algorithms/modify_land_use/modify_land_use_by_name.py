@@ -1,15 +1,41 @@
-from qgis.core import QgsProcessing
-from qgis.core import QgsProcessingAlgorithm
-from qgis.core import QgsProcessingMultiStepFeedback
-from qgis.core import QgsProcessingParameterVectorLayer
-from qgis.core import QgsProcessingParameterRasterLayer
-from qgis.core import QgsProcessingParameterRasterDestination
-from qgis.core import QgsProcessingParameterString
-from qgis.core import QgsProcessingParameterFeatureSource
+# -*- coding: utf-8 -*-
+
+"""
+/***************************************************************************
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ ***************************************************************************/
+"""
+
+__author__ = 'Ian Todd'
+__date__ = '2021-12-29'
+__copyright__ = '(C) 2021 by NOAA'
+
+# This will get replaced with a git SHA1 when you do a git archive
+
+__revision__ = '$Format:%H$'
+
+
+from qgis.core import (
+    QgsProcessing,
+    QgsProcessingAlgorithm,
+    QgsProcessingMultiStepFeedback,
+    QgsProcessingParameterVectorLayer,
+    QgsProcessingParameterRasterLayer,
+    QgsProcessingParameterRasterDestination,
+    QgsProcessingParameterString,
+    QgsProcessingParameterFeatureSource
+)
 import processing
 
+from QNSPECT.qnspect_algorithm import QNSPECTAlgorithm
 
-class ModifyLandUseByName(QgsProcessingAlgorithm):
+
+class ModifyLandUseByName(QNSPECTAlgorithm):
     inputTable = "InputTable"
     inputVector = "InputVector"
     inputRaster = "InputRaster"
@@ -124,16 +150,16 @@ class ModifyLandUseByName(QgsProcessingAlgorithm):
         return results
 
     def name(self):
-        return "Modify Land Use (Custom Lookup Table)"
+        return "modify_land_use_custom_lookup_table"
 
     def displayName(self):
-        return "Modify Land Use (Custom Lookup Table)"
+        return self.tr("Modify Land Use (Custom Lookup Table)")
 
     def group(self):
-        return "QNSPECT"
+        return self.tr("Data Preparation")
 
     def groupId(self):
-        return "QNSPECT"
+        return "data_preparation"
 
     def createInstance(self):
         return ModifyLandUseByName()

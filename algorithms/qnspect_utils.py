@@ -52,6 +52,7 @@ def perform_raster_math(
     )
 
 
+<<<<<<< HEAD:components/run_analysis/qnspect_utils.py
 def grass_material_transport(
     elevation, weight, context, feedback, mfd=True, output=None, threshold=500,
 ):
@@ -89,3 +90,31 @@ def grass_material_transport(
         is_child_algorithm=True,
     )
 
+=======
+def grass_material_transport(elevation, weight, context, feedback, mfd = True, output=QgsProcessing.TEMPORARY_OUTPUT, threshold = 500):
+    # r.watershed
+    alg_params = {
+        '-4': False,
+        '-a': True, 
+        '-b': False,
+        '-m': False,
+        '-s': not mfd, # single flow direction
+        'GRASS_RASTER_FORMAT_META': '',
+        'GRASS_RASTER_FORMAT_OPT': '',
+        'GRASS_REGION_CELLSIZE_PARAMETER': 0,
+        'GRASS_REGION_PARAMETER': None,
+        'blocking': None,
+        'convergence': 5,
+        'depression': None,
+        'disturbed_land': None,
+        'elevation': elevation,
+        'flow': weight, 
+        'max_slope_length': None,
+        'memory': 300,
+        'threshold': threshold, # can be an input advanced parameter
+        'accumulation': output
+    }
+    feedback.pushInfo("Input parameters:")
+    feedback.pushCommandInfo(str(alg_params))
+    return processing.run('grass7:r.watershed', alg_params, context=context, feedback=None, is_child_algorithm=True)
+>>>>>>> origin/development:algorithms/qnspect_utils.py

@@ -1,3 +1,24 @@
+# -*- coding: utf-8 -*-
+
+"""
+/***************************************************************************
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ ***************************************************************************/
+"""
+
+__author__ = 'Abdul Raheem Siddiqui'
+__date__ = '2021-12-29'
+__copyright__ = '(C) 2021 by NOAA'
+
+# This will get replaced with a git SHA1 when you do a git archive
+
+__revision__ = '$Format:%H$'
+
 from qgis.core import (
     QgsProcessingMultiStepFeedback,
     QgsRasterLayer,
@@ -13,7 +34,7 @@ import inspect
 
 cmd_folder = os.path.split(inspect.getfile(inspect.currentframe()))[0]
 sys.path.append(cmd_folder)
-
+sys.path.append(os.path.dirname(cmd_folder))
 
 from qnspect_utils import perform_raster_math
 
@@ -65,7 +86,8 @@ class Runoff_Volume:
         }
 
         # replace 0 CNs with 1 for avoid division by 0 error
-        # will later the Q raster to 0 for these values
+        # will later change the Q raster to 0 for these values
+        # there maybe a better way to do this using gdalwarp -srcnodata flag
         self.outputs["CN_NON_ZERO"] = perform_raster_math(
             "(A==0) * 1 + (A != 0) * A",
             input_params,
@@ -112,7 +134,7 @@ class Runoff_Volume:
 
         # (Volume) (L)
         self.outputs["Q_TEMP"] = perform_raster_math(
-            # (((Precip-(0.2*S*rainy_days))**2)/(Precip+(0.8*S*rainy_days)) * [If (Precip-0.2S)<0, set to 0] * cell area to convert to vol * (28.3168/12) to convert inches to feet and cubic feet to Liters",
+            # (((Precip-(0.2*S*rainy_days))**2)/(Precip+(0.8*S*rainy_days))     *  [If (Precip-0.2S)<0, set to 0]    *  cell area to convert to vol * (28.3168/12) to convert inches to feet and cubic feet to Liters",
             f"(((A-(0.2*B*{self.rainy_days}))**2)/(A+(0.8*B*{self.rainy_days})) * ((A-(0.2*B*{self.rainy_days}))>0)) * {cell_area_sq_feet} * 2.35973722 ",
             input_params,
             self.context,

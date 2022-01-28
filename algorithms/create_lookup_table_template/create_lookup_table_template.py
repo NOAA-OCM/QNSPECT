@@ -1,3 +1,25 @@
+# -*- coding: utf-8 -*-
+
+"""
+/***************************************************************************
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ ***************************************************************************/
+"""
+
+__author__ = 'Ian Todd'
+__date__ = '2021-12-29'
+__copyright__ = '(C) 2021 by NOAA'
+
+# This will get replaced with a git SHA1 when you do a git archive
+
+__revision__ = '$Format:%H$'
+
+
 from qgis.core import (
     QgsProcessing,
     QgsProcessingAlgorithm,
@@ -12,8 +34,10 @@ import processing
 import os
 from pathlib import Path
 
+from QNSPECT.qnspect_algorithm import QNSPECTAlgorithm
 
-class CreateLookupTableTemplate(QgsProcessingAlgorithm):
+
+class CreateLookupTableTemplate(QNSPECTAlgorithm):
     landCoverIndex = "LandCoverType"
     landCoverParam = "LandCoverType"
     output = "OutputTable"
@@ -87,16 +111,16 @@ class CreateLookupTableTemplate(QgsProcessingAlgorithm):
         return {self.output: dest_id}
 
     def name(self):
-        return "Create Lookup Table Template"
+        return "create_lookup_table_template"
 
     def displayName(self):
-        return "Create Lookup Table Template"
+        return self.tr("Create Lookup Table Template")
 
     def group(self):
-        return "QNSPECT"
+        return self.tr("Data Preparation")
 
     def groupId(self):
-        return "QNSPECT"
+        return "data_preparation"
 
     def shortHelpString(self):
         return """<html><body><h2>Algorithm description</h2>
