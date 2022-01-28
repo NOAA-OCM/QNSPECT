@@ -106,7 +106,10 @@ class RunPollutionAnalysis(QNSPECTAlgorithm):
         )
         self.addParameter(
             QgsProcessingParameterRasterLayer(
-                "SoilRaster", "Soil Raster", optional=False, defaultValue=None,
+                "SoilRaster",
+                "Hydrographic Soils Group Raster",
+                optional=False,
+                defaultValue=None,
             )
         )
         self.addParameter(

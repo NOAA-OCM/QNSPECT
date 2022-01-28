@@ -78,7 +78,7 @@ class RunErosionAnalysis(QgsProcessingAlgorithm):
         )
         self.addParameter(
             QgsProcessingParameterRasterLayer(
-                self.soilRaster, "Soil Raster", defaultValue=None
+                self.soilRaster, "Hydrographic Soils Group Raster", defaultValue=None
             )
         )
         self.addParameter(
@@ -168,6 +168,7 @@ class RunErosionAnalysis(QgsProcessingAlgorithm):
         )
         run_out_dir.mkdir(parents=True, exist_ok=True)
 
+        ## RUSLE calculation section
         # K-factor - soil erodability
         erodability_raster = self.fill_zero_k_factor_cells(
             parameters, outputs, feedback, context
@@ -182,6 +183,7 @@ class RunErosionAnalysis(QgsProcessingAlgorithm):
             outputs=outputs,
         )
 
+        # Length-slope factor
         ls_factor = self.create_ls_factor(parameters, context, outputs)
 
         rusle = self.run_rusle(
@@ -195,7 +197,8 @@ class RunErosionAnalysis(QgsProcessingAlgorithm):
             outputs=outputs,
         )
 
-        ## Sediment Delivery Ratio
+        ## Sediment Delivery Ratio calculation section
+        # Relief length ratio part
         rl_raster = create_relief_length_ratio_raster(
             dem_raster=self.parameterAsRasterLayer(
                 parameters, self.elevationRaster, context
@@ -207,6 +210,7 @@ class RunErosionAnalysis(QgsProcessingAlgorithm):
             outputs=outputs,
         )
 
+        # Curve number part
         cn = Curve_Number(
             parameters[self.landUseRaster],
             parameters[self.soilRaster],
@@ -217,6 +221,7 @@ class RunErosionAnalysis(QgsProcessingAlgorithm):
         )
         cn.generate_cn_raster()
 
+        # Multiply RL and CN
         sdr = self.run_sediment_delivery_ratio(
             cell_size_sq_meters=cell_size_sq_meters,
             relief_length=rl_raster,
@@ -227,6 +232,7 @@ class RunErosionAnalysis(QgsProcessingAlgorithm):
             outputs=outputs,
         )
 
+        ## Component outputs section
         sediment_local = str(run_out_dir / (self.sedimentYieldLocal + ".tif"))
         self.run_sediment_yield(
             sediment_delivery_ratio=sdr,
@@ -263,7 +269,7 @@ class RunErosionAnalysis(QgsProcessingAlgorithm):
             parameters=parameters,
             context=context,
             results=results,
-            project_loc=project_loc,
+            run_out_dir=run_out_dir,
         )
 
         return results
@@ -388,7 +394,7 @@ class RunErosionAnalysis(QgsProcessingAlgorithm):
             "input_b": rusle,
             "band_b": 1,
         }
-        exprs = "A * B * 907.18474"
+        exprs = "A * B * 907.18474"  # Multiply by 907.18474 to convert from ton to kg
         outputs[self.sedimentYieldLocal] = perform_raster_math(
             exprs=exprs,
             input_dict=input_dict,
@@ -448,8 +454,9 @@ class RunErosionAnalysis(QgsProcessingAlgorithm):
         return outputs[self.rusle]["OUTPUT"]
 
     def create_config_file(
-        self, parameters, context, results, project_loc: Path,
+        self, parameters, context, results, run_out_dir: Path,
     ):
+        """Create a config file with the name of the run in the outputs folder. Uses the "ero" key word to differentiate it from the results of the pollution analysis."""
         lookup_layer = extract_lookup_table(self, parameters, context)
         config = {}
         config["Inputs"] = parameters
@@ -473,7 +480,7 @@ class RunErosionAnalysis(QgsProcessingAlgorithm):
         config["Outputs"] = results
         config["RunTime"] = str(datetime.datetime.now())
         run_name: str = self.parameterAsString(parameters, self.runName, context)
-        config_file = project_loc / f"{run_name}.ero.json"
+        config_file = run_out_dir / f"{run_name}.ero.json"
         json.dump(config, config_file.open("w"), indent=4)
 
     def handle_post_processing(self, layer, display_name, context):

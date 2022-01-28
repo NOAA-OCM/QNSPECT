@@ -82,7 +82,7 @@ def reclassify_land_use_raster_by_table_field(
 
 
 def extract_lookup_table(alg, parameters, context):
-    """Extract the lookup table as a vector layer. Retuns None if the selection combination was invalid"""
+    """Extract the lookup table as a vector layer."""
     if parameters["LookupTable"]:
         return alg.parameterAsVectorLayer(parameters, "LookupTable", context)
 
