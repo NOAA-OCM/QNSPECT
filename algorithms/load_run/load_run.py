@@ -81,3 +81,20 @@ class LoadPreviousRun(QNSPECTAlgorithm):
 
     def createInstance(self):
         return LoadPreviousRun()
+
+    def shortHelpString(self):
+        return '''<html><body>
+<a href="https://www.noaa.gov/">Documentation</a>
+
+<h2>Algorithm Description</h2>
+
+<p>The `Load Previous Run` component uses a JSON file from a previous analysis run to load the `Run Pollution Analysis` or `Run Erosion Analysis` tool. This can be helpful when running multiple scenarios with only one or two parameters changed between them.
+
+After running, the appropriate analysis component will load with the parameters of the previous scenario automatically populated.</p>
+
+<h2>Input Parameters</h2>
+
+<h3>Run File</h3>
+<p>JSON file created by the `Run Pollution Analysis` or `Run Erosion Analysis` algorithms. The file must have the extension `.pol.json` for pollution analysis and `.ero.json` for erosion analysis.</p>
+
+</body></html>'''

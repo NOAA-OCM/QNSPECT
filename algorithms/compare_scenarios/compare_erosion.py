@@ -89,7 +89,7 @@ class CompareErosion(QNSPECTAlgorithm):
         self.addParameter(
             QgsProcessingParameterFolderDestination(
                 self.outputDir,
-                "Output Directory",
+                "Output Folder",
                 createByDefault=True,
                 defaultValue=None,
             )
@@ -187,3 +187,37 @@ class CompareErosion(QNSPECTAlgorithm):
             feedback.pushWarning(
                 f"Comparison type {compare_type} was selected but one or more scenarios do not contain a related file."
             )
+
+    def shortHelpString(self):
+        return '''<html><body>
+<a href="https://www.noaa.gov/">Documentation</a>
+
+<h2>Algorithm Description</h2>
+
+<p>The `Compare Scenarios (Erosion)` algorithm creates a raster with the differences between `Run Erosion Analysis` results. The user provides the folders where the outputs were saved and which analysis types they would like the comparison to run on.
+
+The results of this analysis are rasters that show the locations of change between the two runs. This can be used to see the effects of changing land use types after construction.</p>
+
+<h2>Input Parameters</h2>
+
+<h3>Scenario A Folder</h3>
+<p>Folder location of the results of the first analysis.</p>
+
+<h3>Scenario B Folder</h3>
+<p>Folder location of the results of the second analysis.</p>
+
+<h3>Compare Local Outputs</h3>
+<p>Select to run the comparison on the local effects rasters.</p>
+
+<h3>Compare Accumulated Outputs</h3>
+<p>Select to run on the comparison on the accumulated effects rasters.</p>
+
+<h3>Open output files after running algorithm</h3>
+<p>Select to open the results of the comparison after the analysis has concluded.</p>
+
+<h2>Outputs</h2>
+
+<h3>Output Folder</h3>
+<p>The folder the results of the comparison will be saved to.</p>
+
+</body></html>'''
