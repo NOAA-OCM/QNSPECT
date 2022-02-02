@@ -11,13 +11,13 @@
  ***************************************************************************/
 """
 
-__author__ = 'Ian Todd'
-__date__ = '2021-12-29'
-__copyright__ = '(C) 2021 by NOAA'
+__author__ = "Ian Todd"
+__date__ = "2021-12-29"
+__copyright__ = "(C) 2021 by NOAA"
 
 # This will get replaced with a git SHA1 when you do a git archive
 
-__revision__ = '$Format:%H$'
+__revision__ = "$Format:%H$"
 
 
 from qgis.core import (
@@ -28,7 +28,7 @@ from qgis.core import (
     QgsProcessingParameterBoolean,
     QgsProcessingParameterMatrix,
     QgsProcessingParameterFolderDestination,
-    QgsProcessingException
+    QgsProcessingException,
 )
 import processing
 from pathlib import Path
@@ -64,6 +64,7 @@ def retrieve_scenario_file_stems(scenario_dir: Path, comparison_types: list) -> 
                 if type in file.stem:
                     stems.append(file.stem)
     return stems
+
 
 from QNSPECT.qnspect_algorithm import QNSPECTAlgorithm
 
@@ -150,7 +151,7 @@ class ComparePollution(QNSPECTAlgorithm):
         self.addParameter(
             QgsProcessingParameterFolderDestination(
                 self.outputDir,
-                "Output Directory",
+                "Output Folder",
                 createByDefault=True,
                 defaultValue=None,
             )
@@ -190,7 +191,9 @@ class ComparePollution(QNSPECTAlgorithm):
             self.parameterAsMatrix(parameters, self.compareGrid, context)
         )
         if not pollutants:
-            raise QgsProcessingException("No pollutants were selected in the 'Desired Outputs' parameter.")
+            raise QgsProcessingException(
+                "No pollutants were selected in the 'Desired Outputs' parameter."
+            )
 
         if "everything" in [pol.lower() for pol in pollutants]:
             feedback.pushInfo("Running everything...")
@@ -263,3 +266,42 @@ class ComparePollution(QNSPECTAlgorithm):
 
     def createInstance(self):
         return ComparePollution()
+
+    def shortHelpString(self):
+        return """<html><body>
+<a href="https://www.noaa.gov/">Documentation</a>
+
+<h2>Algorithm Description</h2>
+
+<p>The `Compare Scenarios (Pollution)` calculates differences between the outputs of two `Run Pollution Analysis` scenarios. The user provides the location of the folders where the output of the scenario runs were saved. The user also needs to provide the types of outputs they would like to compare.
+
+The outputs of this algorithm are rasters that show the absolute and relative magnitude of the difference between the outputs of the provided two scenarios.</p>
+
+<h2>Input Parameters</h2>
+
+<h3>Scenario A Folder</h3>
+<p>Folder location of the first scenario.</p>
+
+<h3>Scenario B Folder</h3>
+<p>Folder location of the second scenario.</p>
+
+<h3>Compare Local Outputs</h3>
+<p>Select to run the comparison on the local rasters.</p>
+
+<h3>Compare Accumulated Outputs</h3>
+<p>Select to run on the comparison on the accumulated rasters.</p>
+
+<h3>Compare Concentration Outputs</h3>
+<p>Select to run on the comparison on the concentration rasters.</p>
+
+<h3>Desired Outputs</h3>
+<p>The comparison will be run on runoff and pollutants with Y in the Output column. If `Everything` is marked as Y, the comparison will be run on all pollutants that are shared between the scenarios.
+
+The user can add more pollutants to the table. To exclude an output from the analysis, write N in the Output column. You must click OK after editing to save your changes.</p>
+
+<h2>Outputs</h2>
+
+<h3>Output Folder</h3>
+<p>The folder the results of the comparison will be saved to.</p>
+
+</body></html>"""

@@ -11,13 +11,13 @@
  ***************************************************************************/
 """
 
-__author__ = 'Ian Todd'
-__date__ = '2021-12-29'
-__copyright__ = '(C) 2021 by NOAA'
+__author__ = "Ian Todd"
+__date__ = "2021-12-29"
+__copyright__ = "(C) 2021 by NOAA"
 
 # This will get replaced with a git SHA1 when you do a git archive
 
-__revision__ = '$Format:%H$'
+__revision__ = "$Format:%H$"
 
 
 from qgis.core import (
@@ -25,7 +25,7 @@ from qgis.core import (
     QgsProcessingParameterFile,
     QgsProcessingParameterBoolean,
     QgsProcessingParameterFolderDestination,
-    QgsProcessingException
+    QgsProcessingException,
 )
 
 import processing
@@ -89,7 +89,7 @@ class CompareErosion(QNSPECTAlgorithm):
         self.addParameter(
             QgsProcessingParameterFolderDestination(
                 self.outputDir,
-                "Output Directory",
+                "Output Folder",
                 createByDefault=True,
                 defaultValue=None,
             )
@@ -115,7 +115,9 @@ class CompareErosion(QNSPECTAlgorithm):
         compare_local = self.parameterAsBool(parameters, self.compareLocal, context)
         compare_acc = self.parameterAsBool(parameters, self.compareAccumulate, context)
         if not any([compare_local, compare_acc]):
-            raise QgsProcessingException("Neither local nor accumulated outputs were selected.")
+            raise QgsProcessingException(
+                "Neither local nor accumulated outputs were selected."
+            )
 
         feedback.pushInfo("Comparing outputs...")
         if compare_local:
@@ -187,3 +189,34 @@ class CompareErosion(QNSPECTAlgorithm):
             feedback.pushWarning(
                 f"Comparison type {compare_type} was selected but one or more scenarios do not contain a related file."
             )
+
+    def shortHelpString(self):
+        return """<html><body>
+<a href="https://www.noaa.gov/">Documentation</a>
+
+<h2>Algorithm Description</h2>
+
+<p>The `Compare Scenarios (Erosion)` algorithm calculates differences between the outputs of two `Run Erosion Analysis` scenarios. The user provides the location of the folders where the output of the scenario runs were saved. The user also needs to select the types of outputs they would like to compare.
+
+The outputs of this algorithm are rasters that show the absolute and relative magnitude of the difference between the output of the provided two scenarios.</p>
+
+<h2>Input Parameters</h2>
+
+<h3>Scenario A Folder</h3>
+<p>Folder location of the first scenario.</p>
+
+<h3>Scenario B Folder</h3>
+<p>Folder location of the second scenario.</p>
+
+<h3>Compare Local Outputs</h3>
+<p>Select to run the comparison on the local sediment outputs.</p>
+
+<h3>Compare Accumulated Outputs</h3>
+<p>Select to run on the comparison on the accumulated sediment outputs.</p>
+
+<h2>Outputs</h2>
+
+<h3>Output Folder</h3>
+<p>The folder the results of the comparison will be saved to.</p>
+
+</body></html>"""
