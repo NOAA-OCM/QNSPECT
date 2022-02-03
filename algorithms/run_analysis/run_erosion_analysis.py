@@ -50,8 +50,8 @@ class RunErosionAnalysis(QgsProcessingAlgorithm):
     mdf = "MDF"
     rusle = "RUSLE"
     sedimentDeliveryRatio = "SedimentDeliveryRatio"
-    sedimentYieldLocal = "SedimentLocal"
-    sedimentYieldAccumulated = "SedimentAccumulated"
+    sedimentYieldLocal = "Sediment Local"
+    sedimentYieldAccumulated = "Sediment Accumulated"
     runName = "RunName"
     dualSoils = "DualSoils"
     loadOutputs = "LoadOutputs"
@@ -246,7 +246,7 @@ class RunErosionAnalysis(QgsProcessingAlgorithm):
         )
         if load_outputs:
             self.handle_post_processing(
-                sediment_local, "Local Accumulation (kg)", context
+                sediment_local, "Sediment Local (kg)", context
             )
 
         sediment_acc = str(run_out_dir / (self.sedimentYieldAccumulated + ".tif"))
