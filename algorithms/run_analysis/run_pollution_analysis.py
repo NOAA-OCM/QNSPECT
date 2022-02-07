@@ -11,13 +11,13 @@
  ***************************************************************************/
 """
 
-__author__ = 'Abdul Raheem Siddiqui'
-__date__ = '2021-12-29'
-__copyright__ = '(C) 2021 by NOAA'
+__author__ = "Abdul Raheem Siddiqui"
+__date__ = "2021-12-29"
+__copyright__ = "(C) 2021 by NOAA"
 
 # This will get replaced with a git SHA1 when you do a git archive
 
-__revision__ = '$Format:%H$'
+__revision__ = "$Format:%H$"
 
 from qgis.core import (
     QgsProcessing,
@@ -35,8 +35,12 @@ from qgis.core import (
     QgsProcessingContext,
     QgsProcessingLayerPostProcessorInterface,
     QgsProcessingException,
+    QgsRasterBandStats,
+    QgsSingleBandPseudoColorRenderer,
+    QgsGradientColorRamp,
 )
 from qgis.utils import iface
+from qgis.PyQt.QtGui import QColor
 
 import processing
 import os
@@ -77,15 +81,48 @@ from QNSPECT.qnspect_algorithm import QNSPECTAlgorithm
 #         return {}
 
 
-# class LayerPostProcessor(QgsProcessingLayerPostProcessorInterface):
-#     def postProcessLayer (self, layer, context, feedback):
-#         if layer.isValid():
-#             layer.loadNamedStyle('Runoff Local.qml')
+class LayerPostProcessor(QgsProcessingLayerPostProcessorInterface):
+    instance = None
+    name = ""
+    color1 = tuple()
+    color2 = tuple()
+
+    def __init__(self, name: str, color1: tuple, color2: tuple) -> None:
+        super().__init__()
+        self.name = name
+        self.color1 = color1
+        self.color2 = color2
+
+    def postProcessLayer(self, layer, context, feedback):
+        feedback.pushInfo("here")
+        if layer.isValid():
+            layer.setName(self.name)
+
+            prov = layer.dataProvider()
+            stats = prov.bandStatistics(1, QgsRasterBandStats.All, layer.extent(), 0)
+            min = stats.minimumValue
+            max = stats.maximumValue
+            renderer = QgsSingleBandPseudoColorRenderer(layer.dataProvider(), 1)
+            color_ramp = QgsGradientColorRamp(
+                QColor(*self.color1), QColor(*self.color2)
+            )
+            renderer.setClassificationMin(min)
+            renderer.setClassificationMax(max)
+            renderer.createShader(color_ramp)
+            layer.setRenderer(renderer)
+
+    # Hack to work around sip bug!
+    @staticmethod
+    def create(name, color1, color2) -> "LayerPostProcessor":
+        LayerPostProcessor.instance = LayerPostProcessor(name, color1, color2)
+        return LayerPostProcessor.instance
+
 
 class RunPollutionAnalysis(QNSPECTAlgorithm):
     lookup_tables = {1: "C-CAP", 2: "NLCD"}
-    default_lookup_path = f"file:///{Path(__file__).parent.parent.parent / 'resources' / 'coefficients'}"
-#     grouper = None
+    default_lookup_path = (
+        f"file:///{Path(__file__).parent.parent.parent / 'resources' / 'coefficients'}"
+    )
 
     def initAlgorithm(self, config=None):
         self.addParameter(
@@ -187,9 +224,13 @@ class RunPollutionAnalysis(QNSPECTAlgorithm):
                 ],
             )
         )
-        self.addParameter(QgsProcessingParameterBoolean(
-            "LoadOutputs", "Open output files after running algorithm", defaultValue=True
-        ))
+        self.addParameter(
+            QgsProcessingParameterBoolean(
+                "LoadOutputs",
+                "Open output files after running algorithm",
+                defaultValue=True,
+            )
+        )
         param = QgsProcessingParameterBoolean(
             "ConcOutputs", "Output Concentration Rasters", defaultValue=False
         )
@@ -243,23 +284,15 @@ class RunPollutionAnalysis(QNSPECTAlgorithm):
         conc_out = self.parameterAsBool(parameters, "ConcOutputs", context)
         load_outputs = self.parameterAsBool(parameters, "LoadOutputs", context)
 
-
         run_name = self.parameterAsString(parameters, "RunName", context)
         proj_loc = self.parameterAsString(parameters, "ProjectLocation", context)
 
         elev_raster = self.parameterAsRasterLayer(
             parameters, "ElevatoinRaster", context
         )
-        soil_raster = self.parameterAsRasterLayer(
-            parameters, "SoilRaster", context
-        )
-        lu_raster = self.parameterAsRasterLayer(
-            parameters, "LandUseRaster", context
-        )
-        precip_raster = self.parameterAsRasterLayer(
-            parameters, "PrecipRaster", context
-        )
-
+        soil_raster = self.parameterAsRasterLayer(parameters, "SoilRaster", context)
+        lu_raster = self.parameterAsRasterLayer(parameters, "LandUseRaster", context)
+        precip_raster = self.parameterAsRasterLayer(parameters, "PrecipRaster", context)
 
         ## Extract Lookup Table
         if parameters["LookupTable"]:
@@ -289,7 +322,7 @@ class RunPollutionAnalysis(QNSPECTAlgorithm):
             raise QgsProcessingException(
                 "One or more of the Pollutants is not a column in the Land Use Lookup Table. Either remove the pollutants from Desired Outputs or provide a custom lookup table with desired pollutants.\n"
                 + f"Missing Pollutants:\n{[pol.lower() for pol in desired_pollutants if not pol.lower() in lookup_fields.keys()]}\n"
-            )    
+            )
 
         # assert all Raster CRS are same and Raster Pixel Units too
 
@@ -328,10 +361,11 @@ class RunPollutionAnalysis(QNSPECTAlgorithm):
             outputs["Runoff Local"] = runoff_vol.calculate_Q(runoff_output)
             results["Runoff Local"] = outputs["Runoff Local"]["OUTPUT"]
             if load_outputs:
-                self.handle_post_processing(outputs["Runoff Local"]["OUTPUT"], "Runoff Local (L)", context)
+                self.handle_post_processing(
+                    outputs["Runoff Local"]["OUTPUT"], "Runoff Local (L)", context
+                )
         else:
             outputs["Runoff Local"] = runoff_vol.calculate_Q()
-
 
         ## Pollutant rasters
         for pol in desired_pollutants:
@@ -359,24 +393,51 @@ class RunPollutionAnalysis(QNSPECTAlgorithm):
             )
             results[pol + " Local"] = outputs[pol + " Local"]["OUTPUT"]
             if load_outputs:
-                self.handle_post_processing(outputs[pol + " Local"]["OUTPUT"], f"{pol} Local (mg)", context)
+                self.handle_post_processing(
+                    outputs[pol + " Local"]["OUTPUT"], f"{pol} Local (mg)", context
+                )
 
         # Accumulated Runoff Calculation (L)
         if "runoff" in [out.lower() for out in desired_outputs]:
             runoff_output = os.path.join(run_out_dir, f"Runoff Accumulated.tif")
-            #see this issue for discussion on nodat value issue https://github.com/Dewberry/QNSPECT/issues/29
-            outputs["Runoff Accumulated"] = grass_material_transport(parameters["ElevatoinRaster"], outputs["Runoff Local"]["OUTPUT"], context, feedback, mfd, runoff_output)
-            results["Runoff Accumulated"] = outputs["Runoff Accumulated"]["accumulation"]
+            # see this issue for discussion on nodat value issue https://github.com/Dewberry/QNSPECT/issues/29
+            outputs["Runoff Accumulated"] = grass_material_transport(
+                parameters["ElevatoinRaster"],
+                outputs["Runoff Local"]["OUTPUT"],
+                context,
+                feedback,
+                mfd,
+                runoff_output,
+            )
+            results["Runoff Accumulated"] = outputs["Runoff Accumulated"][
+                "accumulation"
+            ]
             if load_outputs:
-                self.handle_post_processing(outputs["Runoff Accumulated"]["accumulation"], "Runoff Accumulated (L)", context)
+                self.handle_post_processing(
+                    outputs["Runoff Accumulated"]["accumulation"],
+                    "Runoff Accumulated (L)",
+                    context,
+                )
         else:
-            outputs["Runoff Accumulated"] = grass_material_transport(parameters["ElevatoinRaster"], outputs["Runoff Local"]["OUTPUT"], context, feedback, mfd)
+            outputs["Runoff Accumulated"] = grass_material_transport(
+                parameters["ElevatoinRaster"],
+                outputs["Runoff Local"]["OUTPUT"],
+                context,
+                feedback,
+                mfd,
+            )
 
         # Accumulated Pollutants
         for pol in desired_pollutants:
             # Accumulated Pollutant (mg)
-            outputs[pol + "accum_mg"] = grass_material_transport(parameters["ElevatoinRaster"], outputs[pol + " Local"]["OUTPUT"], context, feedback, mfd)
-            
+            outputs[pol + "accum_mg"] = grass_material_transport(
+                parameters["ElevatoinRaster"],
+                outputs[pol + " Local"]["OUTPUT"],
+                context,
+                feedback,
+                mfd,
+            )
+
             # convert to kg
             input_params = {
                 "input_a": outputs[pol + "accum_mg"]["accumulation"],
@@ -388,10 +449,14 @@ class RunPollutionAnalysis(QNSPECTAlgorithm):
                 context,
                 feedback,
                 os.path.join(run_out_dir, f"{pol} Accumulated.tif"),
-            )            
+            )
             results[pol + " Accumulated"] = outputs[pol + " Accumulated"]["OUTPUT"]
             if load_outputs:
-                self.handle_post_processing(outputs[pol + " Accumulated"]["OUTPUT"], f"{pol} Accumulated (kg)", context)
+                self.handle_post_processing(
+                    outputs[pol + " Accumulated"]["OUTPUT"],
+                    f"{pol} Accumulated (kg)",
+                    context,
+                )
 
         # Concentration Calculations
         if conc_out:
@@ -401,7 +466,7 @@ class RunPollutionAnalysis(QNSPECTAlgorithm):
                     "input_a": outputs[pol + "accum_mg"]["accumulation"],
                     "band_a": "1",
                     "input_b": outputs["Runoff Accumulated"]["accumulation"],
-                    "band_b": "1",                   
+                    "band_b": "1",
                 }
                 outputs[pol + " Concentration"] = perform_raster_math(
                     "(A / B)",
@@ -409,10 +474,16 @@ class RunPollutionAnalysis(QNSPECTAlgorithm):
                     context,
                     feedback,
                     os.path.join(run_out_dir, f"{pol} Concentration.tif"),
-                )            
-                results[pol + " Concentration"] = outputs[pol + " Concentration"]["OUTPUT"]
+                )
+                results[pol + " Concentration"] = outputs[pol + " Concentration"][
+                    "OUTPUT"
+                ]
                 if load_outputs:
-                    self.handle_post_processing(outputs[pol + " Concentration"]["OUTPUT"], f"{pol} Concentration (mg/L)", context)
+                    self.handle_post_processing(
+                        outputs[pol + " Concentration"]["OUTPUT"],
+                        f"{pol} Concentration (mg/L)",
+                        context,
+                    )
 
         # Configuration file
         run_dict["Inputs"] = parameters
@@ -430,7 +501,7 @@ class RunPollutionAnalysis(QNSPECTAlgorithm):
         return results
 
     def postProcessAlgorithm(self, context, feedback):
-        iface.mapCanvas().refreshAllLayers()
+        # iface.mapCanvas().refreshAllLayers()
         return {}
 
     def name(self):
@@ -570,12 +641,15 @@ To exclude an output from the analysis, write N in the Output column. You must c
         )
 
     def handle_post_processing(self, layer, display_name, context):
-        
+
         layer_details = context.LayerDetails(
-                display_name, context.project(), display_name
-            )
-        # layer_details.setPostProcessor(self.grouper)
+            display_name, context.project(), display_name
+        )
         context.addLayerToLoadOnCompletion(
             layer,
             layer_details,
-        )       
+        )
+        if context.willLoadLayerOnCompletion(layer):
+            context.layerToLoadOnCompletionDetails(layer).setPostProcessor(
+                LayerPostProcessor.create(display_name, (255, 0, 0), (0, 0, 255))
+            )
