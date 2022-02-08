@@ -19,6 +19,6 @@ The plugin can also be installed with the following steps:
 
 ## Design
 
-![Design Diagram](https://user-images.githubusercontent.com/53625184/133650150-f5a84ace-26ba-4616-b21a-8a56c0977013.png)
+![Design Diagram](resources/design-diagram.png)
 
 ## Help
