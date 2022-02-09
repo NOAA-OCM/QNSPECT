@@ -25,7 +25,6 @@ import math
 import datetime
 import json
 
-sys.path.append(str(Path(__file__).parent.parent.parent))
 sys.path.append(str(Path(__file__).parent.parent))
 sys.path.append(str(Path(__file__).parent))
 
@@ -43,7 +42,6 @@ DEFAULT_URBAN_K_FACTOR_VALUE = 0.3
 
 from qgis.core import (
     QgsProcessing,
-    QgsProcessingAlgorithm,
     QgsProcessingMultiStepFeedback,
     QgsProcessingParameterRasterLayer,
     QgsProcessingParameterVectorLayer,
@@ -70,7 +68,7 @@ class RunErosionAnalysis(QNSPECTAlgorithm):
     landUseRaster = "LandUseRaster"
     lengthSlopeRaster = "LengthSlopeRaster"
     projectLocation = "ProjectLocation"
-    mdf = "MDF"
+    mfd = 'MFD'
     rusle = "RUSLE"
     sedimentDeliveryRatio = "SedimentDeliveryRatio"
     sedimentYieldLocal = "Sediment Local"
@@ -143,6 +141,11 @@ class RunErosionAnalysis(QNSPECTAlgorithm):
                 defaultValue=True,
             )
         )
+        param = QgsProcessingParameterBoolean(
+            self.mfd, "Use Multi Flow Direction [MFD] Routing", defaultValue=False
+        )
+        param.setFlags(param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
+        self.addParameter(param)
         param = QgsProcessingParameterEnum(
             self.dualSoils,
             "Treat Dual Category Soils as",
@@ -150,11 +153,6 @@ class RunErosionAnalysis(QNSPECTAlgorithm):
             options=["Undrained [Default]", "Drained", "Average"],
             allowMultiple=False,
             defaultValue=[0],
-        )
-        param.setFlags(param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
-        self.addParameter(param)
-        param = QgsProcessingParameterBoolean(
-            self.mdf, "Use Multi Direction Flow [MDF] Routing", defaultValue=False
         )
         param.setFlags(param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(param)
@@ -176,23 +174,33 @@ class RunErosionAnalysis(QNSPECTAlgorithm):
 
         load_outputs: bool = self.parameterAsBool(parameters, self.loadOutputs, context)
 
-        cell_size_sq_meters = self.cell_size_in_sq_meters(parameters, context)
+        dem = self.parameterAsRasterLayer(parameters, self.elevationRaster, context)
+        land_use_raster = self.parameterAsRasterLayer(
+            parameters, self.landUseRaster, context
+        )
+
+        cell_size_sq_meters = self.cell_size_in_sq_meters(dem)
         if cell_size_sq_meters is None:
             raise QgsProcessingException("Invalid Elevation Raster CRS units.")
 
-        lookup_layer = extract_lookup_table(self, parameters, context)
+        lookup_layer = extract_lookup_table(
+            self.parameterAsVectorLayer,
+            self.parameterAsEnum, 
+            parameters,
+            context
+        )
         if lookup_layer is None:
             raise QgsProcessingException(
                 "Land Use Lookup Table must be provided with Custom Land Use Type."
             )
-
         # Folder I/O
         project_loc = Path(
             self.parameterAsString(parameters, self.projectLocation, context)
         )
-        run_out_dir: Path = project_loc / self.parameterAsString(
+        run_name = self.parameterAsString(
             parameters, self.runName, context
         )
+        run_out_dir: Path = project_loc / run_name
         run_out_dir.mkdir(parents=True, exist_ok=True)
 
         ## RUSLE calculation section
@@ -204,14 +212,14 @@ class RunErosionAnalysis(QNSPECTAlgorithm):
         # C-factor - land cover
         c_factor_raster = self.create_c_factor_raster(
             lookup_layer=lookup_layer,
-            parameters=parameters,
+            land_use_raster_layer=land_use_raster,
             context=context,
             feedback=feedback,
             outputs=outputs,
         )
 
         # Length-slope factor
-        ls_factor = self.create_ls_factor(parameters, context, outputs)
+        ls_factor = self.create_ls_factor(parameters, context)
 
         rusle = self.run_rusle(
             c_factor=c_factor_raster,
@@ -227,9 +235,7 @@ class RunErosionAnalysis(QNSPECTAlgorithm):
         ## Sediment Delivery Ratio calculation section
         # Relief length ratio part
         rl_raster = create_relief_length_ratio_raster(
-            dem_raster=self.parameterAsRasterLayer(
-                parameters, self.elevationRaster, context
-            ),
+            dem_raster=dem,
             cell_size_sq_meters=cell_size_sq_meters,
             output=QgsProcessing.TEMPORARY_OUTPUT,
             context=context,
@@ -242,7 +248,7 @@ class RunErosionAnalysis(QNSPECTAlgorithm):
             parameters[self.landUseRaster],
             parameters[self.soilRaster],
             dual_soil_type=self.parameterAsEnum(parameters, self.dualSoils, context),
-            lookup_layer=extract_lookup_table(self, parameters, context),
+            lookup_layer=lookup_layer,
             context=context,
             feedback=feedback,
         )
@@ -253,7 +259,6 @@ class RunErosionAnalysis(QNSPECTAlgorithm):
             cell_size_sq_meters=cell_size_sq_meters,
             relief_length=rl_raster,
             curve_number=cn.cn_raster,
-            parameters=parameters,
             context=context,
             feedback=feedback,
             outputs=outputs,
@@ -266,7 +271,6 @@ class RunErosionAnalysis(QNSPECTAlgorithm):
             rusle=rusle,
             context=context,
             feedback=feedback,
-            parameters=parameters,
             outputs=outputs,
             results=results,
             output=sediment_local,
@@ -277,8 +281,8 @@ class RunErosionAnalysis(QNSPECTAlgorithm):
         sediment_acc = str(run_out_dir / (self.sedimentYieldAccumulated + ".tif"))
         acc_results = self.run_sediment_yield_accumulated(
             sediment_yield=sediment_local,
-            dem=parameters[self.elevationRaster],
-            mdf=self.parameterAsBool(parameters, self.mdf, context),
+            dem=dem,
+            mfd=self.parameterAsBool(parameters, self.mfd, context),
             context=context,
             feedback=feedback,
             outputs=outputs,
@@ -295,6 +299,10 @@ class RunErosionAnalysis(QNSPECTAlgorithm):
             context=context,
             results=results,
             run_out_dir=run_out_dir,
+            lookup_layer=lookup_layer,
+            dem=dem,
+            land_use_raster=land_use_raster,
+            run_name=run_name,
         )
 
         return results
@@ -327,16 +335,14 @@ class RunErosionAnalysis(QNSPECTAlgorithm):
         return outputs["KFill"]["OUTPUT"]
 
     def create_c_factor_raster(
-        self, lookup_layer, parameters, context, feedback, outputs
+        self, lookup_layer, land_use_raster_layer, context, feedback, outputs
     ):
         # The c-factor raster will have floating-point values.
         # If the land use raster used is an integer type,
         # the assignment process will convert the c-factor values to integers.
         # Converting the land use raster to floating point type fixes that.
         land_use_raster = convert_raster_data_type_to_float(
-            raster_layer=self.parameterAsRasterLayer(
-                parameters, self.landUseRaster, context
-            ),
+            raster_layer=land_use_raster_layer,
             context=context,
             feedback=feedback,
             outputs=outputs,
@@ -352,10 +358,9 @@ class RunErosionAnalysis(QNSPECTAlgorithm):
         )["OUTPUT"]
         return c_factor_raster
 
-    def cell_size_in_sq_meters(self, parameters, context):
+    def cell_size_in_sq_meters(self, dem):
         """Converts the cell size of the DEM into meters.
         Returns None if the input raster's CRS is not usable."""
-        dem = self.parameterAsRasterLayer(parameters, self.elevationRaster, context)
         size_x = dem.rasterUnitsPerPixelX()
         size_y = dem.rasterUnitsPerPixelY()
         area = size_x * size_y
@@ -375,7 +380,6 @@ class RunErosionAnalysis(QNSPECTAlgorithm):
         cell_size_sq_meters: float,
         relief_length,
         curve_number,
-        parameters,
         context,
         feedback,
         outputs,
@@ -411,7 +415,6 @@ class RunErosionAnalysis(QNSPECTAlgorithm):
         rusle,
         context,
         feedback,
-        parameters,
         outputs,
         results,
         output,
@@ -436,7 +439,7 @@ class RunErosionAnalysis(QNSPECTAlgorithm):
         self,
         sediment_yield,
         dem,
-        mdf,
+        mfd,
         context,
         feedback,
         outputs,
@@ -449,7 +452,7 @@ class RunErosionAnalysis(QNSPECTAlgorithm):
             context=context,
             feedback=feedback,
             output=output,
-            mfd=mdf,
+            mfd=mfd,
         )
         result = gmt["accumulation"]
         results[self.sedimentYieldAccumulated] = result
@@ -495,17 +498,16 @@ class RunErosionAnalysis(QNSPECTAlgorithm):
         context,
         results,
         run_out_dir: Path,
+        lookup_layer,
+        dem,
+        land_use_raster,
+        run_name,
     ):
         """Create a config file with the name of the run in the outputs folder. Uses the "ero" key word to differentiate it from the results of the pollution analysis."""
-        lookup_layer = extract_lookup_table(self, parameters, context)
         config = {}
         config["Inputs"] = parameters
-        config["Inputs"][self.elevationRaster] = self.parameterAsRasterLayer(
-            parameters, self.elevationRaster, context
-        ).source()
-        config["Inputs"][self.landUseRaster] = self.parameterAsRasterLayer(
-            parameters, self.landUseRaster, context
-        ).source()
+        config["Inputs"][self.elevationRaster] = dem.source()
+        config["Inputs"][self.landUseRaster] = land_use_raster.source()
         config["Inputs"][self.kFactorRaster] = self.parameterAsRasterLayer(
             parameters, self.kFactorRaster, context
         ).source()
@@ -519,7 +521,6 @@ class RunErosionAnalysis(QNSPECTAlgorithm):
             config["Inputs"][self.lookupTable] = lookup_layer.source()
         config["Outputs"] = results
         config["RunTime"] = str(datetime.datetime.now())
-        run_name: str = self.parameterAsString(parameters, self.runName, context)
         config_file = run_out_dir / f"{run_name}.ero.json"
         json.dump(config, config_file.open("w"), indent=4)
 
@@ -533,13 +534,13 @@ class RunErosionAnalysis(QNSPECTAlgorithm):
             layer_details,
         )
 
-    def create_ls_factor(self, parameters, context, outputs):
+    def create_ls_factor(self, parameters, context):
         alg_params = {
             "-4": False,
             "-a": True,
             "-b": False,
             "-m": False,
-            "-s": not self.parameterAsBool(parameters, self.mdf, context),
+            "-s": True,
             "GRASS_RASTER_FORMAT_META": "",
             "GRASS_RASTER_FORMAT_OPT": "",
             "GRASS_REGION_CELLSIZE_PARAMETER": 0,
@@ -555,11 +556,10 @@ class RunErosionAnalysis(QNSPECTAlgorithm):
             "threshold": 500,
             "length_slope": QgsProcessing.TEMPORARY_OUTPUT,
         }
-        outputs["RWatershed"] = processing.run(
+        return processing.run(
             "grass7:r.watershed",
             alg_params,
             context=context,
             feedback=None,
             is_child_algorithm=True,
-        )
-        return outputs["RWatershed"]["length_slope"]
+        )["length_slope"]

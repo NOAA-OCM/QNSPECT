@@ -3,6 +3,7 @@ Store common functions that are required by different analysis modules
 """
 
 
+from typing import Callable
 from qgis.core import (
     QgsProcessing,
     QgsVectorLayer,
@@ -81,12 +82,17 @@ def reclassify_land_use_raster_by_table_field(
     )
 
 
-def extract_lookup_table(alg, parameters, context):
+def extract_lookup_table(
+    parameter_as_vector_layer: Callable,
+    parameter_as_enum: Callable,
+    parameters,
+    context
+):
     """Extract the lookup table as a vector layer."""
     if parameters["LookupTable"]:
-        return alg.parameterAsVectorLayer(parameters, "LookupTable", context)
+        return parameter_as_vector_layer(parameters, "LookupTable", context)
 
-    land_use_type = alg.parameterAsEnum(parameters, "LandUseType", context)
+    land_use_type = parameter_as_enum(parameters, "LandUseType", context)
     if land_use_type > 0:
         return QgsVectorLayer(
             os.path.join(LAND_USE_PATH, f"{LAND_USE_TABLES[land_use_type]}.csv"),

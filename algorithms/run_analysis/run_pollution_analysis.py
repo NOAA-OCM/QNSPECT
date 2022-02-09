@@ -254,7 +254,12 @@ class RunPollutionAnalysis(QNSPECTAlgorithm):
         precip_raster = self.parameterAsRasterLayer(parameters, "PrecipRaster", context)
 
         ## Extract Lookup Table
-        lookup_layer = extract_lookup_table(self, parameters, context)
+        lookup_layer = extract_lookup_table(
+            self.parameterAsVectorLayer,
+            self.parameterAsEnum, 
+            parameters,
+            context
+        )
 
         # handle different cases in input matrix and lookup layer
         lookup_fields = {f.name().lower(): f.name() for f in lookup_layer.fields()}
