@@ -5,7 +5,7 @@ from .modify_land_use.modify_land_use_by_name import ModifyLandUseByName
 from .modify_land_use.modify_land_use_by_nlcdccap import ModifyLandUseByNLCDCCAP
 from .create_lookup_table_template.create_lookup_table_template import CreateLookupTableTemplate
 from .run_analysis.run_pollution_analysis import RunPollutionAnalysis
-# from .run_analysis.run_erosion_analysis import RunErosionAnalysis
+from .run_analysis.run_erosion_analysis import RunErosionAnalysis
 from .load_run.load_run import LoadPreviousRun
 from .compare_scenarios.compare_pollution import ComparePollution
 from .compare_scenarios.compare_erosion import CompareErosion

@@ -1,3 +1,24 @@
+# -*- coding: utf-8 -*-
+
+"""
+/***************************************************************************
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ ***************************************************************************/
+"""
+
+__author__ = "Ian Todd"
+__date__ = "2022-02-09"
+__copyright__ = "(C) 2022 by NOAA"
+
+# This will get replaced with a git SHA1 when you do a git archive
+
+__revision__ = "$Format:%H$"
+
 from pathlib import Path
 import sys
 import math
@@ -36,8 +57,10 @@ from qgis.core import (
 )
 import processing
 
+from QNSPECT.qnspect_algorithm import QNSPECTAlgorithm
 
-class RunErosionAnalysis(QgsProcessingAlgorithm):
+
+class RunErosionAnalysis(QNSPECTAlgorithm):
     lookupTable = "LookupTable"
     landUseType = "LandUseType"
     soilRaster = "SoilsRasterNotKfactor"
@@ -68,12 +91,16 @@ class RunErosionAnalysis(QgsProcessingAlgorithm):
         )
         self.addParameter(
             QgsProcessingParameterRasterLayer(
-                self.elevationRaster, "Elevation Raster", defaultValue=None,
+                self.elevationRaster,
+                "Elevation Raster",
+                defaultValue=None,
             )
         )
         self.addParameter(
             QgsProcessingParameterRasterLayer(
-                self.rFactorRaster, "R-Factor Raster", defaultValue=None,
+                self.rFactorRaster,
+                "R-Factor Raster",
+                defaultValue=None,
             )
         )
         self.addParameter(
@@ -245,9 +272,7 @@ class RunErosionAnalysis(QgsProcessingAlgorithm):
             output=sediment_local,
         )
         if load_outputs:
-            self.handle_post_processing(
-                sediment_local, "Sediment Local (kg)", context
-            )
+            self.handle_post_processing(sediment_local, "Sediment Local (kg)", context)
 
         sediment_acc = str(run_out_dir / (self.sedimentYieldAccumulated + ".tif"))
         acc_results = self.run_sediment_yield_accumulated(
@@ -275,16 +300,16 @@ class RunErosionAnalysis(QgsProcessingAlgorithm):
         return results
 
     def name(self):
-        return "Run Erosion Analysis"
+        return "run_erosion_analysis"
 
     def displayName(self):
-        return "Run Erosion Analysis"
+        return self.tr("Run Erosion Analysis")
 
     def group(self):
-        return "QNSPECT"
+        return self.tr("Analysis")
 
     def groupId(self):
-        return "QNSPECT"
+        return "analysis"
 
     def createInstance(self):
         return RunErosionAnalysis()
@@ -294,7 +319,10 @@ class RunErosionAnalysis(QgsProcessingAlgorithm):
         input_dict = {"input_a": parameters[self.kFactorRaster], "band_a": 1}
         expr = "((A == 0) * 0.3) + ((A > 0) * A)"
         outputs["KFill"] = perform_raster_math(
-            exprs=expr, input_dict=input_dict, context=context, feedback=feedback,
+            exprs=expr,
+            input_dict=input_dict,
+            context=context,
+            feedback=feedback,
         )
         return outputs["KFill"]["OUTPUT"]
 
@@ -405,7 +433,15 @@ class RunErosionAnalysis(QgsProcessingAlgorithm):
         results[self.sedimentYieldLocal] = outputs[self.sedimentYieldLocal]["OUTPUT"]
 
     def run_sediment_yield_accumulated(
-        self, sediment_yield, dem, mdf, context, feedback, outputs, results, output,
+        self,
+        sediment_yield,
+        dem,
+        mdf,
+        context,
+        feedback,
+        outputs,
+        results,
+        output,
     ):
         gmt = outputs[self.sedimentYieldAccumulated] = grass_material_transport(
             elevation=dem,
@@ -454,7 +490,11 @@ class RunErosionAnalysis(QgsProcessingAlgorithm):
         return outputs[self.rusle]["OUTPUT"]
 
     def create_config_file(
-        self, parameters, context, results, run_out_dir: Path,
+        self,
+        parameters,
+        context,
+        results,
+        run_out_dir: Path,
     ):
         """Create a config file with the name of the run in the outputs folder. Uses the "ero" key word to differentiate it from the results of the pollution analysis."""
         lookup_layer = extract_lookup_table(self, parameters, context)
@@ -489,7 +529,8 @@ class RunErosionAnalysis(QgsProcessingAlgorithm):
         )
         # layer_details.setPostProcessor(self.grouper)
         context.addLayerToLoadOnCompletion(
-            layer, layer_details,
+            layer,
+            layer_details,
         )
 
     def create_ls_factor(self, parameters, context, outputs):
