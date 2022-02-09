@@ -66,7 +66,7 @@ class ModifyLandUse(QNSPECTAlgorithm):
         self.addParameter(
             QgsProcessingParameterRasterDestination(
                 self.output,
-                "Modified Land Use",
+                "Modified Land Use Raster",
                 createByDefault=True,
                 defaultValue=None,
             )
@@ -135,3 +135,30 @@ class ModifyLandUse(QNSPECTAlgorithm):
 
     def createInstance(self):
         return ModifyLandUse()
+
+    def shortHelpString(self):
+        return """<html><body>
+<a href="https://www.noaa.gov/">Documentation</a>
+
+<h2>Algorithm Description</h2>
+
+<p>The `Modify Land Use (Vector Field)` algorithm changes a section of a raster based on the land use numeric value in a polygon vector layer.
+The pixels of the input raster layer that overlap with each polygon of the input vector layer will be changed to the land use code of the polygon's land use field.</p>
+
+<h2>Input Parameters</h2>
+
+<h3>Areas to Modify</h3>
+<p>Polygon vector layer that overlaps the pixels that should be changed.</p>
+
+<h3>Land Use Value Field</h3>
+<p>The field with the land use value the raster pixels will be changed to. If this is left blank, the algorithm will try to use a field called "lu_value".</p>
+
+<h3>Land Use Raster</h3>
+<p>Land use raster that needs to be modified.</p>
+
+<h2>Outputs</h2>
+
+<h3>Modified Land Use Raster</h3>
+<p>The location the modified land use raster will be saved to.</p>
+
+</body></html>"""
