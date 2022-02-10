@@ -11,8 +11,11 @@ __all__ = ("create_relief_length_ratio_raster",)
 
 
 def create_relief_length_ratio_raster(
-    dem_raster, cell_size_sq_meters, output, context, feedback, outputs: dict
-):
+    dem_raster,
+    cell_size_sq_meters,
+    context,
+    feedback,
+) -> str:
     """Relief-length ratio is the ratio between the vertical distance and horizontal distance along a slope.
     This algorithm calculates the height between each cell and its neighbor using the pythagorean theorem.
     It uses the cell slope value and cell size to calculate rise.
@@ -25,17 +28,15 @@ def create_relief_length_ratio_raster(
     adjacent_expr = f"( {cell_size_meters} * tan(A * 3.14159 / 180.0) )"  # meters
 
     expr = f"{adjacent_expr} / {cell_size_meters} / 1000.0"
-    outputs["ReliefLengthRaster"] = perform_raster_math(
+    return perform_raster_math(
         exprs=expr,
         input_dict=input_dict,
         context=context,
         feedback=feedback,
-        output=output,
-    )
-    return outputs["ReliefLengthRaster"]["OUTPUT"]
+    )["OUTPUT"]
 
 
-def create_slope(dem_raster: QgsRasterLayer, context, feedback):
+def create_slope(dem_raster: QgsRasterLayer, context, feedback) -> str:
     # QGIS Native Slope
     alg_params = {
         "INPUT": dem_raster,
@@ -49,4 +50,3 @@ def create_slope(dem_raster: QgsRasterLayer, context, feedback):
         feedback=feedback,
         is_child_algorithm=True,
     )["OUTPUT"]
-

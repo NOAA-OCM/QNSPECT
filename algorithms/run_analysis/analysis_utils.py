@@ -22,7 +22,10 @@ LAND_USE_PATH = (
 
 
 def convert_raster_data_type_to_float(
-    raster_layer: QgsRasterLayer, context, feedback, outputs, output=None,
+    raster_layer: QgsRasterLayer,
+    context,
+    feedback,
+    output=None,
 ):
     """Converts the input raster layer's data type from an integer to a float 32.
     If the input raster's data type is already a float, it will return the input raster layer."""
@@ -37,14 +40,13 @@ def convert_raster_data_type_to_float(
             "OPTIONS": "",
             "OUTPUT": output,
         }
-        outputs["RearrangeBands"] = processing.run(
+        return processing.run(
             "gdal:rearrange_bands",
             alg_params,
             context=context,
             feedback=feedback,
             is_child_algorithm=True,
-        )
-        return outputs["RearrangeBands"]["OUTPUT"]
+        )["OUTPUT"]
     return raster_layer
 
 
@@ -86,7 +88,7 @@ def extract_lookup_table(
     parameter_as_vector_layer: Callable,
     parameter_as_enum: Callable,
     parameters,
-    context
+    context,
 ):
     """Extract the lookup table as a vector layer."""
     if parameters["LookupTable"]:
