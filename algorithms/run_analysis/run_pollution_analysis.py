@@ -93,7 +93,11 @@ class RunPollutionAnalysis(QNSPECTAlgorithm):
     def initAlgorithm(self, config=None):
         self.addParameter(
             QgsProcessingParameterString(
-                "RunName", "Run Name", multiLine=False, optional=False, defaultValue="",
+                "RunName",
+                "Run Name",
+                multiLine=False,
+                optional=False,
+                defaultValue="",
             )
         )
         self.addParameter(
@@ -106,7 +110,7 @@ class RunPollutionAnalysis(QNSPECTAlgorithm):
         )
         self.addParameter(
             QgsProcessingParameterRasterLayer(
-                "SoilRaster",
+                "HSGRaster",
                 "Hydrographic Soils Group Raster",
                 optional=False,
                 defaultValue=None,
@@ -140,7 +144,10 @@ class RunPollutionAnalysis(QNSPECTAlgorithm):
         )
         self.addParameter(
             QgsProcessingParameterRasterLayer(
-                "LandUseRaster", "Land Use Raster", optional=False, defaultValue=None,
+                "LandUseRaster",
+                "Land Use Raster",
+                optional=False,
+                defaultValue=None,
             )
         )
         self.addParameter(
@@ -249,16 +256,13 @@ class RunPollutionAnalysis(QNSPECTAlgorithm):
         elev_raster = self.parameterAsRasterLayer(
             parameters, "ElevatoinRaster", context
         )
-        soil_raster = self.parameterAsRasterLayer(parameters, "SoilRaster", context)
+        soil_raster = self.parameterAsRasterLayer(parameters, "HSGRaster", context)
         lu_raster = self.parameterAsRasterLayer(parameters, "LandUseRaster", context)
         precip_raster = self.parameterAsRasterLayer(parameters, "PrecipRaster", context)
 
         ## Extract Lookup Table
         lookup_layer = extract_lookup_table(
-            self.parameterAsVectorLayer,
-            self.parameterAsEnum, 
-            parameters,
-            context
+            self.parameterAsVectorLayer, self.parameterAsEnum, parameters, context
         )
 
         # handle different cases in input matrix and lookup layer
@@ -286,12 +290,14 @@ class RunPollutionAnalysis(QNSPECTAlgorithm):
         ## Generate CN Raster
         cn = Curve_Number(
             parameters["LandUseRaster"],
-            parameters["SoilRaster"],
+            parameters["HSGRaster"],
             dual_soil_type,
             lookup_layer,
             context,
             feedback,
         )
+
+        # All final outputs that are not returned to user should be saved in outputs
         outputs["CN"] = cn.generate_cn_raster()
 
         # Calculate Q (Runoff) (Liters)
@@ -441,13 +447,17 @@ class RunPollutionAnalysis(QNSPECTAlgorithm):
         run_dict["Inputs"]["ElevatoinRaster"] = elev_raster.source()
         run_dict["Inputs"]["LandUseRaster"] = lu_raster.source()
         run_dict["Inputs"]["PrecipRaster"] = precip_raster.source()
-        run_dict["Inputs"]["SoilRaster"] = soil_raster.source()
+        run_dict["Inputs"]["HSGRaster"] = soil_raster.source()
         if parameters["LookupTable"]:
             run_dict["Inputs"]["LookupTable"] = lookup_layer.source()
         run_dict["Outputs"] = results
         run_dict["RunTime"] = str(datetime.now())
         with open(os.path.join(run_out_dir, f"{run_name}.pol.json"), "w") as f:
             f.write(dumps(run_dict, indent=4))
+
+        ## Uncomment following two lines to print debugging info
+        # feedback.pushCommandInfo("\n"+ str(outputs))
+        # feedback.pushCommandInfo("\n"+ str(run_dict) + "\n")
 
         return results
 
@@ -526,6 +536,6 @@ To exclude an output from the analysis, write N in the Output column. You must c
         )
         # layer_details.setPostProcessor(self.grouper)
         context.addLayerToLoadOnCompletion(
-            layer, layer_details,
+            layer,
+            layer_details,
         )
-
