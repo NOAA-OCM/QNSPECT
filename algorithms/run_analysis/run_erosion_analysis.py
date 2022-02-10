@@ -33,6 +33,7 @@ from analysis_utils import (
     extract_lookup_table,
     reclassify_land_use_raster_by_table_field,
     convert_raster_data_type_to_float,
+    check_raster_values_in_lookup_table,
     LAND_USE_TABLES,
 )
 from Curve_Number import Curve_Number
@@ -188,6 +189,13 @@ class RunErosionAnalysis(QNSPECTAlgorithm):
 
         lookup_layer = extract_lookup_table(
             self.parameterAsVectorLayer, self.parameterAsEnum, parameters, context
+        )
+
+        check_raster_values_in_lookup_table(
+            raster=land_use_raster,
+            lookup_table_layer=lookup_layer,
+            context=context,
+            feedback=feedback
         )
 
         # Folder I/O

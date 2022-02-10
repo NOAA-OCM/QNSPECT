@@ -13,6 +13,7 @@ from qgis.core import (
 )
 import processing
 import os
+import re
 from pathlib import Path
 
 LAND_USE_TABLES = {1: "C-CAP", 2: "NLCD"}
@@ -104,4 +105,50 @@ def extract_lookup_table(
     else:
         raise QgsProcessingException(
             "Land Use Lookup Table must be provided with Custom Land Use Type.\n"
+        )
+
+def check_raster_values_in_lookup_table(
+    raster,
+    lookup_table_layer,
+    context,
+    feedback,
+):
+    """Finds the land use lookup values, then compares with the raster.
+    If there area any values in the raster that are not in the lookup table, a QgsProcessingException is raised."""
+    lu_codes = []
+    for land_use in lookup_table_layer.getFeatures():
+        lu_codes.append(float(land_use["lu_value"]))
+
+    alg_params = {
+        "BAND": 1,
+        "INPUT": raster,
+        "OUTPUT_HTML_FILE": QgsProcessing.TEMPORARY_OUTPUT,
+    }
+    html_file = processing.run(
+        "native:rasterlayeruniquevaluesreport",
+        alg_params,
+        context=context,
+        feedback=feedback,
+        is_child_algorithm=True,
+    )["OUTPUT_HTML_FILE"]
+    inside_prop_section = False
+    error_codes = []
+    with open(html_file) as file:
+        for line in file.readlines():
+            # Analyze only if in the properties section
+            if "<table>" in line:
+                inside_prop_section = True
+                continue
+            elif "</table>" in line:
+                break
+            elif not inside_prop_section:
+                continue
+            # The value is held in the first <td> of the html table
+            html_value = line.split("</td>")[0]
+            num = re.sub("[^0-9.]", "", html_value)
+            if float(num) not in lu_codes:
+                error_codes.append(num)
+    if error_codes:
+        raise QgsProcessingException(
+            f"The following raster values were not found in the lookup table provided: {', '.join(error_codes)}"
         )
