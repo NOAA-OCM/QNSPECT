@@ -171,7 +171,7 @@ class CompareErosion(QNSPECTAlgorithm):
         output_dir: Path,
         load_outputs: bool,
     ):
-        compare_name = f"Erosion {compare_type}"
+        compare_name = f"Sediment {compare_type}"
         raster_a = (scenario_dir_a / f"{compare_name}.tif").is_file()
         raster_b = (scenario_dir_b / f"{compare_name}.tif").is_file()
         if raster_a and raster_b:
