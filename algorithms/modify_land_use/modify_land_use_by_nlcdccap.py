@@ -83,7 +83,7 @@ class ModifyLandUseByNLCDCCAP(QNSPECTAlgorithm):
         self.addParameter(
             QgsProcessingParameterRasterDestination(
                 self.output,
-                "Modified Land Use",
+                "Modified Land Use Raster",
                 createByDefault=True,
                 defaultValue=None,
             )
@@ -153,3 +153,31 @@ class ModifyLandUseByNLCDCCAP(QNSPECTAlgorithm):
 
     def createInstance(self):
         return ModifyLandUseByNLCDCCAP()
+
+    def shortHelpString(self):
+        return """<html><body>
+<a href="https://www.noaa.gov/">Documentation</a>
+
+<h2>Algorithm Description</h2>
+
+<p>The `Modify Land Use (NLCD/C-CAP)` algorithm changes a section of a raster based on the NLCD/C-CAP land use name.
+This tool is designed to make it easy to change a raster's values in an area based on the name of the new land use.
+The pixels of the input raster layer that overlap with the areas of the input vector layer will be changed to the land use code of the name selected.</p>
+
+<h2>Input Parameters</h2>
+
+<h3>Name of Land Use to Apply</h3>
+<p>The name of the new land use.</p>
+
+<h3>Areas to Modify</h3>
+<p>Polygon vector layer that overlaps the pixels that should be changed.</p>
+
+<h3>Land Use Raster</h3>
+<p>Land use raster that needs to be modified.</p>
+
+<h2>Outputs</h2>
+
+<h3>Modified Land Use Raster</h3>
+<p>The location the modified land use raster will be saved to.</p>
+
+</body></html>"""

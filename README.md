@@ -12,8 +12,13 @@ QNSPECT is the QGIS implementation of NOAA Office for Coastal Management (OCM) N
 
 Once published, the QNSPECT will be available to install from official QGIS plugin repository.
 
+The plugin can also be installed with the following steps:
+1. Download repo to your QGIS python plugins folder
+2. Restart the QGIS to see the plugin
+
+
 ## Design
 
-![Design Diagram](https://user-images.githubusercontent.com/53625184/133650150-f5a84ace-26ba-4616-b21a-8a56c0977013.png)
+![Design Diagram](resources/design-diagram.png)
 
 ## Help

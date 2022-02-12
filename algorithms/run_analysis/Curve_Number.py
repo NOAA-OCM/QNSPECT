@@ -33,7 +33,7 @@ import inspect
 
 cmd_folder = os.path.split(inspect.getfile(inspect.currentframe()))[0]
 sys.path.append(cmd_folder)
-sys.path.append(os.path.dirname(cmd_folder))
+
 
 from qnspect_utils import perform_raster_math
 
@@ -41,7 +41,6 @@ from qnspect_utils import perform_raster_math
 class Curve_Number:
     """Class to generate and store Curve Number Raster"""
 
-    outputs = {}
     dual_soil_reclass = {0: [5, 9, 4], 1: [5, 5, 1, 6, 6, 2, 7, 7, 3, 8, 9, 4]}
 
     def __init__(
@@ -53,6 +52,7 @@ class Curve_Number:
         context: QgsProcessingContext,
         feedback: QgsProcessingMultiStepFeedback,
     ):
+        self.outputs = {}
         self.lookup_layer = lookup_layer
         self.lu_raster = lu_raster
         self.soil_raster = soil_raster
@@ -99,10 +99,7 @@ class Curve_Number:
 
         if self.dual_soil_type in [0, 1]:
             input_params.update(
-                {
-                    "input_b": self.outputs["Soil"]["OUTPUT"],
-                    "band_b": "1",
-                }
+                {"input_b": self.outputs["Soil"]["OUTPUT"], "band_b": "1",}
             )
             self.outputs["CN"] = perform_raster_math(
                 self._cn_expression, input_params, self.context, self.feedback
@@ -110,20 +107,14 @@ class Curve_Number:
 
         elif self.dual_soil_type == 2:
             input_params.update(
-                {
-                    "input_b": self.outputs["SoilUndrain"]["OUTPUT"],
-                    "band_b": "1",
-                }
+                {"input_b": self.outputs["SoilUndrain"]["OUTPUT"], "band_b": "1",}
             )
             self.outputs["CNUndrain"] = perform_raster_math(
                 self._cn_expression, input_params, self.context, self.feedback
             )
 
             input_params.update(
-                {
-                    "input_b": self.outputs["SoilDrain"]["OUTPUT"],
-                    "band_b": "1",
-                }
+                {"input_b": self.outputs["SoilDrain"]["OUTPUT"], "band_b": "1",}
             )
             self.outputs["CNDrain"] = perform_raster_math(
                 self._cn_expression, input_params, self.context, self.feedback
