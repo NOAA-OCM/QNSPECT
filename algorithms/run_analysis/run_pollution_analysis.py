@@ -67,59 +67,56 @@ from analysis_utils import (
 from QNSPECT.qnspect_algorithm import QNSPECTAlgorithm
 
 
-# class LayerGrouper(QgsProcessingLayerPostProcessorInterface):
-#     project = None
-#     group = None
+def create_layer_post_processor(display_name, layer_color1, layer_color2):
+    """Create a New Post Processor class and returns it"""
+    # Just simply creating a new instance of the class was not working
+    # for details see https://gis.stackexchange.com/questions/423650/qgsprocessinglayerpostprocessorinterface-only-processing-the-last-layer
+    class LayerPostProcessor(QgsProcessingLayerPostProcessorInterface):
+        instance = None
+        name = display_name
+        color1 = layer_color1
+        color2 = layer_color2
 
-#     def __init__(self, group_name):
-#         self.group_name = group_name
-#         super().__init__()
+        project = None
+        group = None
 
-#     def postProcessLayer(self, layer, context, feedback):
-#         if not self.project:
-#             self.project = context.project()
-#         if not self.group:
-#             root = self.project.instance().layerTreeRoot()
-#             self.group = root.addGroup(self.group_name)
-#         self.group.addLayer(layer)
-#         return {}
+        def postProcessLayer(self, layer, context, feedback):
+            feedback.pushInfo("here")
+            if layer.isValid():
+                layer.setName(self.name)
 
+                prov = layer.dataProvider()
+                stats = prov.bandStatistics(
+                    1, QgsRasterBandStats.All, layer.extent(), 0
+                )
+                min = stats.minimumValue
+                max = stats.maximumValue
+                renderer = QgsSingleBandPseudoColorRenderer(
+                    layer.dataProvider(), band=1
+                )
+                color_ramp = QgsGradientColorRamp(
+                    QColor(*self.color1), QColor(*self.color2)
+                )
+                renderer.setClassificationMin(min)
+                renderer.setClassificationMax(max)
+                renderer.createShader(color_ramp)
+                layer.setRenderer(renderer)
 
-class LayerPostProcessor(QgsProcessingLayerPostProcessorInterface):
-    instance = None
-    name = ""
-    color1 = tuple()
-    color2 = tuple()
+                if not self.project:
+                    self.project = context.project()
+                if not self.group:
+                    root = self.project.instance().layerTreeRoot()
+                    self.group = root.addGroup("abc")
+                self.group.addLayer(layer)
+                return {}
 
-    def __init__(self, name: str, color1: tuple, color2: tuple) -> None:
-        super().__init__()
-        self.name = name
-        self.color1 = color1
-        self.color2 = color2
+        # Hack to work around sip bug!
+        @staticmethod
+        def create() -> "LayerPostProcessor":
+            LayerPostProcessor.instance = LayerPostProcessor()
+            return LayerPostProcessor.instance
 
-    def postProcessLayer(self, layer, context, feedback):
-        feedback.pushInfo("here")
-        if layer.isValid():
-            layer.setName(self.name)
-
-            prov = layer.dataProvider()
-            stats = prov.bandStatistics(1, QgsRasterBandStats.All, layer.extent(), 0)
-            min = stats.minimumValue
-            max = stats.maximumValue
-            renderer = QgsSingleBandPseudoColorRenderer(layer.dataProvider(), 1)
-            color_ramp = QgsGradientColorRamp(
-                QColor(*self.color1), QColor(*self.color2)
-            )
-            renderer.setClassificationMin(min)
-            renderer.setClassificationMax(max)
-            renderer.createShader(color_ramp)
-            layer.setRenderer(renderer)
-
-    # Hack to work around sip bug!
-    @staticmethod
-    def create(name, color1, color2) -> "LayerPostProcessor":
-        LayerPostProcessor.instance = LayerPostProcessor(name, color1, color2)
-        return LayerPostProcessor.instance
+    return LayerPostProcessor.create()
 
 
 class RunPollutionAnalysis(QNSPECTAlgorithm):
@@ -564,7 +561,14 @@ To exclude an output from the analysis, write N in the Output column. You must c
     def createInstance(self):
         return RunPollutionAnalysis()
 
-    def handle_post_processing(self, layer, display_name, context):
+    def handle_post_processing(
+        self,
+        layer,
+        display_name,
+        context,
+        color1: tuple = (255, 0, 0),
+        color2: tuple = (0, 0, 255),
+    ):
 
         layer_details = context.LayerDetails(
             display_name, context.project(), display_name
@@ -575,5 +579,5 @@ To exclude an output from the analysis, write N in the Output column. You must c
         )
         if context.willLoadLayerOnCompletion(layer):
             context.layerToLoadOnCompletionDetails(layer).setPostProcessor(
-                LayerPostProcessor.create(display_name, (255, 0, 0), (0, 0, 255))
+                create_layer_post_processor(display_name, color1, color2)
             )
