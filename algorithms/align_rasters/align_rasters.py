@@ -340,11 +340,9 @@ class AlignRasters(QNSPECTAlgorithm):
 <h3>Resampling Method</h3>
 <p>The resampling method used for determining the value of aligned rasters' pixel value. The algorithms are identical to the algorithms executed in GDAL Warp.</p>
 <h3>Clipping Extent [optional]</h3>
-<p>The extent the aligned rasters will be clipped to.</p>
-<p>If this is not set, the aligned rasters will be clipped to the extent of the Reference Raster.</p>
+<p>The extent the aligned rasters will be clipped to. If this is not set, the aligned rasters will be clipped to the extent of the Reference Raster.</p>
 <h3>Clip Buffer [optional]</h3>
-<p>Buffer added around the Clipping Extent.
-If the Clipping Extent is not set, no buffer will be applied.</p>
+<p>Buffer added around the Clipping Extent. If the Clipping Extent is not set, no buffer will be applied.</p>
 <h3>Output Cell Size [optional]</h3>
 <p>The raster cell size of the output rasters. If this is not set, the cell size will be the same as the reference raster. If the reference raster has non-square pixels, the aligned raster(s) pixel size will be the smallest length.</p>
 <h2>Outputs</h2>
