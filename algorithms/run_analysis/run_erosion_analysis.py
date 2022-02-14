@@ -566,3 +566,49 @@ class RunErosionAnalysis(QNSPECTAlgorithm):
             feedback=None,
             is_child_algorithm=True,
         )["length_slope"]
+
+    def shortHelpString(self):
+        return """<html><body>
+<a href="https://www.noaa.gov/">Documentation</a>
+<h2>Algorithm Description</h2>
+<p>The `Run Erosion Analysis` algorithm estimates annual erosion volume for a given area on per cell and accumulated basis. The volume is calculated using RUSLE and Sediment Delivery Ratio models (see the QNSPECT Technical documentation for details).</p>
+<p>The user must provide Elevation, Land Use, Hydrographic Soil Group, K-Factor, and R-Factor rasters for the area of interest. The user is also optionally required to provide a lookup table that relates different land use classes in the provided Land Use raster with Curve Number and C-Factor values.</p>
+
+<h2>Input Parameters</h2>
+
+<h3>Run Name</h3>
+<p>Name of the run. The algorithm will create a folder with this name and save all outputs and a configuration file in that folder.</p>
+
+<h3>Elevation Raster</h3>
+<p>Elevation raster for the area of interest. The CRS can be in any units, but the <span style="color: #ff9800">elevation must be in meters</span>. The algorithm uses elevation data to calculate ratios, flow direction, and flow accumulation throughout a watershed.</p>
+
+<h3>Hydrographic Soils Group Raster</h3>
+<p>Hydrologic Soil Group raster for the area of interest with following mapping {'A': 1, 'B': 2, 'C': 3, 'D':4, 'A/D':5, 'B/D':6, 'C/D':7, 'W':8, Null: 9}. The soil raster is used to generate runoff estimates using NRCS Curve Number method.</p>
+
+<h3>K-factor Raster</h3>
+<p>Soil erodibility raster for the area of interest. The K-factor is used in RUSLE equation.</p>
+
+<h3>Land Use Raster</h3>
+<p>Land Cover/Classification raster for the area of interest. The algorithm uses Land Use Raster and Lookup Table to determine each cell's erosion potential.</p>
+
+<h3>Land Use Type</h3>
+<p>Type of Land Use raster. If the Land Use raster is not of type C-CAP or NCLD, select custom for this field and supply a lookup table in the Land Use Lookup Table field.</p>
+
+<h3>Land Use Lookup Table [optional]</h3>
+<p>Lookup table to relate each land use class with Curve Number and C-Factor. The user can skip providing a lookup table if the land use type is not custom; the algorithm will utilize the default lookup table for the land use type selected in the previous option.</p>
+<p>To create a custom lookup table, develop a table using <a href="https://raw.githubusercontent.com/Dewberry/QNSPECT/development/resources/coefficients/NLCD.csv">this format</a>. The table must contain all land use classes available in the land use raster.</p>
+
+<h2>Advanced Parameters</h2>
+
+<h3>Use Multi Flow Direction [MFD] Routing</h3>
+<p>By default, the Single Flow Direction [SFD] option is used for flow routing. Multi Flow Direction [MFD] routing will be utilized if this option is checked. The algorithm passes these flags to GRASS r.watershed function, which is the computational engine for accumulation calculations</p>
+
+<h3>Treat Dual Category Soils as</h3>
+<p>Certain areas can have dual soil types (A/D, B/D, or C/D). These areas possess characteristics of Hydrologic Soil Group D during undrained conditions and characteristics of Hydrologic Soil Group A/B/C for drained conditions.</p>
+<p>In this parameter, the user can specify if these areas should be treated as drained, undrained, or average of both conditions. If the average option is selected, the algorithm will use the average of drained and undrained Curve Number for Sediment Delivery Ratio calculations.</p>
+
+<h2>Outputs</h2>
+
+<h3>Folder for Run Outputs</h3>
+<p>The algorithm outputs and configuration file will be saved in this directory in a separate folder.</p>
+</body></html>"""
