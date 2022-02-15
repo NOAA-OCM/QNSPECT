@@ -1,5 +1,5 @@
 """
-Store stylers to be used for different algorithms
+Store helper functions to be used for different classes
 """
 
 
@@ -11,6 +11,34 @@ from qgis.core import (
 )
 
 from qgis.PyQt.QtGui import QColor
+
+from qgis.utils import iface
+from qgis.PyQt.QtCore import *
+
+
+def select_group(name: str) -> bool:
+    """
+    Select group item of a node tree
+    """
+
+    view = iface.layerTreeView()
+    m = view.model()
+
+    listIndexes = m.match(
+        m.index(0, 0),
+        Qt.DisplayRole,
+        name,
+        1,
+        Qt.MatchFixedString | Qt.MatchRecursive | Qt.MatchCaseSensitive | Qt.MatchWrap,
+    )
+
+    if listIndexes:
+        i = listIndexes[0]
+        view.selectionModel().setCurrentIndex(i, QItemSelectionModel.ClearAndSelect)
+        return True
+
+    else:
+        return False
 
 
 def run_alg_styler(display_name, layer_color1, layer_color2):

@@ -6,7 +6,7 @@ from pathlib import Path
 import sys
 
 sys.path.append(Path(__file__).parent.parent)
-from qnspect_utils import perform_raster_math
+from qnspect_alg_utils import perform_raster_math
 
 
 def run_direct_and_percent_comparisons(

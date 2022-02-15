@@ -37,12 +37,10 @@ from json import load
 
 from QNSPECT.qnspect_algorithm import QNSPECTAlgorithm
 
-from qgis.core import (
-    QgsVectorLayer,
-    QgsProcessingException,
-)
+from qgis.core import QgsVectorLayer, QgsProcessingException, QgsLayerTreeGroup
+from qgis.utils import iface
 
-from QNSPECT.stylers import run_alg_styler
+from QNSPECT.qnspect_utils import run_alg_styler, select_group
 
 
 class QNSPECTRunAlgorithm(QNSPECTAlgorithm):
@@ -60,6 +58,28 @@ class QNSPECTRunAlgorithm(QNSPECTAlgorithm):
 
     def groupId(self):
         return "analysis"
+
+    def postProcessAlgorithm(self, context, feedback):
+
+        project = context.project()
+        root = project.instance().layerTreeRoot()
+
+        group = root.findGroup(self.run_name)
+        if not group:
+            selected_nodes = iface.layerTreeView().selectedNodes()
+            if selected_nodes:
+                if isinstance(selected_nodes[0], QgsLayerTreeGroup):
+                    group = selected_nodes[0].insertGroup(0, self.run_name)
+                else:
+                    parent = selected_nodes[0].parent()
+                    index = parent.children()(selected_nodes[0])
+                    group = parent.insertGroup(index, self.run_name)
+            else:
+                group = root.insertGroup(0, self.run_name)
+
+        feedback.pushWarning(str(select_group(self.run_name)))
+
+        return {}
 
     def extract_lookup_table(
         self,
