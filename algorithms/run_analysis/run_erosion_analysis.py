@@ -508,6 +508,7 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
             config["Inputs"][self.lookupTable] = lookup_layer.source()
         config["Outputs"] = results
         config["RunTime"] = str(datetime.datetime.now())
+        config["QNSPECTVersion"] = self.version
         config_file = run_out_dir / f"{run_name}.ero.json"
         json.dump(config, config_file.open("w"), indent=4)
         return config

@@ -428,6 +428,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
             run_dict["Inputs"]["LookupTable"] = lookup_layer.source()
         run_dict["Outputs"] = results
         run_dict["RunTime"] = str(datetime.now())
+        run_dict["QNSPECTVersion"] = self.version
         with open(os.path.join(run_out_dir, f"{run_name}.pol.json"), "w") as f:
             f.write(dumps(run_dict, indent=4))
 

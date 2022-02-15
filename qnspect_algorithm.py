@@ -43,6 +43,8 @@ class QNSPECTAlgorithm(QgsProcessingAlgorithm):
     Base class for QNSPECT Algorithms
     """
 
+    version = 0.1
+
     def icon(self):
         """
         Returns the algorithm's icon.
