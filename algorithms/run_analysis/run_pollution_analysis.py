@@ -28,19 +28,11 @@ from qgis.core import (
     QgsProcessingParameterNumber,
     QgsProcessingParameterVectorLayer,
     QgsProcessingParameterMatrix,
-    QgsVectorLayer,
     QgsProcessingParameterFolderDestination,
     QgsProcessingParameterBoolean,
     QgsProcessingParameterDefinition,
-    QgsProcessingContext,
-    QgsProcessingLayerPostProcessorInterface,
     QgsProcessingException,
-    QgsRasterBandStats,
-    QgsSingleBandPseudoColorRenderer,
-    QgsGradientColorRamp,
 )
-from qgis.utils import iface
-from qgis.PyQt.QtGui import QColor
 
 import processing
 import os
@@ -60,68 +52,13 @@ from Curve_Number import Curve_Number
 from Runoff_Volume import Runoff_Volume
 from qnspect_utils import perform_raster_math, grass_material_transport, filter_matrix
 from analysis_utils import (
-    extract_lookup_table,
     reclassify_land_use_raster_by_table_field,
 )
 
-from QNSPECT.qnspect_algorithm import QNSPECTAlgorithm
+from QNSPECT.qnspect_run_algorithm import QNSPECTRunAlgorithm
 
 
-def create_layer_post_processor(display_name, layer_color1, layer_color2):
-    """Create a New Post Processor class and returns it"""
-    # Just simply creating a new instance of the class was not working
-    # for details see https://gis.stackexchange.com/questions/423650/qgsprocessinglayerpostprocessorinterface-only-processing-the-last-layer
-    class LayerPostProcessor(QgsProcessingLayerPostProcessorInterface):
-        instance = None
-        name = display_name
-        color1 = layer_color1
-        color2 = layer_color2
-
-        project = None
-        group = None
-
-        def postProcessLayer(self, layer, context, feedback):
-            feedback.pushInfo("here")
-            if layer.isValid():
-                layer.setName(self.name)
-
-                prov = layer.dataProvider()
-                stats = prov.bandStatistics(
-                    1, QgsRasterBandStats.All, layer.extent(), 0
-                )
-                min = stats.minimumValue
-                max = stats.maximumValue
-                renderer = QgsSingleBandPseudoColorRenderer(
-                    layer.dataProvider(), band=1
-                )
-                color_ramp = QgsGradientColorRamp(
-                    QColor(*self.color1), QColor(*self.color2)
-                )
-                renderer.setClassificationMin(min)
-                renderer.setClassificationMax(max)
-                renderer.createShader(color_ramp)
-                layer.setRenderer(renderer)
-
-                if not self.project:
-                    self.project = context.project()
-                if not self.group:
-                    root = self.project.instance().layerTreeRoot()
-                    self.group = root.addGroup("abc")
-                self.group.addLayer(layer)
-                return {}
-
-        # Hack to work around sip bug!
-        @staticmethod
-        def create() -> "LayerPostProcessor":
-            LayerPostProcessor.instance = LayerPostProcessor()
-            return LayerPostProcessor.instance
-
-    return LayerPostProcessor.create()
-
-
-class RunPollutionAnalysis(QNSPECTAlgorithm):
-    #     grouper = None
-
+class RunPollutionAnalysis(QNSPECTRunAlgorithm):
     def initAlgorithm(self, config=None):
         self.addParameter(
             QgsProcessingParameterString(
@@ -293,9 +230,7 @@ class RunPollutionAnalysis(QNSPECTAlgorithm):
         precip_raster = self.parameterAsRasterLayer(parameters, "PrecipRaster", context)
 
         ## Extract Lookup Table
-        lookup_layer = extract_lookup_table(
-            self.parameterAsVectorLayer, self.parameterAsEnum, parameters, context
-        )
+        lookup_layer = self.extract_lookup_table(parameters, context)
 
         # handle different cases in input matrix and lookup layer
         lookup_fields = {f.name().lower(): f.name() for f in lookup_layer.fields()}
@@ -351,7 +286,10 @@ class RunPollutionAnalysis(QNSPECTAlgorithm):
             results["Runoff Local"] = outputs["Runoff Local"]["OUTPUT"]
             if load_outputs:
                 self.handle_post_processing(
-                    outputs["Runoff Local"]["OUTPUT"], "Runoff Local (L)", context
+                    "runoff",
+                    outputs["Runoff Local"]["OUTPUT"],
+                    "Runoff Local (L)",
+                    context,
                 )
         else:
             outputs["Runoff Local"] = runoff_vol.calculate_Q()
@@ -383,7 +321,10 @@ class RunPollutionAnalysis(QNSPECTAlgorithm):
             results[pol + " Local"] = outputs[pol + " Local"]["OUTPUT"]
             if load_outputs:
                 self.handle_post_processing(
-                    outputs[pol + " Local"]["OUTPUT"], f"{pol} Local (mg)", context
+                    pol.lower(),
+                    outputs[pol + " Local"]["OUTPUT"],
+                    f"{pol} Local (mg)",
+                    context,
                 )
 
         # Accumulated Runoff Calculation (L)
@@ -403,6 +344,7 @@ class RunPollutionAnalysis(QNSPECTAlgorithm):
             ]
             if load_outputs:
                 self.handle_post_processing(
+                    "runoff",
                     outputs["Runoff Accumulated"]["accumulation"],
                     "Runoff Accumulated (L)",
                     context,
@@ -442,6 +384,7 @@ class RunPollutionAnalysis(QNSPECTAlgorithm):
             results[pol + " Accumulated"] = outputs[pol + " Accumulated"]["OUTPUT"]
             if load_outputs:
                 self.handle_post_processing(
+                    pol.lower(),
                     outputs[pol + " Accumulated"]["OUTPUT"],
                     f"{pol} Accumulated (kg)",
                     context,
@@ -469,6 +412,7 @@ class RunPollutionAnalysis(QNSPECTAlgorithm):
                 ]
                 if load_outputs:
                     self.handle_post_processing(
+                        pol.lower(),
                         outputs[pol + " Concentration"]["OUTPUT"],
                         f"{pol} Concentration (mg/L)",
                         context,
@@ -494,7 +438,6 @@ class RunPollutionAnalysis(QNSPECTAlgorithm):
         return results
 
     def postProcessAlgorithm(self, context, feedback):
-        # iface.mapCanvas().refreshAllLayers()
         return {}
 
     def name(self):
@@ -502,12 +445,6 @@ class RunPollutionAnalysis(QNSPECTAlgorithm):
 
     def displayName(self):
         return self.tr("Run Pollution Analysis")
-
-    def group(self):
-        return self.tr("Analysis")
-
-    def groupId(self):
-        return "analysis"
 
     def shortHelpString(self):
         return """<html><body>
@@ -560,24 +497,3 @@ To exclude an output from the analysis, write N in the Output column. You must c
 
     def createInstance(self):
         return RunPollutionAnalysis()
-
-    def handle_post_processing(
-        self,
-        layer,
-        display_name,
-        context,
-        color1: tuple = (255, 0, 0),
-        color2: tuple = (0, 0, 255),
-    ):
-
-        layer_details = context.LayerDetails(
-            display_name, context.project(), display_name
-        )
-        context.addLayerToLoadOnCompletion(
-            layer,
-            layer_details,
-        )
-        if context.willLoadLayerOnCompletion(layer):
-            context.layerToLoadOnCompletionDetails(layer).setPostProcessor(
-                create_layer_post_processor(display_name, color1, color2)
-            )
