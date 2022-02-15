@@ -115,40 +115,29 @@ def check_raster_values_in_lookup_table(
 ):
     """Finds the land use lookup values, then compares with the raster.
     If there area any values in the raster that are not in the lookup table, a QgsProcessingException is raised."""
-    lu_codes = []
+    lu_codes = set()
     for land_use in lookup_table_layer.getFeatures():
-        lu_codes.append(float(land_use["lu_value"]))
+        lu_codes.add(float(land_use["lu_value"]))
 
     alg_params = {
         "BAND": 1,
         "INPUT": raster,
-        "OUTPUT_HTML_FILE": QgsProcessing.TEMPORARY_OUTPUT,
+        "OUTPUT_TABLE": QgsProcessing.TEMPORARY_OUTPUT,
     }
-    html_file = processing.run(
+    values_table = processing.run(
         "native:rasterlayeruniquevaluesreport",
         alg_params,
         context=context,
         feedback=feedback,
         is_child_algorithm=True,
-    )["OUTPUT_HTML_FILE"]
-    inside_prop_section = False
+    )["OUTPUT_TABLE"]
+    if isinstance(values_table, str):
+        values_table = QgsVectorLayer(values_table)
     error_codes = []
-    with open(html_file) as file:
-        for line in file.readlines():
-            # Analyze only if in the properties section
-            if "<table>" in line:
-                inside_prop_section = True
-                continue
-            elif "</table>" in line:
-                break
-            elif not inside_prop_section:
-                continue
-            # The value is held in the first <td> of the html table
-            html_value = line.split("</td>")[0]
-            num = re.sub("[^0-9.]", "", html_value)
-            if float(num) not in lu_codes:
-                error_codes.append(num)
+    for feature in values_table.getFeatures():
+        if feature['value'] not in lu_codes:
+            error_codes.append(feature['value'])
     if error_codes:
         raise QgsProcessingException(
-            f"The following raster values were not found in the lookup table provided: {', '.join(error_codes)}"
+            f"The following raster values were not found in the lookup table provided: {', '.join(sorted(error_codes))}"
         )
