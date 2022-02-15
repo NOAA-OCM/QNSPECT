@@ -22,13 +22,13 @@
  ***************************************************************************/
 """
 
-__author__ = 'Abdul Raheem Siddiqui'
-__date__ = '2021-12-29'
-__copyright__ = '(C) 2021 by NOAA'
+__author__ = "Abdul Raheem Siddiqui"
+__date__ = "2021-12-29"
+__copyright__ = "(C) 2021 by NOAA"
 
 # This will get replaced with a git SHA1 when you do a git archive
 
-__revision__ = '$Format:%H$'
+__revision__ = "$Format:%H$"
 
 import os
 import inspect
@@ -38,9 +38,8 @@ from qgis.core import QgsProcessingProvider
 from QNSPECT.qnspect_algorithm import QNSPECTAlgorithm
 from QNSPECT import algorithms
 
+
 class QNSPECTProvider(QgsProcessingProvider):
-
-
     def __init__(self):
         """
         Default constructor.
@@ -59,8 +58,11 @@ class QNSPECTProvider(QgsProcessingProvider):
         Loads all algorithms belonging to this provider.
         """
 
-        alg_classes = [m[1] for m in inspect.getmembers(algorithms, inspect.isclass) if
-                       issubclass(m[1], QNSPECTAlgorithm)]        
+        alg_classes = [
+            m[1]
+            for m in inspect.getmembers(algorithms, inspect.isclass)
+            if issubclass(m[1], QNSPECTAlgorithm)
+        ]
 
         for alg_class in alg_classes:
             self.addAlgorithm(alg_class())
@@ -71,7 +73,7 @@ class QNSPECTProvider(QgsProcessingProvider):
         string should be a unique, short, character only string, eg "qgis" or
         "gdal". This string should not be localised.
         """
-        return 'qnspect'
+        return "qnspect"
 
     def name(self):
         """
@@ -80,7 +82,7 @@ class QNSPECTProvider(QgsProcessingProvider):
 
         This string should be short and localised.
         """
-        return self.tr('QNSPECT')
+        return self.tr("QNSPECT")
 
     def icon(self):
         """
@@ -88,7 +90,9 @@ class QNSPECTProvider(QgsProcessingProvider):
         the Processing toolbox.
         """
         cmd_folder = os.path.split(inspect.getfile(inspect.currentframe()))[0]
-        icon = QIcon(os.path.join(os.path.join(cmd_folder, "resources/branding/icon.svg")))
+        icon = QIcon(
+            os.path.join(os.path.join(cmd_folder, "resources/branding/icon.svg"))
+        )
         return icon
 
     def longName(self):
@@ -97,4 +101,4 @@ class QNSPECTProvider(QgsProcessingProvider):
         extra details such as version numbers. This string should be localised.
         The default implementation returns the same string as name().
         """
-        return self.tr('Nonpoint Source Pollution and Erosion Comparison Tool')
+        return self.tr("Nonpoint Source Pollution and Erosion Comparison Tool")
