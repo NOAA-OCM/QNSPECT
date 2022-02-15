@@ -50,7 +50,11 @@ sys.path.append(os.path.dirname(cmd_folder))
 
 from Curve_Number import Curve_Number
 from Runoff_Volume import Runoff_Volume
-from qnspect_utils import perform_raster_math, grass_material_transport, filter_matrix
+from qnspect_alg_utils import (
+    perform_raster_math,
+    grass_material_transport,
+    filter_matrix,
+)
 from analysis_utils import (
     reclassify_land_use_raster_by_table_field,
 )
@@ -59,6 +63,8 @@ from QNSPECT.qnspect_run_algorithm import QNSPECTRunAlgorithm
 
 
 class RunPollutionAnalysis(QNSPECTRunAlgorithm):
+    run_name = ""
+
     def initAlgorithm(self, config=None):
         self.addParameter(
             QgsProcessingParameterString(
@@ -219,7 +225,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
         conc_out = self.parameterAsBool(parameters, "ConcOutputs", context)
         load_outputs = self.parameterAsBool(parameters, "LoadOutputs", context)
 
-        run_name = self.parameterAsString(parameters, "RunName", context)
+        self.run_name = self.parameterAsString(parameters, "RunName", context)
         proj_loc = self.parameterAsString(parameters, "ProjectLocation", context)
 
         elev_raster = self.parameterAsRasterLayer(
@@ -249,10 +255,8 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
         # assert all Raster CRS are same and Raster Pixel Units too
 
         # Folder I/O
-        run_out_dir = os.path.join(proj_loc, run_name)
+        run_out_dir = os.path.join(proj_loc, self.run_name)
         os.makedirs(run_out_dir, exist_ok=True)
-
-        # self.grouper = LayerGrouper(run_name)
 
         ## Generate CN Raster
         cn = Curve_Number(
@@ -429,7 +433,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
         run_dict["Outputs"] = results
         run_dict["RunTime"] = str(datetime.now())
         run_dict["QNSPECTVersion"] = self.version
-        with open(os.path.join(run_out_dir, f"{run_name}.pol.json"), "w") as f:
+        with open(os.path.join(run_out_dir, f"{self.run_name}.pol.json"), "w") as f:
             f.write(dumps(run_dict, indent=4))
 
         ## Uncomment following two lines to print debugging info
@@ -437,9 +441,6 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
         # feedback.pushCommandInfo("\n"+ str(run_dict) + "\n")
 
         return results
-
-    def postProcessAlgorithm(self, context, feedback):
-        return {}
 
     def name(self):
         return "run_pollution_analysis"

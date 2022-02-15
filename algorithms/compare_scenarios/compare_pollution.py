@@ -38,7 +38,7 @@ import sys
 sys.path.append(str(Path(__file__).parent))
 sys.path.append(str(Path(__file__).parent.parent))
 from comparison_utils import run_direct_and_percent_comparisons
-from qnspect_utils import filter_matrix
+from qnspect_alg_utils import filter_matrix
 
 
 def find_all_matching(

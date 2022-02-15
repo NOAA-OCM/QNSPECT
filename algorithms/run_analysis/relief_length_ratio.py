@@ -5,7 +5,7 @@ from qgis.core import QgsUnitTypes, QgsRasterLayer, QgsProcessing
 import processing
 
 sys.path.append(str(Path(__file__).parent.parent))
-from qnspect_utils import perform_raster_math
+from qnspect_alg_utils import perform_raster_math
 
 __all__ = ("create_relief_length_ratio_raster",)
 

@@ -25,7 +25,7 @@ import math
 import datetime
 import json
 
-from qnspect_utils import perform_raster_math, grass_material_transport
+from qnspect_alg_utils import perform_raster_math, grass_material_transport
 from analysis_utils import (
     reclassify_land_use_raster_by_table_field,
     convert_raster_data_type_to_float,
@@ -54,6 +54,7 @@ from QNSPECT.qnspect_run_algorithm import QNSPECTRunAlgorithm
 
 
 class RunErosionAnalysis(QNSPECTRunAlgorithm):
+    run_name = ""
     lookupTable = "LookupTable"
     landUseType = "LandUseType"
     soilRaster = "HSGRaster"
@@ -186,8 +187,8 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
         project_loc = Path(
             self.parameterAsString(parameters, self.projectLocation, context)
         )
-        run_name = self.parameterAsString(parameters, self.runName, context)
-        run_out_dir: Path = project_loc / run_name
+        self.run_name = self.parameterAsString(parameters, self.runName, context)
+        run_out_dir: Path = project_loc / self.run_name
         run_out_dir.mkdir(parents=True, exist_ok=True)
 
         ## RUSLE calculations
@@ -300,7 +301,6 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
             lookup_layer=lookup_layer,
             elev_raster=elev_raster,
             land_use_raster=land_use_raster,
-            run_name=run_name,
         )
 
         ## Uncomment following two lines to print debugging info
@@ -308,9 +308,6 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
         # feedback.pushCommandInfo("\n" + str(run_dict) + "\n")
 
         return results
-
-    def postProcessAlgorithm(self, context, feedback):
-        return {}
 
     def name(self):
         return "run_erosion_analysis"
@@ -487,7 +484,6 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
         lookup_layer,
         elev_raster,
         land_use_raster,
-        run_name,
     ) -> dict:
         """Create a config file with the name of the run in the outputs folder.
         Uses the "ero" key word to differentiate it from the results of the pollution analysis."""
@@ -509,7 +505,7 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
         config["Outputs"] = results
         config["RunTime"] = str(datetime.datetime.now())
         config["QNSPECTVersion"] = self.version
-        config_file = run_out_dir / f"{run_name}.ero.json"
+        config_file = run_out_dir / f"{self.run_name}.ero.json"
         json.dump(config, config_file.open("w"), indent=4)
         return config
 

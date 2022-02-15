@@ -37,12 +37,10 @@ from json import load
 
 from QNSPECT.qnspect_algorithm import QNSPECTAlgorithm
 
-from qgis.core import (
-    QgsVectorLayer,
-    QgsProcessingException,
-)
+from qgis.core import QgsVectorLayer, QgsProcessingException, QgsLayerTreeGroup
+from qgis.utils import iface
 
-from QNSPECT.stylers import run_alg_styler
+from QNSPECT.qnspect_utils import run_alg_styler, select_group
 
 
 class QNSPECTRunAlgorithm(QNSPECTAlgorithm):
@@ -60,6 +58,36 @@ class QNSPECTRunAlgorithm(QNSPECTAlgorithm):
 
     def groupId(self):
         return "analysis"
+
+    def postProcessAlgorithm(self, context, feedback):
+
+        # following code make(if doesn't exist) and select a group so that the QGIS  spits layer at that location
+
+        project = context.project()
+        root = project.instance().layerTreeRoot()  # get base level node
+
+        group = root.findGroup(self.run_name)  # find group in whole hierarchy
+        if not group:  # if group does not already exists
+            selected_nodes = (
+                iface.layerTreeView().selectedNodes()
+            )  # get all selected nodes
+            if selected_nodes:  # if a node is selected
+                # check the first node is group
+                if isinstance(selected_nodes[0], QgsLayerTreeGroup):
+                    # if it is add a group inside
+                    group = selected_nodes[0].insertGroup(0, self.run_name)
+                else:
+                    parent = selected_nodes[0].parent()
+                    # get current index so that new group can be inserted at that location
+                    index = parent.children()(selected_nodes[0])
+                    group = parent.insertGroup(index, self.run_name)
+            else:
+                group = root.insertGroup(0, self.run_name)
+
+        # select the group
+        select_group(self.run_name)
+
+        return {}
 
     def extract_lookup_table(
         self,
