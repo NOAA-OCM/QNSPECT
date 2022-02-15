@@ -25,15 +25,10 @@ import math
 import datetime
 import json
 
-sys.path.append(str(Path(__file__).parent.parent))
-sys.path.append(str(Path(__file__).parent))
-
 from qnspect_utils import perform_raster_math, grass_material_transport
 from analysis_utils import (
-    extract_lookup_table,
     reclassify_land_use_raster_by_table_field,
     convert_raster_data_type_to_float,
-    LAND_USE_TABLES,
 )
 from Curve_Number import Curve_Number
 from relief_length_ratio import create_relief_length_ratio_raster
@@ -53,13 +48,12 @@ from qgis.core import (
     QgsProcessingParameterString,
     QgsProcessingException,
 )
-from qgis.utils import iface
 import processing
 
-from QNSPECT.qnspect_algorithm import QNSPECTAlgorithm
+from QNSPECT.qnspect_run_algorithm import QNSPECTRunAlgorithm
 
 
-class RunErosionAnalysis(QNSPECTAlgorithm):
+class RunErosionAnalysis(QNSPECTRunAlgorithm):
     lookupTable = "LookupTable"
     landUseType = "LandUseType"
     soilRaster = "HSGRaster"
@@ -119,7 +113,7 @@ class RunErosionAnalysis(QNSPECTAlgorithm):
             QgsProcessingParameterEnum(
                 self.landUseType,
                 "Land Use Type",
-                options=["Custom"] + list(LAND_USE_TABLES.values()),
+                options=["Custom"] + list(self.LAND_USE_TABLES.values()),
                 allowMultiple=False,
                 defaultValue=None,
             )
@@ -186,9 +180,7 @@ class RunErosionAnalysis(QNSPECTAlgorithm):
         if cell_size_sq_meters is None:
             raise QgsProcessingException("Invalid Elevation Raster CRS units.")
 
-        lookup_layer = extract_lookup_table(
-            self.parameterAsVectorLayer, self.parameterAsEnum, parameters, context
-        )
+        lookup_layer = self.extract_lookup_table(parameters, context)
 
         # Folder I/O
         project_loc = Path(
@@ -279,7 +271,7 @@ class RunErosionAnalysis(QNSPECTAlgorithm):
 
         if load_outputs:
             self.handle_post_processing(
-                sediment_local_path, "Sediment Local (kg)", context
+                "sediment", sediment_local_path, "Sediment Local (kg)", context
             )
 
         sediment_acc_path = str(run_out_dir / (self.sedimentYieldAccumulated + ".tif"))
@@ -297,7 +289,7 @@ class RunErosionAnalysis(QNSPECTAlgorithm):
 
         if load_outputs:
             self.handle_post_processing(
-                sediment_acc, "Sediment Accumulation (Mg)", context
+                "sediment", sediment_acc, "Sediment Accumulation (Mg)", context
             )
 
         run_dict = self.create_config_file(
@@ -318,7 +310,6 @@ class RunErosionAnalysis(QNSPECTAlgorithm):
         return results
 
     def postProcessAlgorithm(self, context, feedback):
-        iface.mapCanvas().refreshAllLayers()
         return {}
 
     def name(self):
@@ -326,12 +317,6 @@ class RunErosionAnalysis(QNSPECTAlgorithm):
 
     def displayName(self):
         return self.tr("Run Erosion Analysis")
-
-    def group(self):
-        return self.tr("Analysis")
-
-    def groupId(self):
-        return "analysis"
 
     def createInstance(self):
         return RunErosionAnalysis()
@@ -526,16 +511,6 @@ class RunErosionAnalysis(QNSPECTAlgorithm):
         config_file = run_out_dir / f"{run_name}.ero.json"
         json.dump(config, config_file.open("w"), indent=4)
         return config
-
-    def handle_post_processing(self, layer, display_name, context):
-        layer_details = context.LayerDetails(
-            display_name, context.project(), display_name
-        )
-        # layer_details.setPostProcessor(self.grouper)
-        context.addLayerToLoadOnCompletion(
-            layer,
-            layer_details,
-        )
 
     def create_ls_factor(self, parameters, context):
         alg_params = {

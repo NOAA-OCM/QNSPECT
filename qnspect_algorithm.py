@@ -22,13 +22,13 @@
  ***************************************************************************/
 """
 
-__author__ = 'NOAA'
-__date__ = '2021-12-29'
-__copyright__ = '(C) 2021 by NOAA'
+__author__ = "NOAA"
+__date__ = "2021-12-29"
+__copyright__ = "(C) 2021 by NOAA"
 
 # This will get replaced with a git SHA1 when you do a git archive
 
-__revision__ = '$Format:%H$'
+__revision__ = "$Format:%H$"
 
 import os
 import inspect
@@ -48,8 +48,8 @@ class QNSPECTAlgorithm(QgsProcessingAlgorithm):
         Returns the algorithm's icon.
         """
         cmd_folder = os.path.split(inspect.getfile(inspect.currentframe()))[0]
-        icon = QIcon(os.path.join(os.path.join(cmd_folder, "resources/branding/icon.svg")))
+        icon = QIcon(os.path.join(cmd_folder, "resources/branding/icon.svg"))
         return icon
 
     def tr(self, string):
-        return QCoreApplication.translate('Processing', string)
+        return QCoreApplication.translate("Processing", string)

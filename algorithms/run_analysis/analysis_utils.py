@@ -3,22 +3,14 @@ Store common functions that are required by different analysis modules
 """
 
 
-from typing import Callable
 from qgis.core import (
     QgsProcessing,
     QgsVectorLayer,
     Qgis,
     QgsRasterLayer,
-    QgsProcessingException,
 )
-import processing
-import os
-from pathlib import Path
 
-LAND_USE_TABLES = {1: "C-CAP", 2: "NLCD"}
-LAND_USE_PATH = (
-    f"file:///{Path(__file__).parent.parent.parent / 'resources' / 'coefficients'}"
-)
+import processing
 
 
 def convert_raster_data_type_to_float(
@@ -82,26 +74,3 @@ def reclassify_land_use_raster_by_table_field(
         feedback=feedback,
         is_child_algorithm=True,
     )
-
-
-def extract_lookup_table(
-    parameter_as_vector_layer: Callable,
-    parameter_as_enum: Callable,
-    parameters,
-    context,
-):
-    """Extract the lookup table as a vector layer."""
-    if parameters["LookupTable"]:
-        return parameter_as_vector_layer(parameters, "LookupTable", context)
-
-    land_use_type = parameter_as_enum(parameters, "LandUseType", context)
-    if land_use_type > 0:
-        return QgsVectorLayer(
-            os.path.join(LAND_USE_PATH, f"{LAND_USE_TABLES[land_use_type]}.csv"),
-            "Land Use Lookup Table",
-            "delimitedtext",
-        )
-    else:
-        raise QgsProcessingException(
-            "Land Use Lookup Table must be provided with Custom Land Use Type.\n"
-        )
