@@ -35,7 +35,7 @@ cmd_folder = os.path.split(inspect.getfile(inspect.currentframe()))[0]
 sys.path.append(cmd_folder)
 
 
-from qnspect_alg_utils import perform_raster_math
+from qnspect_utils import perform_raster_math
 
 
 class Curve_Number:
