@@ -3,7 +3,6 @@ Store common functions that are required by different analysis modules
 """
 
 
-from typing import Callable
 from qgis.core import (
     QgsProcessing,
     QgsVectorLayer,
@@ -13,13 +12,9 @@ from qgis.core import (
 )
 import processing
 import os
-import re
 from pathlib import Path
 
-LAND_USE_TABLES = {1: "C-CAP", 2: "NLCD"}
-LAND_USE_PATH = (
-    f"file:///{Path(__file__).parent.parent.parent / 'resources' / 'coefficients'}"
-)
+import processing
 
 
 def convert_raster_data_type_to_float(
@@ -85,28 +80,6 @@ def reclassify_land_use_raster_by_table_field(
     )
 
 
-def extract_lookup_table(
-    parameter_as_vector_layer: Callable,
-    parameter_as_enum: Callable,
-    parameters,
-    context,
-):
-    """Extract the lookup table as a vector layer."""
-    if parameters["LookupTable"]:
-        return parameter_as_vector_layer(parameters, "LookupTable", context)
-
-    land_use_type = parameter_as_enum(parameters, "LandUseType", context)
-    if land_use_type > 0:
-        return QgsVectorLayer(
-            os.path.join(LAND_USE_PATH, f"{LAND_USE_TABLES[land_use_type]}.csv"),
-            "Land Use Lookup Table",
-            "delimitedtext",
-        )
-    else:
-        raise QgsProcessingException(
-            "Land Use Lookup Table must be provided with Custom Land Use Type.\n"
-        )
-
 def check_raster_values_in_lookup_table(
     raster,
     lookup_table_layer,
@@ -135,8 +108,8 @@ def check_raster_values_in_lookup_table(
         values_table = QgsVectorLayer(values_table)
     error_codes = []
     for feature in values_table.getFeatures():
-        if feature['value'] not in lu_codes:
-            error_codes.append(feature['value'])
+        if feature["value"] not in lu_codes:
+            error_codes.append(feature["value"])
     if error_codes:
         raise QgsProcessingException(
             f"The following raster values were not found in the lookup table provided: {', '.join(sorted(error_codes))}"

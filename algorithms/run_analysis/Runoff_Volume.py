@@ -11,13 +11,13 @@
  ***************************************************************************/
 """
 
-__author__ = 'Abdul Raheem Siddiqui'
-__date__ = '2021-12-29'
-__copyright__ = '(C) 2021 by NOAA'
+__author__ = "Abdul Raheem Siddiqui"
+__date__ = "2021-12-29"
+__copyright__ = "(C) 2021 by NOAA"
 
 # This will get replaced with a git SHA1 when you do a git archive
 
-__revision__ = '$Format:%H$'
+__revision__ = "$Format:%H$"
 
 from qgis.core import (
     QgsProcessingMultiStepFeedback,
@@ -42,8 +42,6 @@ from qnspect_utils import perform_raster_math
 class Runoff_Volume:
     """Class to generate and store Runoff Volume Raster"""
 
-    outputs = {}
-
     def __init__(
         self,
         precip_raster: str,
@@ -61,6 +59,7 @@ class Runoff_Volume:
         self.rainy_days = rainy_days
         self.context = context
         self.feedback = feedback
+        self.outputs = {}
 
     def preprocess_precipitation(self) -> None:
         if self.precip_units == 1:
@@ -139,7 +138,6 @@ class Runoff_Volume:
             input_params,
             self.context,
             self.feedback,
-            output=output,
         )
 
         input_params = {
@@ -157,7 +155,6 @@ class Runoff_Volume:
             self.feedback,
             output=output,
         )
-
 
         self.runoff_vol_raster = self.outputs["Q"]["OUTPUT"]
 

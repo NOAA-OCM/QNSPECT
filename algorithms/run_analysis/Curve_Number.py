@@ -11,13 +11,13 @@
  ***************************************************************************/
 """
 
-__author__ = 'Abdul Raheem Siddiqui'
-__date__ = '2021-12-29'
-__copyright__ = '(C) 2021 by NOAA'
+__author__ = "Abdul Raheem Siddiqui"
+__date__ = "2021-12-29"
+__copyright__ = "(C) 2021 by NOAA"
 
 # This will get replaced with a git SHA1 when you do a git archive
 
-__revision__ = '$Format:%H$'
+__revision__ = "$Format:%H$"
 
 
 from qgis.core import (
@@ -99,7 +99,10 @@ class Curve_Number:
 
         if self.dual_soil_type in [0, 1]:
             input_params.update(
-                {"input_b": self.outputs["Soil"]["OUTPUT"], "band_b": "1",}
+                {
+                    "input_b": self.outputs["Soil"]["OUTPUT"],
+                    "band_b": "1",
+                }
             )
             self.outputs["CN"] = perform_raster_math(
                 self._cn_expression, input_params, self.context, self.feedback
@@ -107,14 +110,20 @@ class Curve_Number:
 
         elif self.dual_soil_type == 2:
             input_params.update(
-                {"input_b": self.outputs["SoilUndrain"]["OUTPUT"], "band_b": "1",}
+                {
+                    "input_b": self.outputs["SoilUndrain"]["OUTPUT"],
+                    "band_b": "1",
+                }
             )
             self.outputs["CNUndrain"] = perform_raster_math(
                 self._cn_expression, input_params, self.context, self.feedback
             )
 
             input_params.update(
-                {"input_b": self.outputs["SoilDrain"]["OUTPUT"], "band_b": "1",}
+                {
+                    "input_b": self.outputs["SoilDrain"]["OUTPUT"],
+                    "band_b": "1",
+                }
             )
             self.outputs["CNDrain"] = perform_raster_math(
                 self._cn_expression, input_params, self.context, self.feedback

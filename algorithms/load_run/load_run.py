@@ -32,8 +32,10 @@ from QNSPECT.qnspect_algorithm import QNSPECTAlgorithm
 
 
 class LoadPreviousRun(QNSPECTAlgorithm):
-    load_parameters = {}
-    alg = ""
+    def __init__(self):
+        super().__init__()
+        self.load_parameters = {}
+        self.alg = ""
 
     def initAlgorithm(self, config=None):
         self.addParameter(
