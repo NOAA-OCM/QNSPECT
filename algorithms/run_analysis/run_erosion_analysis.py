@@ -54,7 +54,6 @@ from qnspect_run_algorithm import QNSPECTRunAlgorithm
 
 
 class RunErosionAnalysis(QNSPECTRunAlgorithm):
-    run_name = ""
     lookupTable = "LookupTable"
     landUseType = "LandUseType"
     soilRaster = "HSGRaster"
@@ -70,6 +69,10 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
     runName = "RunName"
     dualSoils = "DualSoils"
     loadOutputs = "LoadOutputs"
+
+    def __init__(self):
+        super().__init__()
+        self.run_name = ""
 
     def initAlgorithm(self, config=None):
         self.addParameter(
@@ -114,7 +117,7 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
             QgsProcessingParameterEnum(
                 self.landUseType,
                 "Land Use Type",
-                options=["Custom"] + list(self.LAND_USE_TABLES.values()),
+                options=["Custom"] + list(self._LAND_USE_TABLES.values()),
                 allowMultiple=False,
                 defaultValue=None,
             )
@@ -504,7 +507,7 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
             config["Inputs"][self.lookupTable] = lookup_layer.source()
         config["Outputs"] = results
         config["RunTime"] = str(datetime.datetime.now())
-        config["QNSPECTVersion"] = self.version
+        config["QNSPECTVersion"] = self._version
         config_file = run_out_dir / f"{self.run_name}.ero.json"
         json.dump(config, config_file.open("w"), indent=4)
         return config

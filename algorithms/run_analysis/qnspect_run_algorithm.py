@@ -48,14 +48,14 @@ class QNSPECTRunAlgorithm(QNSPECTAlgorithm):
     Base class for QNSPECT Run Algorithms
     """
 
-    LAND_USE_TABLES = {1: "C-CAP", 2: "NLCD"}
-    LAND_USE_PATH = (
+    _LAND_USE_TABLES = {1: "C-CAP", 2: "NLCD"}
+    _LAND_USE_PATH = (
         f"file:///{Path(__file__).parent.parent.parent / 'resources' / 'coefficients'}"
     )
     with open(
         f"{Path(__file__).parent.parent.parent / 'resources' / 'style-colors.json'}"
     ) as json_f:
-        STYLE_COLORS = load(json_f)
+        _STYLE_COLORS = load(json_f)
 
     def group(self):
         return self.tr("Analysis")
@@ -106,7 +106,7 @@ class QNSPECTRunAlgorithm(QNSPECTAlgorithm):
         if land_use_type > 0:
             return QgsVectorLayer(
                 os.path.join(
-                    self.LAND_USE_PATH, f"{self.LAND_USE_TABLES[land_use_type]}.csv"
+                    self._LAND_USE_PATH, f"{self._LAND_USE_TABLES[land_use_type]}.csv"
                 ),
                 "Land Use Lookup Table",
                 "delimitedtext",
@@ -125,7 +125,7 @@ class QNSPECTRunAlgorithm(QNSPECTAlgorithm):
             layer_details,
         )
 
-        colors = self.STYLE_COLORS.get(entity, self.STYLE_COLORS["default"])
+        colors = self._STYLE_COLORS.get(entity, self._STYLE_COLORS["default"])
         if context.willLoadLayerOnCompletion(layer):
             context.layerToLoadOnCompletionDetails(layer).setPostProcessor(
                 run_alg_styler(display_name, colors[0], colors[1])

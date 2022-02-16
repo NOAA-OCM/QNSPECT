@@ -63,7 +63,9 @@ from qnspect_run_algorithm import QNSPECTRunAlgorithm
 
 
 class RunPollutionAnalysis(QNSPECTRunAlgorithm):
-    run_name = ""
+    def __init__(self):
+        super().__init__()
+        self.run_name = ""
 
     def initAlgorithm(self, config=None):
         self.addParameter(
@@ -129,7 +131,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
             QgsProcessingParameterEnum(
                 "LandUseType",
                 "Land Use Type",
-                options=["Custom", "C-CAP", "NLCD"],
+                options=["Custom"] + list(self._LAND_USE_TABLES.values()),
                 allowMultiple=False,
                 defaultValue=None,
             )
@@ -432,7 +434,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
             run_dict["Inputs"]["LookupTable"] = lookup_layer.source()
         run_dict["Outputs"] = results
         run_dict["RunTime"] = str(datetime.now())
-        run_dict["QNSPECTVersion"] = self.version
+        run_dict["QNSPECTVersion"] = self._version
         with open(os.path.join(run_out_dir, f"{self.run_name}.pol.json"), "w") as f:
             f.write(dumps(run_dict, indent=4))
 

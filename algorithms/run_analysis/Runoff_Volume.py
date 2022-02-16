@@ -42,8 +42,6 @@ from qnspect_utils import perform_raster_math
 class Runoff_Volume:
     """Class to generate and store Runoff Volume Raster"""
 
-    outputs = {}
-
     def __init__(
         self,
         precip_raster: str,
@@ -61,6 +59,7 @@ class Runoff_Volume:
         self.rainy_days = rainy_days
         self.context = context
         self.feedback = feedback
+        self.outputs = {}
 
     def preprocess_precipitation(self) -> None:
         if self.precip_units == 1:
