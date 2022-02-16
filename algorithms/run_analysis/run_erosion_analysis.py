@@ -444,7 +444,7 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
             feedback=feedback,
             output=output,
             mfd=mfd,
-        )["accumulation"]
+        )["OUTPUT"]
 
     def run_rusle(
         self,

@@ -336,7 +336,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
         # Accumulated Runoff Calculation (L)
         if "runoff" in [out.lower() for out in desired_outputs]:
             runoff_output = os.path.join(run_out_dir, f"Runoff Accumulated.tif")
-            # see this issue for discussion on nodat value issue https://github.com/Dewberry/QNSPECT/issues/29
+
             outputs["Runoff Accumulated"] = grass_material_transport(
                 parameters["ElevatoinRaster"],
                 outputs["Runoff Local"]["OUTPUT"],
@@ -345,13 +345,11 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
                 mfd,
                 runoff_output,
             )
-            results["Runoff Accumulated"] = outputs["Runoff Accumulated"][
-                "accumulation"
-            ]
+            results["Runoff Accumulated"] = outputs["Runoff Accumulated"]["OUTPUT"]
             if load_outputs:
                 self.handle_post_processing(
                     "runoff",
-                    outputs["Runoff Accumulated"]["accumulation"],
+                    outputs["Runoff Accumulated"]["OUTPUT"],
                     "Runoff Accumulated (L)",
                     context,
                 )
@@ -377,7 +375,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
 
             # convert to kg
             input_params = {
-                "input_a": outputs[pol + "accum_mg"]["accumulation"],
+                "input_a": outputs[pol + "accum_mg"]["OUTPUT"],
                 "band_a": "1",
             }
             outputs[pol + " Accumulated"] = perform_raster_math(
@@ -401,9 +399,9 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
             for pol in desired_pollutants:
                 # Concentration Pollutant (mg/L)
                 input_params = {
-                    "input_a": outputs[pol + "accum_mg"]["accumulation"],
+                    "input_a": outputs[pol + "accum_mg"]["OUTPUT"],
                     "band_a": "1",
-                    "input_b": outputs["Runoff Accumulated"]["accumulation"],
+                    "input_b": outputs["Runoff Accumulated"]["OUTPUT"],
                     "band_b": "1",
                 }
                 outputs[pol + " Concentration"] = perform_raster_math(
