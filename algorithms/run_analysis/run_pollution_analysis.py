@@ -57,6 +57,7 @@ from qnspect_utils import (
 )
 from analysis_utils import (
     reclassify_land_use_raster_by_table_field,
+    check_raster_values_in_lookup_table
 )
 
 from qnspect_run_algorithm import QNSPECTRunAlgorithm
@@ -239,6 +240,13 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
 
         ## Extract Lookup Table
         lookup_layer = self.extract_lookup_table(parameters, context)
+
+        check_raster_values_in_lookup_table(
+            raster=lu_raster,
+            lookup_table_layer=lookup_layer,
+            context=context,
+            feedback=feedback
+        )
 
         # handle different cases in input matrix and lookup layer
         lookup_fields = {f.name().lower(): f.name() for f in lookup_layer.fields()}

@@ -29,6 +29,7 @@ from qnspect_utils import perform_raster_math, grass_material_transport
 from analysis_utils import (
     reclassify_land_use_raster_by_table_field,
     convert_raster_data_type_to_float,
+    check_raster_values_in_lookup_table,
 )
 from Curve_Number import Curve_Number
 from relief_length_ratio import create_relief_length_ratio_raster
@@ -185,6 +186,13 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
             raise QgsProcessingException("Invalid Elevation Raster CRS units.")
 
         lookup_layer = self.extract_lookup_table(parameters, context)
+
+        check_raster_values_in_lookup_table(
+            raster=land_use_raster,
+            lookup_table_layer=lookup_layer,
+            context=context,
+            feedback=feedback,
+        )
 
         # Folder I/O
         project_loc = Path(

@@ -8,7 +8,11 @@ from qgis.core import (
     QgsVectorLayer,
     Qgis,
     QgsRasterLayer,
+    QgsProcessingException,
 )
+import processing
+import os
+from pathlib import Path
 
 import processing
 
@@ -74,3 +78,39 @@ def reclassify_land_use_raster_by_table_field(
         feedback=feedback,
         is_child_algorithm=True,
     )
+
+
+def check_raster_values_in_lookup_table(
+    raster,
+    lookup_table_layer,
+    context,
+    feedback,
+):
+    """Finds the land use lookup values, then compares with the raster.
+    If there area any values in the raster that are not in the lookup table, a QgsProcessingException is raised."""
+    lu_codes = set()
+    for land_use in lookup_table_layer.getFeatures():
+        lu_codes.add(float(land_use["lu_value"]))
+
+    alg_params = {
+        "BAND": 1,
+        "INPUT": raster,
+        "OUTPUT_TABLE": QgsProcessing.TEMPORARY_OUTPUT,
+    }
+    values_table = processing.run(
+        "native:rasterlayeruniquevaluesreport",
+        alg_params,
+        context=context,
+        feedback=feedback,
+        is_child_algorithm=True,
+    )["OUTPUT_TABLE"]
+    values_table_layer = context.takeResultLayer(values_table)
+
+    error_codes = []
+    for feature in values_table_layer.getFeatures():
+        if feature["value"] not in lu_codes:
+            error_codes.append(feature["value"])
+    if error_codes:
+        raise QgsProcessingException(
+            f"The following land use raster values were not found in the lookup table provided: {', '.join([str(ec) for ec in sorted(error_codes)])}"
+        )
