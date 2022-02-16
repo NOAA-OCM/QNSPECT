@@ -8,7 +8,7 @@
    version="1.1"
    id="svg1431"
    inkscape:version="1.1 (c68e22c387, 2021-05-23)"
-   sodipodi:docname="final_banner.svg"
+   sodipodi:docname="final_banner_vector.svg"
    inkscape:export-filename="C:\Users\davee\Downloads\final_banner.png"
    inkscape:export-xdpi="278"
    inkscape:export-ydpi="278"
@@ -162,29 +162,45 @@
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="layer1"
-     transform="translate(39.429982,-117.6306)">
+     transform="translate(39.429982,-117.6306)"
+     style="display:inline">
     <g
-       id="g896">
+       id="g6497">
       <path
          style="display:inline;fill:url(#linearGradient779);fill-opacity:1;stroke:#000000;stroke-width:0;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
          d="m -13.415869,166.77917 c 14.7078404,-3.81825 29.994126,-11.9306 50.222311,-4.46817 23.784215,8.7743 33.159011,7.22386 48.609762,3.0805 36.298226,-9.73393 60.644396,1.36757 74.941926,5.67241 15.77975,4.75111 27.85608,1.95476 34.97482,0.12328 10.85064,-2.79159 20.40517,-11.58864 20.40517,-11.58864 -18.69514,9.77337 -35.05459,13.81661 -60.7485,3.80991 -11.56585,-4.5044 -38.36163,-13.31774 -69.956464,-5.666 -30.694796,7.43375 -28.557426,0.81832 -46.498189,-5.04815 -19.370953,-6.33415 -29.0082471,-2.72303 -43.5956864,1.72432 -14.1640656,4.31828 -19.8278866,2.50087 -29.0775956,1.74144 0,0 0.0037,1.24251 0.02351,12.00408 1.998816,1.0828 16.230329,0.21099 20.698931,-1.38498 z"
          id="path693"
          sodipodi:nodetypes="csssscsssscccc"
          clip-path="none" />
-      <text
-         xml:space="preserve"
-         style="font-size:63.1095px;line-height:1.25;font-family:Trueno;-inkscape-font-specification:Trueno;letter-spacing:0px;word-spacing:0px;display:inline;fill:url(#linearGradient1007);fill-opacity:1;stroke-width:0.315547"
-         x="-38.555981"
-         y="167.60379"
+      <g
+         aria-label="NSPECT"
          id="text12530"
-         inkscape:export-filename="C:\Users\davee\Documents\Work\QNSPECT\Banner_v2.png"
-         inkscape:export-xdpi="278"
-         inkscape:export-ydpi="278"><tspan
-           sodipodi:role="line"
-           id="tspan12528"
-           style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Trueno;-inkscape-font-specification:'Trueno Bold';fill:url(#linearGradient1007);fill-opacity:1;stroke-width:0.315547"
-           x="-38.555981"
-           y="167.60379">NSPECT</tspan></text>
+         style="font-size:63.1095px;line-height:1.25;font-family:Trueno;-inkscape-font-specification:Trueno;letter-spacing:0px;word-spacing:0px;display:inline;fill:url(#linearGradient1007);stroke-width:0.315547">
+        <path
+           d="m -34.138316,167.60379 h 10.539287 V 140.4036 l 20.3212593,27.20019 H 6.630422 V 123.42714 H -3.8457552 v 27.2633 l -20.3843688,-27.2633 h -9.908192 z"
+           style="font-weight:bold;-inkscape-font-specification:'Trueno Bold'"
+           id="path6093" />
+        <path
+           d="m 12.120904,160.91418 c 5.238088,4.29145 12.811228,7.06827 20.19504,7.06827 9.845082,0 17.67066,-4.67011 17.67066,-13.50544 0,-15.9667 -23.350515,-11.61214 -23.350515,-19.24839 0,-2.14573 1.956395,-3.21859 4.859432,-3.21859 3.597241,0 9.466425,1.89329 14.136528,4.607 l 4.228336,-8.77223 c -4.543884,-2.96614 -11.044162,-4.92254 -17.418222,-4.92254 -10.602396,0 -17.607551,5.17498 -17.607551,13.31611 0,15.65115 23.350516,10.98105 23.350516,18.80663 0,2.52438 -2.208833,3.84968 -5.742965,3.84968 -4.606993,0 -11.42282,-2.6506 -15.966704,-6.6265 z"
+           style="font-weight:bold;-inkscape-font-specification:'Trueno Bold'"
+           id="path6095" />
+        <path
+           d="m 56.108167,167.60379 h 11.233491 v -12.43257 h 8.014907 c 11.296601,0 17.796879,-5.9954 17.796879,-16.34536 0,-9.84508 -6.500278,-15.39872 -17.796879,-15.39872 H 56.108167 Z m 11.233491,-21.2679 v -14.07342 h 7.446921 c 4.922542,0 7.762469,2.33505 7.762469,6.94204 0,4.67011 -2.839927,7.13138 -7.762469,7.13138 z"
+           style="font-weight:bold;-inkscape-font-specification:'Trueno Bold'"
+           id="path6097" />
+        <path
+           d="m 99.022527,167.60379 h 35.278213 v -8.83533 h -24.04472 v -8.89844 h 21.07857 v -8.83533 h -21.07857 v -8.77222 h 23.35051 v -8.83533 H 99.022527 Z"
+           style="font-weight:bold;-inkscape-font-specification:'Trueno Bold'"
+           id="path6099" />
+        <path
+           d="m 138.65527,145.38925 c 0,12.93744 9.90819,22.71942 23.2243,22.71942 6.50028,0 13.50543,-3.21859 18.23864,-8.07802 l -6.56338,-6.94204 c -3.09237,3.15547 -7.38382,5.17497 -11.10728,5.17497 -7.00515,0 -12.30635,-5.61674 -12.30635,-13.00055 0,-7.2576 5.3012,-12.81123 12.30635,-12.81123 3.91279,0 8.20424,2.20883 11.10728,5.74296 l 6.50027,-7.69936 c -4.41766,-4.54388 -11.23349,-7.44692 -17.79687,-7.44692 -13.44233,0 -23.60296,9.59265 -23.60296,22.34077 z"
+           style="font-weight:bold;-inkscape-font-specification:'Trueno Bold'"
+           id="path6101" />
+        <path
+           d="m 181.25416,132.4518 h 13.18989 v 35.15199 h 11.23349 V 132.4518 h 13.31611 v -9.08777 h -37.73949 z"
+           style="font-weight:bold;-inkscape-font-specification:'Trueno Bold'"
+           id="path6103" />
+      </g>
       <g
          id="g22023"
          transform="matrix(1.0807979,-0.09265706,0.09265706,1.0807979,-37.115855,125.87265)"

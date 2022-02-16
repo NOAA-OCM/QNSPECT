@@ -2,22 +2,19 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   width="169.20007"
-   height="180.00009"
-   viewBox="0 0 44.767518 47.625026"
+   width="116.90005pt"
+   height="125.00006pt"
+   viewBox="0 0 41.239743 44.097245"
    version="1.1"
-   id="svg1002"
+   id="svg1263"
    inkscape:version="1.1 (c68e22c387, 2021-05-23)"
-   sodipodi:docname="final_logo.svg"
-   inkscape:export-filename="C:\Users\davee\Downloads\final_logo.png"
-   inkscape:export-xdpi="278"
-   inkscape:export-ydpi="278"
+   sodipodi:docname="logo_final_vector.svg"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
    xmlns:svg="http://www.w3.org/2000/svg">
   <sodipodi:namedview
-     id="namedview1004"
+     id="namedview1265"
      pagecolor="#ffffff"
      bordercolor="#666666"
      borderopacity="1.0"
@@ -26,14 +23,14 @@
      inkscape:pagecheckerboard="0"
      inkscape:document-units="mm"
      showgrid="false"
-     fit-margin-top="20"
-     fit-margin-right="20"
-     fit-margin-bottom="20"
-     fit-margin-left="20"
-     units="px"
-     inkscape:zoom="4.1205921"
-     inkscape:cx="90.642313"
-     inkscape:cy="87.366085"
+     fit-margin-top="10"
+     fit-margin-left="10"
+     fit-margin-right="10"
+     fit-margin-bottom="10"
+     units="pt"
+     inkscape:zoom="8.7155916"
+     inkscape:cx="77.963726"
+     inkscape:cy="83.872677"
      inkscape:window-width="3747"
      inkscape:window-height="2126"
      inkscape:window-x="2869"
@@ -41,40 +38,30 @@
      inkscape:window-maximized="1"
      inkscape:current-layer="layer1" />
   <defs
-     id="defs999" />
+     id="defs1260" />
   <g
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="layer1"
-     transform="translate(-97.793186,-175.73166)">
-    <text
-       xml:space="preserve"
-       style="font-size:52.9167px;line-height:1.25;font-family:Trueno;-inkscape-font-specification:Trueno;letter-spacing:0px;word-spacing:0px;display:inline;fill:#0055d4;fill-opacity:1;stroke-width:0.264583"
-       x="99.380684"
-       y="218.06502"
-       id="text2522"
-       inkscape:export-filename="C:\Users\davee\Documents\Work\QNSPECT\logo_v1.png"
-       inkscape:export-xdpi="278"
-       inkscape:export-ydpi="278"><tspan
-         sodipodi:role="line"
-         id="tspan2520"
-         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Trueno;-inkscape-font-specification:'Trueno Bold';fill:#0055d4;fill-opacity:1;stroke-width:0.264583"
-         x="99.380684"
-         y="218.06502">N</tspan></text>
+     transform="translate(-46.060539,-99.06478)"
+     style="display:inline">
+    <path
+       d="m 49.588317,139.63425 h 8.837088 v -22.8071 l 17.039177,22.8071 h 8.307922 v -37.04169 h -8.784172 v 22.86001 L 57.896238,102.59256 h -8.307921 z"
+       style="font-weight:bold;font-size:52.9167px;line-height:1.25;font-family:Trueno;-inkscape-font-specification:'Trueno Bold';letter-spacing:0px;word-spacing:0px;fill:#0055d4;stroke-width:0.264583"
+       id="path1462" />
     <g
-       id="g20732"
-       transform="matrix(0.90426941,-0.07911333,0.07911333,0.90426941,102.26998,185.40137)">
+       id="g1474">
       <path
-         style="display:inline;fill:#698a41;fill-opacity:1;stroke:#726a00;stroke-width:0.0443939;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:0, 0.488333;stroke-dashoffset:0;stroke-opacity:1"
-         d="m 18.425373,22.038658 0.0874,-3.095336 3.344926,-0.04632 7.751231,12.182652 -0.07561,3.195295 -3.455237,-0.06573 z"
+         style="display:inline;fill:#698a41;fill-opacity:1;stroke:#726a00;stroke-width:0.0396526;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:0, 0.436178;stroke-dashoffset:0;stroke-opacity:1"
+         d="m 67.06134,125.12226 -0.147011,-2.76195 2.974424,-0.28418 7.785304,10.28251 0.164767,2.85007 -3.080766,0.19245 z"
          id="path26679"
          sodipodi:nodetypes="ccccccc" />
       <path
          id="path27045"
-         style="fill:#698a41;fill-opacity:1;stroke:#ff0000;stroke-width:0.300424;stroke-dasharray:0, 3.30467"
+         style="fill:#698a41;fill-opacity:1;stroke:#ff0000;stroke-width:0.268338;stroke-dasharray:0, 2.95173"
          inkscape:transform-center-x="0.60428994"
          inkscape:transform-center-y="0.15107248"
-         d="m 17.880166,4.007877 a 13.67403,13.67403 0 0 0 -13.674101,13.674101 13.67403,13.67403 0 0 0 13.674101,13.6741 13.67403,13.67403 0 0 0 3.59978,-0.48731 L 17.066779,23.7121 a 6.0915454,6.0915454 0 0 1 -5.278231,-6.030122 6.0915454,6.0915454 0 0 1 6.091618,-6.091618 6.0915454,6.0915454 0 0 1 6.091618,6.091618 6.0915454,6.0915454 0 0 1 -0.01395,0.280086 l 4.874121,7.896676 a 13.67403,13.67403 0 0 0 2.722314,-8.176762 13.67403,13.67403 0 0 0 -13.6741,-13.674101 z" />
+         d="m 65.266374,109.11012 a 12.213623,12.213623 0 0 0 -11.18007,13.16641 12.213623,12.213623 0 0 0 13.166408,11.18007 12.213623,12.213623 0 0 0 3.169276,-0.69528 l -4.448579,-6.05062 a 5.4409593,5.4409593 0 0 1 -5.136871,-4.98489 5.4409593,5.4409593 0 0 1 4.980562,-5.86545 5.4409593,5.4409593 0 0 1 5.865448,4.98056 5.4409593,5.4409593 0 0 1 0.0079,0.25036 l 4.912687,6.67592 a 12.213623,12.213623 0 0 0 1.829624,-7.47701 12.213623,12.213623 0 0 0 -13.166408,-11.18007 z" />
     </g>
   </g>
 </svg>
