@@ -159,14 +159,45 @@ def grass_material_transport(
         "max_slope_length": None,
         "memory": 300,
         "threshold": threshold,  # can be an input advanced parameter
-        "accumulation": output,
+        "accumulation": QgsProcessing.TEMPORARY_OUTPUT,
     }
-    feedback.pushInfo("Input parameters:")
+    feedback.pushInfo("\nGRASS Input parameters:")
     feedback.pushCommandInfo(str(alg_params))
-    return processing.run(
+    grass_accumulation = processing.run(
         "grass7:r.watershed",
         alg_params,
         context=context,
         feedback=None,
         is_child_algorithm=True,
+    )["accumulation"]
+
+    # Grass output has 0 values marked as nodata
+    # Following is a temporary workaround, refer Github issue #29
+
+    # Fill NoData cells
+    alg_params = {
+        "BAND": 1,
+        "FILL_VALUE": 0,
+        "INPUT": grass_accumulation,
+        "OUTPUT": QgsProcessing.TEMPORARY_OUTPUT,
+    }
+    all_filled = processing.run(
+        "native:fillnodata",
+        alg_params,
+        context=context,
+        feedback=feedback,
+        is_child_algorithm=True,
+    )["OUTPUT"]
+
+    # Get back original nodata cells
+    input_dict = {
+        "input_a": all_filled,
+        "band_a": 1,
+        "input_b": weight,
+        "band_b": 1,
+    }
+    exprs = "A + ( B * 0)"
+
+    return perform_raster_math(
+        exprs, input_dict, context=context, feedback=feedback, output=output
     )
