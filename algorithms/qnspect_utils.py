@@ -108,7 +108,7 @@ def perform_raster_math(
         "BAND_D": input_dict.get("band_d", None),
         "BAND_E": input_dict.get("band_e", None),
         "BAND_F": input_dict.get("band_f", None),
-        "EXTRA": "",
+        "EXTRA": "--overwrite",  # explicity pass overwrite till GDAL/QGIS issues are resolved. Refer Github Issue #38
         "FORMULA": exprs,
         "INPUT_A": input_dict.get("input_a", None),
         "INPUT_B": input_dict.get("input_b", None),
