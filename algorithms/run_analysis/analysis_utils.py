@@ -104,13 +104,13 @@ def check_raster_values_in_lookup_table(
         feedback=feedback,
         is_child_algorithm=True,
     )["OUTPUT_TABLE"]
-    if isinstance(values_table, str):
-        values_table = QgsVectorLayer(values_table)
+    values_table_layer = context.takeResultLayer(values_table)
+
     error_codes = []
-    for feature in values_table.getFeatures():
+    for feature in values_table_layer.getFeatures():
         if feature["value"] not in lu_codes:
             error_codes.append(feature["value"])
     if error_codes:
         raise QgsProcessingException(
-            f"The following raster values were not found in the lookup table provided: {', '.join(sorted(error_codes))}"
+            f"The following land use raster values were not found in the lookup table provided: {', '.join([str(ec) for ec in sorted(error_codes)])}"
         )
