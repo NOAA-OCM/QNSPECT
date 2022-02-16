@@ -25,7 +25,7 @@ import math
 import datetime
 import json
 
-from qnspect_alg_utils import perform_raster_math, grass_material_transport
+from qnspect_utils import perform_raster_math, grass_material_transport
 from analysis_utils import (
     reclassify_land_use_raster_by_table_field,
     convert_raster_data_type_to_float,
@@ -50,7 +50,7 @@ from qgis.core import (
 )
 import processing
 
-from QNSPECT.qnspect_run_algorithm import QNSPECTRunAlgorithm
+from qnspect_run_algorithm import QNSPECTRunAlgorithm
 
 
 class RunErosionAnalysis(QNSPECTRunAlgorithm):

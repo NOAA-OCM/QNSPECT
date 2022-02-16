@@ -50,7 +50,7 @@ sys.path.append(os.path.dirname(cmd_folder))
 
 from Curve_Number import Curve_Number
 from Runoff_Volume import Runoff_Volume
-from qnspect_alg_utils import (
+from qnspect_utils import (
     perform_raster_math,
     grass_material_transport,
     filter_matrix,
@@ -59,7 +59,7 @@ from analysis_utils import (
     reclassify_land_use_raster_by_table_field,
 )
 
-from QNSPECT.qnspect_run_algorithm import QNSPECTRunAlgorithm
+from qnspect_run_algorithm import QNSPECTRunAlgorithm
 
 
 class RunPollutionAnalysis(QNSPECTRunAlgorithm):

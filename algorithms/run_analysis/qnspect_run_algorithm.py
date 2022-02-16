@@ -40,7 +40,7 @@ from QNSPECT.qnspect_algorithm import QNSPECTAlgorithm
 from qgis.core import QgsVectorLayer, QgsProcessingException, QgsLayerTreeGroup
 from qgis.utils import iface
 
-from QNSPECT.qnspect_utils import run_alg_styler, select_group
+from qnspect_utils import run_alg_styler, select_group
 
 
 class QNSPECTRunAlgorithm(QNSPECTAlgorithm):
@@ -49,8 +49,12 @@ class QNSPECTRunAlgorithm(QNSPECTAlgorithm):
     """
 
     LAND_USE_TABLES = {1: "C-CAP", 2: "NLCD"}
-    LAND_USE_PATH = f"file:///{Path(__file__).parent / 'resources' / 'coefficients'}"
-    with open(f"{Path(__file__).parent / 'resources' / 'style-colors.json'}") as json_f:
+    LAND_USE_PATH = (
+        f"file:///{Path(__file__).parent.parent.parent / 'resources' / 'coefficients'}"
+    )
+    with open(
+        f"{Path(__file__).parent.parent.parent / 'resources' / 'style-colors.json'}"
+    ) as json_f:
         STYLE_COLORS = load(json_f)
 
     def group(self):
@@ -79,7 +83,7 @@ class QNSPECTRunAlgorithm(QNSPECTAlgorithm):
                 else:
                     parent = selected_nodes[0].parent()
                     # get current index so that new group can be inserted at that location
-                    index = parent.children()(selected_nodes[0])
+                    index = parent.children().index(selected_nodes[0])
                     group = parent.insertGroup(index, self.run_name)
             else:
                 group = root.insertGroup(0, self.run_name)
