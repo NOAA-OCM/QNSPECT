@@ -13,12 +13,12 @@ body:
   - type: checkboxes
     id: qnspect-version
     attributes:
-      label: latest
+      label: Latest QNSPECT version:
       options:
         - label: I am running the latest QNSPECT version
 
   - type: checkboxes
-    id: similar-issues
+    id: Similar issue do not exist:
     attributes:
       label: similar-issues
       options:
@@ -47,7 +47,7 @@ body:
   - type: textarea
     id: about-info
     attributes:
-      label: QGIS Versions
+      label: Versions
       description: |
         In the QGIS Help menu -> About, click in the table, Ctrl+A and then Ctrl+C. Finally paste here.
         Do not make a screenshot.
