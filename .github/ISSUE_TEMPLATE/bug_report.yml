@@ -36,11 +36,20 @@ body:
     attributes:
       label: Steps to reproduce the issue
       description: |
-        Steps, sample datasets and qgis project file to reproduce the behavior. Screencasts or screenshots are more than welcome, you can drag&drop them in the text box.
+        Steps, sample datasets and qgis project file to reproduce the behavior. Screencasts or screenshots are more than welcome, you can drag & drop them in this or next text box.
         1. Go to '...'
         2. Click on '...'
         3. Scroll down to '...'
         4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots and Attachements
+      description: |
+        Screenshots and file attachements are more than welcome, you can drag & drop them in here.
     validations:
       required: true
 
