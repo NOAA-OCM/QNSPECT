@@ -20,7 +20,7 @@ body:
   - type: checkboxes
     id: similar-issues
     attributes:
-      label: Similar issue do not exist
+      label: Similar issues do not exist
       options:
         - label: I have searched existing issues to make sure a similar issue does not exist
 
@@ -50,8 +50,6 @@ body:
       label: Screenshots and Attachements
       description: |
         Screenshots and file attachements are more than welcome, you can drag & drop them in here.
-    validations:
-      required: true
 
   - type: textarea
     id: about-info
