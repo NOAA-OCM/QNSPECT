@@ -13,12 +13,12 @@ body:
   - type: checkboxes
     id: qnspect-version
     attributes:
-      label: Latest QNSPECT version:
+      label: Latest QNSPECT version
       options:
         - label: I am running the latest QNSPECT version
 
   - type: checkboxes
-    id: Similar issue do not exist:
+    id: Similar issue do not exist
     attributes:
       label: similar-issues
       options:
