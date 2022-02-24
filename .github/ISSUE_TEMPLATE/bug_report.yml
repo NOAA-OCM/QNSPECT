@@ -18,9 +18,9 @@ body:
         - label: I am running the latest QNSPECT version
 
   - type: checkboxes
-    id: Similar issue do not exist
+    id: similar-issues
     attributes:
-      label: similar-issues
+      label: Similar issue do not exist
       options:
         - label: I have searched existing issues to make sure a similar issue does not exist
 
