@@ -89,7 +89,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
         self.addParameter(
             QgsProcessingParameterRasterLayer(
                 "HSGRaster",
-                "Hydrographic Soils Group Raster",
+                "Hydrologic Soils Group Raster",
                 optional=False,
                 defaultValue=None,
             )
@@ -476,7 +476,7 @@ GRASS `r.watershed`function is used by the algorithm under the hood to calculate
 <h3>Precipitation Raster Units</h3>
 <p>Units of the precipitation raster, inches or millimeters.</p>
 <h3>Number of Rainy Days in a Year</h3>
-<p>This field indicates the average number of days rain occurs in one year in the area of interest. A rainy day is a day on which there was enough rain to produce runoff. The higher number of rainy days reduces access runoff volume by increasing retention.</p>
+<p>This field indicates the average number of days rain occurs in one year in the area of interest. A rainy day is a day on which there was enough rain to produce runoff. The higher number of rainy days reduces excess runoff volume by increasing retention.</p>
 <h3>Land Cover Raster</h3>
 <p>Land Cover/Classification raster for the area of interest. The algorithm uses Land Cover Raster and Lookup Table to determine each cell's runoff and pollution potential.</p>
 <h3>Land Cover Type</h3>

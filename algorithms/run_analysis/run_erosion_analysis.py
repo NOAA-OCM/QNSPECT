@@ -101,7 +101,7 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
         )
         self.addParameter(
             QgsProcessingParameterRasterLayer(
-                self.soilRaster, "Hydrographic Soils Group Raster", defaultValue=None
+                self.soilRaster, "Hydrologic Soils Group Raster", defaultValue=None
             )
         )
         self.addParameter(
@@ -555,7 +555,7 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
 <a href="https://www.noaa.gov/">Documentation</a>
 <h2>Algorithm Description</h2>
 <p>The `Run Erosion Analysis` algorithm estimates annual erosion volume for a given area on per cell and accumulated basis. The volume is calculated using RUSLE and Sediment Delivery Ratio models (see the QNSPECT Technical documentation for details).</p>
-<p>The user must provide Elevation, Land Cover, Hydrographic Soil Group, K-Factor, and R-Factor rasters for the area of interest. The user is also optionally required to provide a lookup table that relates different land cover classes in the provided Land Cover raster with Curve Number and C-Factor values.</p>
+<p>The user must provide Elevation, Land Cover, Hydrologic Soil Group, K-Factor, and R-Factor rasters for the area of interest. The user is also optionally required to provide a lookup table that relates different land cover classes in the provided Land Cover raster with Curve Number and C-Factor values.</p>
 
 <h2>Input Parameters</h2>
 
@@ -565,7 +565,7 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
 <h3>Elevation Raster</h3>
 <p>Elevation raster for the area of interest. The CRS can be in any units, but the <span style="color: #ff9800">elevation must be in meters</span>. The algorithm uses elevation data to calculate ratios, flow direction, and flow accumulation throughout a watershed.</p>
 
-<h3>Hydrographic Soils Group Raster</h3>
+<h3>Hydrologic Soils Group Raster</h3>
 <p>Hydrologic Soil Group raster for the area of interest with following mapping {'A': 1, 'B': 2, 'C': 3, 'D':4, 'A/D':5, 'B/D':6, 'C/D':7, 'W':8, Null: 9}. The soil raster is used to generate runoff estimates using NRCS Curve Number method.</p>
 
 <h3>K-factor Raster</h3>
