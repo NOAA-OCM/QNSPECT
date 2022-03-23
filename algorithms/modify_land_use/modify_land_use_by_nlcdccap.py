@@ -59,15 +59,6 @@ class ModifyLandUseByNLCDCCAP(QNSPECTAlgorithm):
         self.choices = sorted(self.coefficients)
 
         self.addParameter(
-            QgsProcessingParameterEnum(
-                self.landUse,
-                "Name of Land Use to Apply",
-                options=self.choices,
-                allowMultiple=False,
-                defaultValue=[],
-            )
-        )
-        self.addParameter(
             QgsProcessingParameterFeatureSource(
                 self.inputVector,
                 "Areas to Modify",
@@ -76,14 +67,23 @@ class ModifyLandUseByNLCDCCAP(QNSPECTAlgorithm):
             )
         )
         self.addParameter(
+            QgsProcessingParameterEnum(
+                self.landUse,
+                "Change to Land Cover Class",
+                options=self.choices,
+                allowMultiple=False,
+                defaultValue=[],
+            )
+        )
+        self.addParameter(
             QgsProcessingParameterRasterLayer(
-                self.inputRaster, "Land Use Raster", defaultValue=None
+                self.inputRaster, "Initial Land Cover Raster", defaultValue=None
             )
         )
         self.addParameter(
             QgsProcessingParameterRasterDestination(
                 self.output,
-                "Modified Land Use Raster",
+                "Modified Land Cover Raster",
                 createByDefault=True,
                 defaultValue=None,
             )
@@ -143,7 +143,7 @@ class ModifyLandUseByNLCDCCAP(QNSPECTAlgorithm):
         return "modify_land_use_NLCD_C-CAP"
 
     def displayName(self):
-        return self.tr("Modify Land Use (NLCD/C-CAP)")
+        return self.tr("Modify Land Cover (NLCD/C-CAP)")
 
     def group(self):
         return self.tr("Data Preparation")
@@ -160,24 +160,24 @@ class ModifyLandUseByNLCDCCAP(QNSPECTAlgorithm):
 
 <h2>Algorithm Description</h2>
 
-<p>The `Modify Land Use (NLCD/C-CAP)` algorithm changes a section of a raster based on the NLCD/C-CAP land use name.
-This tool is designed to make it easy to change a raster's values in an area based on the name of the new land use.
-The pixels of the input raster layer that overlap with the areas of the input vector layer will be changed to the land use code of the name selected.</p>
+<p>The `Modify Land Cover (NLCD/C-CAP)` algorithm changes a section of a raster based on the NLCD/C-CAP land cover name.
+This tool is designed to make it easy to change a raster's values in an area based on the name of the new land cover.
+The pixels of the input raster layer that overlap with the areas of the input vector layer will be changed to the land cover code of the name selected.</p>
 
 <h2>Input Parameters</h2>
-
-<h3>Name of Land Use to Apply</h3>
-<p>The name of the new land use.</p>
 
 <h3>Areas to Modify</h3>
 <p>Polygon vector layer that overlaps the pixels that should be changed.</p>
 
-<h3>Land Use Raster</h3>
-<p>Land use raster that needs to be modified.</p>
+<h3>Change to Land Cover Class</h3>
+<p>The land cover class to be used in the modified areas.</p>
+
+<h3>Initial Land Cover Raster</h3>
+<p>Land cover raster that needs to be modified.</p>
 
 <h2>Outputs</h2>
 
-<h3>Modified Land Use Raster</h3>
-<p>The location the modified land use raster will be saved to.</p>
+<h3>Modified Land Cover Raster</h3>
+<p>The location the modified land cover raster will be saved to.</p>
 
 </body></html>"""
