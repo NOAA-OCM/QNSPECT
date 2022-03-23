@@ -32,7 +32,7 @@ import processing
 
 from QNSPECT.qnspect_algorithm import QNSPECTAlgorithm
 
-class ModifyLandUse(QNSPECTAlgorithm):
+class ModifyLandCover(QNSPECTAlgorithm):
     inputVector = "InputVector"
     field = "Field"
     inputRaster = "InputRaster"
@@ -122,7 +122,7 @@ class ModifyLandUse(QNSPECTAlgorithm):
         return results
 
     def name(self):
-        return "modify_land_use_vector_field"
+        return "modify_land_cover_vector_field"
 
     def displayName(self):
         return self.tr("Modify Land Use (Vector Field)")
@@ -134,7 +134,7 @@ class ModifyLandUse(QNSPECTAlgorithm):
         return "data_preparation"
 
     def createInstance(self):
-        return ModifyLandUse()
+        return ModifyLandCover()
 
     def shortHelpString(self):
         return """<html><body>

@@ -35,7 +35,7 @@ import processing
 from QNSPECT.qnspect_algorithm import QNSPECTAlgorithm
 
 
-class ModifyLandUseByName(QNSPECTAlgorithm):
+class ModifyLandCoverByName(QNSPECTAlgorithm):
     inputTable = "InputTable"
     inputVector = "InputVector"
     inputRaster = "InputRaster"
@@ -150,7 +150,7 @@ class ModifyLandUseByName(QNSPECTAlgorithm):
         return results
 
     def name(self):
-        return "modify_land_use_custom_lookup_table"
+        return "modify_land_cover_custom_lookup_table"
 
     def displayName(self):
         return self.tr("Modify Land Use (Custom Lookup Table)")
@@ -162,7 +162,7 @@ class ModifyLandUseByName(QNSPECTAlgorithm):
         return "data_preparation"
 
     def createInstance(self):
-        return ModifyLandUseByName()
+        return ModifyLandCoverByName()
 
     def shortHelpString(self):
         return """<html><body>

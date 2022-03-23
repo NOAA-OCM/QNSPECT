@@ -38,7 +38,7 @@ from pathlib import Path
 from QNSPECT.qnspect_algorithm import QNSPECTAlgorithm
 
 
-class ModifyLandUseByNLCDCCAP(QNSPECTAlgorithm):
+class ModifyLandCoverByNLCDCCAP(QNSPECTAlgorithm):
     inputVector = "InputVector"
     inputRaster = "InputRaster"
     output = "OutputRaster"
@@ -140,7 +140,7 @@ class ModifyLandUseByNLCDCCAP(QNSPECTAlgorithm):
         return results
 
     def name(self):
-        return "modify_land_use_NLCD_C-CAP"
+        return "modify_land_cover_NLCD_C-CAP"
 
     def displayName(self):
         return self.tr("Modify Land Cover (NLCD/C-CAP)")
@@ -152,7 +152,7 @@ class ModifyLandUseByNLCDCCAP(QNSPECTAlgorithm):
         return "data_preparation"
 
     def createInstance(self):
-        return ModifyLandUseByNLCDCCAP()
+        return ModifyLandCoverByNLCDCCAP()
 
     def shortHelpString(self):
         return """<html><body>
