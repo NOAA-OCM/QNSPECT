@@ -123,7 +123,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
         self.addParameter(
             QgsProcessingParameterRasterLayer(
                 "LandUseRaster",
-                "Land Use Raster",
+                "Land Cover Raster",
                 optional=False,
                 defaultValue=None,
             )
@@ -131,7 +131,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
         self.addParameter(
             QgsProcessingParameterEnum(
                 "LandUseType",
-                "Land Use Type",
+                "Land Cover Type",
                 options=["Custom"] + list(self._LAND_USE_TABLES.values()),
                 allowMultiple=False,
                 defaultValue=None,
@@ -140,7 +140,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
         self.addParameter(
             QgsProcessingParameterVectorLayer(
                 "LookupTable",
-                "Land Use Lookup Table [*required with Custom Land Use Type]",
+                "Land Cover Lookup Table [*required with Custom Land Cover Type]",
                 optional=True,
                 types=[QgsProcessing.TypeVector],
                 defaultValue=None,
@@ -258,7 +258,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
             return {}
         if not all([pol.lower() in lookup_fields.keys() for pol in desired_pollutants]):
             raise QgsProcessingException(
-                "One or more of the Pollutants is not a column in the Land Use Lookup Table. Either remove the pollutants from Desired Outputs or provide a custom lookup table with desired pollutants.\n"
+                "One or more of the Pollutants is not a column in the Land Cover Lookup Table. Either remove the pollutants from Desired Outputs or provide a custom lookup table with desired pollutants.\n"
                 + f"Missing Pollutants:\n{[pol.lower() for pol in desired_pollutants if not pol.lower() in lookup_fields.keys()]}\n"
             )
 
@@ -461,7 +461,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
 <a href="https://www.noaa.gov/">Documentation</a>
 <h2>Algorithm Description</h2>
 <p>The `Run Pollution Analysis` algorithm estimates annual runoff volume and pollutant loading for a given area on per cell and accumulated bases. The Runoff Volume is calculated using the NRCS Curve Number method, while pollution loading is calculated using Land Cover as a proxy.</p>
-The user must provide Elevation, Land Use, Soil, and Precipitation rasters for the area of interest. The user is also optionally required to provide a lookup table that relates different land use classes in the provided Land Use raster with Curve Number and pollutant loading.
+The user must provide Elevation, Land Cover, Soil, and Precipitation rasters for the area of interest. The user is also optionally required to provide a lookup table that relates different land cover classes in the provided Land Cover raster with Curve Number and pollutant loading.
 This analysis should be performed on a watershed level to account for all upstream flow at a cell. For accurate results, the area of interest should fully envelop the watershed in consideration.
 GRASS `r.watershed`function is used by the algorithm under the hood to calculate runoff and accumulation.</p>
 <h2>Input Parameters</h2>
@@ -477,20 +477,20 @@ GRASS `r.watershed`function is used by the algorithm under the hood to calculate
 <p>Units of the precipitation raster, inches or millimeters.</p>
 <h3>Number of Rainy Days in a Year</h3>
 <p>This field indicates the average number of days rain occurs in one year in the area of interest. A rainy day is a day on which there was enough rain to produce runoff. The higher number of rainy days reduces access runoff volume by increasing retention.</p>
-<h3>Land Use Raster</h3>
-<p>Land Cover/Classification raster for the area of interest. The algorithm uses Land Use Raster and Lookup Table to determine each cell's runoff and pollution potential.</p>
-<h3>Land Use Type</h3>
-<p>Type of Land Use raster. If the Land Use raster is not of type C-CAP or NCLD, select custom for this field and supply a lookup table in the `Land Use Lookup Table` field.</p>
-<h3>Land Use Lookup Table [optional]</h3>
-<p>Lookup table to relate each land use class with Curve Number and pollutant load. The user can skip providing a lookup table if the land use
-type is not custom; the algorithm will utilize the default lookup table for the land use type selected in the previous option.
-To create a custom lookup table, develop a table using <a href="https://raw.githubusercontent.com/Dewberry/QNSPECT/development/resources/coefficients/NLCD.csv">this format</a>. The table must contain all land use classes available in the land use raster and all pollutants that have Output = Y in the `Desired Outputs` parameter.</p>
+<h3>Land Cover Raster</h3>
+<p>Land Cover/Classification raster for the area of interest. The algorithm uses Land Cover Raster and Lookup Table to determine each cell's runoff and pollution potential.</p>
+<h3>Land Cover Type</h3>
+<p>Type of Land Cover raster. If the Land Cover raster is not of type C-CAP or NCLD, select custom for this field and supply a lookup table in the `Land Cover Lookup Table` field.</p>
+<h3>Land Cover Lookup Table [optional]</h3>
+<p>Lookup table to relate each land cover class with Curve Number and pollutant load. The user can skip providing a lookup table if the land cover
+type is not custom; the algorithm will utilize the default lookup table for the land cover type selected in the previous option.
+To create a custom lookup table, develop a table using <a href="https://raw.githubusercontent.com/Dewberry/QNSPECT/development/resources/coefficients/NLCD.csv">this format</a>. The table must contain all land cover classes available in the land cover raster and all pollutants that have Output = Y in the `Desired Outputs` parameter.</p>
 <h3>Desired Outputs</h3>
 <p>In addition to the runoff, the algorithm will output the following rasters for each pollutant added here with Output column as Y:
 - Local (per cell) pollutant load [mg]
 - Accumulated (all upstream cell) pollutant load [kg]
 - Concentration (accumulated pollutant mass divided by accumulated runoff volume) [mg/L]. The concentration raster will only be outputted if the Output Concentration Raster option is checked in Advanced Parameters
-The user can add more pollutants here as long as the lookup coefficients for each pollutant are supplied in the land use lookup table.
+The user can add more pollutants here as long as the lookup coefficients for each pollutant are supplied in the land cover lookup table.
 To exclude an output from the analysis, write N in the Output column. You must click Ok after editing to save your changes.</p>
 <h2>Advanced Parameters</h2>
 <h3>Output Concentration Raster</h3>

@@ -50,7 +50,7 @@ class ModifyLandCover(QNSPECTAlgorithm):
         self.addParameter(
             QgsProcessingParameterField(
                 self.field,
-                "Land Use Value Field",
+                "Land Cover Value Field",
                 optional=True,
                 type=QgsProcessingParameterField.Numeric,
                 parentLayerParameterName=self.inputVector,
@@ -60,13 +60,13 @@ class ModifyLandCover(QNSPECTAlgorithm):
         )
         self.addParameter(
             QgsProcessingParameterRasterLayer(
-                self.inputRaster, "Land Use Raster", defaultValue=None
+                self.inputRaster, "Land Cover Raster", defaultValue=None
             )
         )
         self.addParameter(
             QgsProcessingParameterRasterDestination(
                 self.output,
-                "Modified Land Use Raster",
+                "Modified Land Cover Raster",
                 createByDefault=True,
                 defaultValue=None,
             )
@@ -125,7 +125,7 @@ class ModifyLandCover(QNSPECTAlgorithm):
         return "modify_land_cover_vector_field"
 
     def displayName(self):
-        return self.tr("Modify Land Use (Vector Field)")
+        return self.tr("Modify Land Cover (Vector Field)")
 
     def group(self):
         return self.tr("Data Preparation")
@@ -142,23 +142,23 @@ class ModifyLandCover(QNSPECTAlgorithm):
 
 <h2>Algorithm Description</h2>
 
-<p>The `Modify Land Use (Vector Field)` algorithm changes a section of a raster based on the land use numeric value in a polygon vector layer.
-The pixels of the input raster layer that overlap with each polygon of the input vector layer will be changed to the land use code of the polygon's land use field.</p>
+<p>The `Modify Land Cover (Vector Field)` algorithm changes a section of a raster based on the land cover numeric value in a polygon vector layer.
+The pixels of the input raster layer that overlap with each polygon of the input vector layer will be changed to the land cover code of the polygon's land cover field.</p>
 
 <h2>Input Parameters</h2>
 
 <h3>Areas to Modify</h3>
 <p>Polygon vector layer that overlaps the pixels that should be changed.</p>
 
-<h3>Land Use Value Field</h3>
-<p>The field with the land use value the raster pixels will be changed to. If this is left blank, the algorithm will try to use a field called "lu_value".</p>
+<h3>Land Cover Value Field</h3>
+<p>The field with the land cover value the raster pixels will be changed to. If this is left blank, the algorithm will try to use a field called "lu_value".</p>
 
-<h3>Land Use Raster</h3>
-<p>Land use raster that needs to be modified.</p>
+<h3>Land Cover Raster</h3>
+<p>Land cover raster that needs to be modified.</p>
 
 <h2>Outputs</h2>
 
-<h3>Modified Land Use Raster</h3>
-<p>The location the modified land use raster will be saved to.</p>
+<h3>Modified Land Cover Raster</h3>
+<p>The location the modified land cover raster will be saved to.</p>
 
 </body></html>"""
