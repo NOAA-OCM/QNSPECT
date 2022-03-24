@@ -20,25 +20,44 @@ __copyright__ = '(C) 2021 by NOAA'
 __revision__ = '$Format:%H$'
 
 
-from qgis.core import (QgsProcessing,
+from qgis.core import (
+    QgsProcessing,
     QgsProcessingAlgorithm,
     QgsProcessingMultiStepFeedback,
+    QgsProcessingParameterEnum,
     QgsProcessingParameterFeatureSource,
     QgsProcessingParameterRasterLayer,
-    QgsProcessingParameterField,
-    QgsProcessingParameterRasterDestination
+    QgsProcessingParameterRasterDestination,
+    QgsProcessingParameterFeatureSource,
 )
+from typing import Dict
+import csv
 import processing
+from pathlib import Path
 
 from QNSPECT.qnspect_algorithm import QNSPECTAlgorithm
 
-class ModifyLandUse(QNSPECTAlgorithm):
+
+class ModifyLandCoverByNLCDCCAP(QNSPECTAlgorithm):
     inputVector = "InputVector"
-    field = "Field"
     inputRaster = "InputRaster"
     output = "OutputRaster"
+    landUse = "LandUse"
 
     def initAlgorithm(self, config=None):
+        self.coefficients: Dict[str, int] = {}
+        root = Path(__file__).parent.parent.parent
+        coef_dir = root / "resources" / "coefficients"
+        for csvfile in coef_dir.iterdir():
+            if csvfile.suffix.lower() == ".csv":
+                coef_type = csvfile.stem
+                with csvfile.open(newline="") as file:
+                    reader = csv.DictReader(file)
+                    for row in reader:
+                        name = f"""{coef_type} - {row["lu_name"]}"""
+                        self.coefficients[name] = int(row["lu_value"])
+        self.choices = sorted(self.coefficients)
+
         self.addParameter(
             QgsProcessingParameterFeatureSource(
                 self.inputVector,
@@ -48,25 +67,23 @@ class ModifyLandUse(QNSPECTAlgorithm):
             )
         )
         self.addParameter(
-            QgsProcessingParameterField(
-                self.field,
-                "Land Use Value Field",
-                optional=True,
-                type=QgsProcessingParameterField.Numeric,
-                parentLayerParameterName=self.inputVector,
+            QgsProcessingParameterEnum(
+                self.landUse,
+                "Change to Land Cover Class",
+                options=self.choices,
                 allowMultiple=False,
-                defaultValue=None,
+                defaultValue=[],
             )
         )
         self.addParameter(
             QgsProcessingParameterRasterLayer(
-                self.inputRaster, "Land Use Raster", defaultValue=None
+                self.inputRaster, "Initial Land Cover Raster", defaultValue=None
             )
         )
         self.addParameter(
             QgsProcessingParameterRasterDestination(
                 self.output,
-                "Modified Land Use Raster",
+                "Modified Land Cover Raster",
                 createByDefault=True,
                 defaultValue=None,
             )
@@ -75,7 +92,6 @@ class ModifyLandUse(QNSPECTAlgorithm):
     def processAlgorithm(self, parameters, context, model_feedback):
         # Use a multi-step feedback, so that individual child algorithm progress reports are adjusted for the
         # overall progress through the model
-        # Rasterize with overwrite was the best method for accomplishing this. Since it directly changes the input, the original needs to be copied prior to execution
         feedback = QgsProcessingMultiStepFeedback(2, model_feedback)
         results = {}
         outputs = {}
@@ -103,29 +119,31 @@ class ModifyLandUse(QNSPECTAlgorithm):
         if feedback.isCanceled():
             return {}
 
-        # Rasterize (overwrite with attribute)
+        enum_value = self.parameterAsInt(parameters, self.landUse, context)
+        land_use_name = self.choices[enum_value]
+
+        # Rasterize (overwrite with fixed value)
         alg_params = {
             "ADD": False,
+            "BURN": self.coefficients[land_use_name],
             "EXTRA": "",
-            "FIELD": parameters[self.field],
             "INPUT": parameters[self.inputVector],
             "INPUT_RASTER": outputs["ClipRasterByExtent"]["OUTPUT"],
         }
-        outputs["RasterizeOverwriteWithAttribute"] = processing.run(
-            "gdal:rasterize_over",
+        outputs["RasterizeOverwriteWithFixedValue"] = processing.run(
+            "gdal:rasterize_over_fixed_value",
             alg_params,
             context=context,
             feedback=feedback,
             is_child_algorithm=True,
         )
-
         return results
 
     def name(self):
-        return "modify_land_use_vector_field"
+        return "modify_land_cover_NLCD_C-CAP"
 
     def displayName(self):
-        return self.tr("Modify Land Use (Vector Field)")
+        return self.tr("Modify Land Cover (NLCD/C-CAP)")
 
     def group(self):
         return self.tr("Data Preparation")
@@ -134,7 +152,7 @@ class ModifyLandUse(QNSPECTAlgorithm):
         return "data_preparation"
 
     def createInstance(self):
-        return ModifyLandUse()
+        return ModifyLandCoverByNLCDCCAP()
 
     def shortHelpString(self):
         return """<html><body>
@@ -142,23 +160,24 @@ class ModifyLandUse(QNSPECTAlgorithm):
 
 <h2>Algorithm Description</h2>
 
-<p>The `Modify Land Use (Vector Field)` algorithm changes a section of a raster based on the land use numeric value in a polygon vector layer.
-The pixels of the input raster layer that overlap with each polygon of the input vector layer will be changed to the land use code of the polygon's land use field.</p>
+<p>The `Modify Land Cover (NLCD/C-CAP)` algorithm changes a section of a raster based on the NLCD/C-CAP land cover name.
+This tool is designed to make it easy to change a raster's values in an area based on the name of the new land cover.
+The pixels of the input raster layer that overlap with the areas of the input vector layer will be changed to the land cover code of the name selected.</p>
 
 <h2>Input Parameters</h2>
 
 <h3>Areas to Modify</h3>
 <p>Polygon vector layer that overlaps the pixels that should be changed.</p>
 
-<h3>Land Use Value Field</h3>
-<p>The field with the land use value the raster pixels will be changed to. If this is left blank, the algorithm will try to use a field called "lu_value".</p>
+<h3>Change to Land Cover Class</h3>
+<p>The land cover class to be used in the modified areas.</p>
 
-<h3>Land Use Raster</h3>
-<p>Land use raster that needs to be modified.</p>
+<h3>Initial Land Cover Raster</h3>
+<p>Land cover raster that needs to be modified.</p>
 
 <h2>Outputs</h2>
 
-<h3>Modified Land Use Raster</h3>
-<p>The location the modified land use raster will be saved to.</p>
+<h3>Modified Land Cover Raster</h3>
+<p>The location the modified land cover raster will be saved to.</p>
 
 </body></html>"""

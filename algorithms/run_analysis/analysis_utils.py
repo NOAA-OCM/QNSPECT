@@ -86,7 +86,7 @@ def check_raster_values_in_lookup_table(
     context,
     feedback,
 ):
-    """Finds the land use lookup values, then compares with the raster.
+    """Finds the land cover lookup values, then compares with the raster.
     If there area any values in the raster that are not in the lookup table, a QgsProcessingException is raised."""
     lu_codes = set()
     for land_use in lookup_table_layer.getFeatures():
@@ -112,5 +112,5 @@ def check_raster_values_in_lookup_table(
             error_codes.append(feature["value"])
     if error_codes:
         raise QgsProcessingException(
-            f"The following land use raster values were not found in the lookup table provided: {', '.join([str(ec) for ec in sorted(error_codes)])}"
+            f"The following land cover raster values were not found in the lookup table provided: {', '.join([str(ec) for ec in sorted(error_codes)])}"
         )

@@ -101,7 +101,7 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
         )
         self.addParameter(
             QgsProcessingParameterRasterLayer(
-                self.soilRaster, "Hydrographic Soils Group Raster", defaultValue=None
+                self.soilRaster, "Hydrologic Soils Group Raster", defaultValue=None
             )
         )
         self.addParameter(
@@ -111,13 +111,13 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
         )
         self.addParameter(
             QgsProcessingParameterRasterLayer(
-                self.landUseRaster, "Land Use Raster", defaultValue=None
+                self.landUseRaster, "Land Cover Raster", defaultValue=None
             )
         )
         self.addParameter(
             QgsProcessingParameterEnum(
                 self.landUseType,
-                "Land Use Type",
+                "Land Cover Type",
                 options=["Custom"] + list(self._LAND_USE_TABLES.values()),
                 allowMultiple=False,
                 defaultValue=None,
@@ -126,7 +126,7 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
         self.addParameter(
             QgsProcessingParameterVectorLayer(
                 self.lookupTable,
-                "Land Use Lookup Table",
+                "Land Cover Lookup Table",
                 optional=True,
                 types=[QgsProcessing.TypeVector],
                 defaultValue=None,
@@ -368,9 +368,9 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
     ) -> str:
         """"""
         # The c-factor raster will have floating-point values.
-        # If the land use raster used is an integer type,
+        # If the land cover raster used is an integer type,
         # the assignment process will convert the c-factor values to integers.
-        # Converting the land use raster to floating point type fixes that.
+        # Converting the land cover raster to floating point type fixes that.
         land_use_raster = convert_raster_data_type_to_float(
             raster_layer=land_use_raster_layer,
             context=context,
@@ -578,7 +578,7 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
 <a href="https://www.noaa.gov/">Documentation</a>
 <h2>Algorithm Description</h2>
 <p>The `Run Erosion Analysis` algorithm estimates annual erosion volume for a given area on per cell and accumulated basis. The volume is calculated using RUSLE and Sediment Delivery Ratio models (see the QNSPECT Technical documentation for details).</p>
-<p>The user must provide Elevation, Land Use, Hydrographic Soil Group, K-Factor, and R-Factor rasters for the area of interest. The user is also optionally required to provide a lookup table that relates different land use classes in the provided Land Use raster with Curve Number and C-Factor values.</p>
+<p>The user must provide Elevation, Land Cover, Hydrologic Soil Group, K-Factor, and R-Factor rasters for the area of interest. The user is also optionally required to provide a lookup table that relates different land cover classes in the provided Land Cover raster with Curve Number and C-Factor values.</p>
 
 <h2>Input Parameters</h2>
 
@@ -588,21 +588,21 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
 <h3>Elevation Raster</h3>
 <p>Elevation raster for the area of interest. The CRS can be in any units, but the <span style="color: #ff9800">elevation must be in meters</span>. The algorithm uses elevation data to calculate ratios, flow direction, and flow accumulation throughout a watershed.</p>
 
-<h3>Hydrographic Soils Group Raster</h3>
+<h3>Hydrologic Soils Group Raster</h3>
 <p>Hydrologic Soil Group raster for the area of interest with following mapping {'A': 1, 'B': 2, 'C': 3, 'D':4, 'A/D':5, 'B/D':6, 'C/D':7, 'W':8, Null: 9}. The soil raster is used to generate runoff estimates using NRCS Curve Number method.</p>
 
 <h3>K-factor Raster</h3>
 <p>Soil erodibility raster for the area of interest. The K-factor is used in RUSLE equation.</p>
 
-<h3>Land Use Raster</h3>
-<p>Land Cover/Classification raster for the area of interest. The algorithm uses Land Use Raster and Lookup Table to determine each cell's erosion potential.</p>
+<h3>Land Cover Raster</h3>
+<p>Land Cover/Classification raster for the area of interest. The algorithm uses Land Cover Raster and Lookup Table to determine each cell's erosion potential.</p>
 
-<h3>Land Use Type</h3>
-<p>Type of Land Use raster. If the Land Use raster is not of type C-CAP or NCLD, select custom for this field and supply a lookup table in the Land Use Lookup Table field.</p>
+<h3>Land Cover Type</h3>
+<p>Type of Land Cover raster. If the Land Cover raster is not of type C-CAP or NCLD, select custom for this field and supply a lookup table in the Land Cover Lookup Table field.</p>
 
-<h3>Land Use Lookup Table [optional]</h3>
-<p>Lookup table to relate each land use class with Curve Number and C-Factor. The user can skip providing a lookup table if the land use type is not custom; the algorithm will utilize the default lookup table for the land use type selected in the previous option.</p>
-<p>To create a custom lookup table, develop a table using <a href="https://raw.githubusercontent.com/Dewberry/QNSPECT/development/resources/coefficients/NLCD.csv">this format</a>. The table must contain all land use classes available in the land use raster.</p>
+<h3>Land Cover Lookup Table [optional]</h3>
+<p>Lookup table to relate each land cover class with Curve Number and C-Factor. The user can skip providing a lookup table if the land cover type is not custom; the algorithm will utilize the default lookup table for the land cover type selected in the previous option.</p>
+<p>To create a custom lookup table, develop a table using <a href="https://raw.githubusercontent.com/Dewberry/QNSPECT/development/resources/coefficients/NLCD.csv">this format</a>. The table must contain all land cover classes available in the land cover raster.</p>
 
 <h2>Advanced Parameters</h2>
 
