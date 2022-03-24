@@ -76,7 +76,7 @@ class ModifyLandCover(QNSPECTAlgorithm):
         # Use a multi-step feedback, so that individual child algorithm progress reports are adjusted for the
         # overall progress through the model
         # Rasterize with overwrite was the best method for accomplishing this. Since it directly changes the input, the original needs to be copied prior to execution
-        feedback = QgsProcessingMultiStepFeedback(0, model_feedback)
+        feedback = QgsProcessingMultiStepFeedback(2, model_feedback)
         results = {}
         outputs = {}
 

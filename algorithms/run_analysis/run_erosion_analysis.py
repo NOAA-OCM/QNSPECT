@@ -166,7 +166,7 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
     def processAlgorithm(self, parameters, context, model_feedback):
         # Use a multi-step feedback, so that individual child algorithm progress reports are adjusted for the
         # overall progress through the model
-        feedback = QgsProcessingMultiStepFeedback(0, model_feedback)
+        feedback = QgsProcessingMultiStepFeedback(11, model_feedback)
         results = {}
         outputs = {}
         run_dict = {}
@@ -204,27 +204,36 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
 
         ## RUSLE calculations
         # K-factor - soil erodability
+        feedback.setCurrentStep(1)
+        if feedback.isCanceled():
+            return {}
         erodability_raster = self.fill_zero_k_factor_cells(
             parameters, feedback, context
         )
 
         # C-factor - land cover
-        c_factor_raster = self.create_c_factor_raster(
+        feedback.setCurrentStep(2)
+        if feedback.isCanceled():
+            return {}
+        # All final outputs that are not returned to user should be saved in outputs
+        c_factor_raster = outputs["C-Factor"] = self.create_c_factor_raster(
             lookup_layer=lookup_layer,
             land_use_raster_layer=land_use_raster,
             context=context,
             feedback=feedback,
         )
 
-        # All final outputs that are not returned to user should be saved in outputs
-        outputs["C-Factor"] = c_factor_raster
-
         # Length-slope factor
-        ls_factor = self.create_ls_factor(parameters, context)
-        outputs["LS-Factor"] = ls_factor
+        feedback.setCurrentStep(3)
+        if feedback.isCanceled():
+            return {}
+        ls_factor = outputs["LS-Factor"] = self.create_ls_factor(parameters, context)
 
         # RUSLE Soil Loss calculation
-        rusle = self.run_rusle(
+        feedback.setCurrentStep(4)
+        if feedback.isCanceled():
+            return {}
+        rusle = outputs["RUSLE Soil Loss"] = self.run_rusle(
             c_factor=c_factor_raster,
             ls_factor=ls_factor,
             erodability=erodability_raster,
@@ -233,19 +242,23 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
             context=context,
             feedback=feedback,
         )
-        outputs["RUSLE Soil Loss"] = rusle
 
         ## Sediment Delivery Ratio calculation section
         # Relief length ratio part
-        rl_raster = create_relief_length_ratio_raster(
+        feedback.setCurrentStep(5)
+        if feedback.isCanceled():
+            return {}
+        rl_raster = outputs["Relief Length Ratio"] = create_relief_length_ratio_raster(
             dem_raster=elev_raster,
             cell_size_sq_meters=cell_size_sq_meters,
             context=context,
             feedback=feedback,
         )
-        outputs["Relief Length Ratio"] = rl_raster
 
         # Curve number part
+        feedback.setCurrentStep(6)
+        if feedback.isCanceled():
+            return {}
         cn = Curve_Number(
             parameters[self.landUseRaster],
             parameters[self.soilRaster],
@@ -258,16 +271,21 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
         outputs["Curve Number"] = cn.cn_raster
 
         # Multiply RL and CN
-        sdr = self.run_sediment_delivery_ratio(
+        feedback.setCurrentStep(7)
+        if feedback.isCanceled():
+            return {}
+        sdr = outputs["Sediment Delivery Ratio"] = self.run_sediment_delivery_ratio(
             cell_size_sq_meters=cell_size_sq_meters,
             relief_length=rl_raster,
             curve_number=cn.cn_raster,
             context=context,
             feedback=feedback,
         )
-        outputs["Sediment Delivery Ratio"] = sdr
 
         ## Output results
+        feedback.setCurrentStep(8)
+        if feedback.isCanceled():
+            return {}
         sediment_local_path = str(run_out_dir / (self.sedimentYieldLocal + ".tif"))
         sediment_local = self.run_sediment_yield(
             sediment_delivery_ratio=sdr,
@@ -276,9 +294,8 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
             feedback=feedback,
             output=sediment_local_path,
         )
-        outputs[self.sedimentYieldLocal] = sediment_local
-
         # because this is an algorithm output this will go in results as well
+        outputs[self.sedimentYieldLocal] = sediment_local
         results[self.sedimentYieldLocal] = sediment_local
 
         if load_outputs:
@@ -286,6 +303,9 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
                 "sediment", sediment_local_path, "Sediment Local (kg)", context
             )
 
+        feedback.setCurrentStep(9)
+        if feedback.isCanceled():
+            return {}
         sediment_acc_path = str(run_out_dir / (self.sedimentYieldAccumulated + ".tif"))
         sediment_acc = self.run_sediment_yield_accumulated(
             sediment_yield=sediment_local,
@@ -304,6 +324,9 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
                 "sediment", sediment_acc, "Sediment Accumulation (Mg)", context
             )
 
+        feedback.setCurrentStep(10)
+        if feedback.isCanceled():
+            return {}
         run_dict = self.create_config_file(
             parameters=parameters,
             context=context,
