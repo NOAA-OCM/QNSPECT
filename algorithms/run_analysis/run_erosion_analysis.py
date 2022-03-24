@@ -294,6 +294,7 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
             feedback=feedback,
             output=sediment_local_path,
         )
+        # because this is an algorithm output this will go in results as well
         outputs[self.sedimentYieldLocal] = sediment_local
         results[self.sedimentYieldLocal] = sediment_local
 
