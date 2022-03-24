@@ -98,7 +98,6 @@ class CompareErosion(QNSPECTAlgorithm):
     def processAlgorithm(self, parameters, context, model_feedback):
         # Use a multi-step feedback, so that individual child algorithm progress reports are adjusted for the
         # overall progress through the model
-        feedback = QgsProcessingMultiStepFeedback(0, model_feedback)
         results = {}
         outputs = {}
 
@@ -119,8 +118,16 @@ class CompareErosion(QNSPECTAlgorithm):
                 "Neither local nor accumulated outputs were selected."
             )
 
+        feedback = QgsProcessingMultiStepFeedback(int(compare_local) + int(compare_acc),
+                                                  model_feedback)
+
+        current_step = 1
         feedback.pushInfo("Comparing outputs...")
         if compare_local:
+            feedback.setCurrentStep(current_step)
+            current_step += 1
+            if feedback.isCanceled():
+                return {}
             self.compare_outputs(
                 feedback=feedback,
                 context=context,
@@ -132,6 +139,9 @@ class CompareErosion(QNSPECTAlgorithm):
                 load_outputs=load_outputs,
             )
         if compare_acc:
+            feedback.setCurrentStep(current_step)
+            if feedback.isCanceled():
+                return {}
             self.compare_outputs(
                 feedback=feedback,
                 context=context,

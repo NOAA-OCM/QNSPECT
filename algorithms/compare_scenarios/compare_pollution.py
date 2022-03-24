@@ -160,7 +160,6 @@ class ComparePollution(QNSPECTAlgorithm):
     def processAlgorithm(self, parameters, context, model_feedback):
         # Use a multi-step feedback, so that individual child algorithm progress reports are adjusted for the
         # overall progress through the model
-        feedback = QgsProcessingMultiStepFeedback(0, model_feedback)
         results = {}
         outputs = {}
 
@@ -174,7 +173,6 @@ class ComparePollution(QNSPECTAlgorithm):
         output_dir = Path(self.parameterAsString(parameters, self.outputDir, context))
         output_dir.mkdir(parents=True, exist_ok=True)
 
-        feedback.pushInfo("Starting getting comp types...")
         # Create a list of what will be compared
         comparison_types = []
         if self.parameterAsBool(parameters, self.compareLocal, context):
@@ -186,26 +184,32 @@ class ComparePollution(QNSPECTAlgorithm):
         if not comparison_types:
             raise QgsProcessingException("No comparison types were checked.")
 
-        feedback.pushInfo("Filtering matrix...")
         pollutants = filter_matrix(
             self.parameterAsMatrix(parameters, self.compareGrid, context)
         )
         if not pollutants:
-            raise QgsProcessingException(
-                "No pollutants were selected in the 'Desired Outputs' parameter."
-            )
+            raise QgsProcessingException("No pollutants were selected in the 'Desired Outputs' parameter.")
 
-        if "everything" in [pol.lower() for pol in pollutants]:
-            feedback.pushInfo("Running everything...")
+        run_everything = "everything" in [pol.lower() for pol in pollutants]
+        if run_everything:
             matching_names = find_all_matching(
                 scenario_dir_a, scenario_dir_b, comparison_types
             )
             if not matching_names:
-                feedback.pushWarning(
-                    "No valid comparisons were found between the two scenario folders."
-                )
+                raise QgsProcessingException("No valid comparisons were found between the two scenario folders.")
+            total_steps = len(matching_names)
+        else:
+            total_steps = len(pollutants)
+        feedback = QgsProcessingMultiStepFeedback(total_steps + 1, model_feedback)
+        current_step = 1
 
+        if run_everything:
+            feedback.pushInfo("Running everything...")
             for name in matching_names:
+                feedback.setCurrentStep(current_step)
+                current_step += 1
+                if feedback.isCanceled():
+                    return {}
                 run_direct_and_percent_comparisons(
                     scenario_dir_a=scenario_dir_a,
                     scenario_dir_b=scenario_dir_b,
@@ -218,6 +222,10 @@ class ComparePollution(QNSPECTAlgorithm):
                 )
         else:
             for pollutant in pollutants:
+                feedback.setCurrentStep(current_step)
+                current_step += 1
+                if feedback.isCanceled():
+                    return {}
                 for comp_type in comparison_types:
                     name = f"{pollutant} {comp_type}"
 

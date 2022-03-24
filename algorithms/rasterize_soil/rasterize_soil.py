@@ -93,7 +93,7 @@ class RasterizeSoil(QNSPECTAlgorithm):
     def processAlgorithm(self, parameters, context, model_feedback):
         # Use a multi-step feedback, so that individual child algorithm progress reports are adjusted for the
         # overall progress through the model
-        feedback = QgsProcessingMultiStepFeedback(6, model_feedback)
+        feedback = QgsProcessingMultiStepFeedback(4, model_feedback)
         results = {}
         outputs = {}
 

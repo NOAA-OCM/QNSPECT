@@ -207,7 +207,6 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
     def processAlgorithm(self, parameters, context, model_feedback):
         # Use a multi-step feedback, so that individual child algorithm progress reports are adjusted for the
         # overall progress through the model
-        feedback = QgsProcessingMultiStepFeedback(0, model_feedback)
         results = {}
         outputs = {}
         run_dict = {}
@@ -237,6 +236,12 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
         soil_raster = self.parameterAsRasterLayer(parameters, "HSGRaster", context)
         lu_raster = self.parameterAsRasterLayer(parameters, "LandUseRaster", context)
         precip_raster = self.parameterAsRasterLayer(parameters, "PrecipRaster", context)
+
+        ## Total steps based on necessary steps plus two times for each pollutant
+        total_steps = 4 + (len(desired_pollutants) * 2)
+        if conc_out:
+            total_steps += len(desired_outputs) # additional round if concentration is returned
+        feedback = QgsProcessingMultiStepFeedback(total_steps, model_feedback)
 
         ## Extract Lookup Table
         lookup_layer = self.extract_lookup_table(parameters, context)
@@ -269,6 +274,9 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
         os.makedirs(run_out_dir, exist_ok=True)
 
         ## Generate CN Raster
+        feedback.setCurrentStep(1)
+        if feedback.isCanceled():
+            return {}
         cn = Curve_Number(
             parameters["LandUseRaster"],
             parameters["HSGRaster"],
@@ -283,6 +291,9 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
 
         # Calculate Q (Runoff) (Liters)
         # using elev layer here because everything should have same units and crs
+        feedback.setCurrentStep(2)
+        if feedback.isCanceled():
+            return {}
         runoff_vol = Runoff_Volume(
             parameters["PrecipRaster"],
             outputs["CN"]["OUTPUT"],
@@ -309,7 +320,12 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
             outputs["Runoff Local"] = runoff_vol.calculate_Q()
 
         ## Pollutant rasters
+        current_step = 3
         for pol in desired_pollutants:
+            feedback.setCurrentStep(current_step)
+            current_step += 1
+            if feedback.isCanceled():
+                return {}
             # Calculate pollutant per LU (mg/L)
             outputs[pol + "_lu"] = reclassify_land_use_raster_by_table_field(
                 parameters["LandUseRaster"],
@@ -342,6 +358,10 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
                 )
 
         # Accumulated Runoff Calculation (L)
+        feedback.setCurrentStep(current_step)
+        current_step += 1
+        if feedback.isCanceled():
+            return {}
         if "runoff" in [out.lower() for out in desired_outputs]:
             runoff_output = os.path.join(run_out_dir, f"Runoff Accumulated.tif")
 
@@ -372,6 +392,10 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
 
         # Accumulated Pollutants
         for pol in desired_pollutants:
+            feedback.setCurrentStep(current_step)
+            current_step += 1
+            if feedback.isCanceled():
+                return {}
             # Accumulated Pollutant (mg)
             outputs[pol + "accum_mg"] = grass_material_transport(
                 parameters["ElevatoinRaster"],
@@ -405,6 +429,10 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
         # Concentration Calculations
         if conc_out:
             for pol in desired_pollutants:
+                feedback.setCurrentStep(current_step)
+                current_step += 1
+                if feedback.isCanceled():
+                    return {}
                 # Concentration Pollutant (mg/L)
                 input_params = {
                     "input_a": outputs[pol + "accum_mg"]["OUTPUT"],
@@ -431,6 +459,9 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
                     )
 
         # Configuration file
+        feedback.setCurrentStep(current_step)
+        if feedback.isCanceled():
+            return {}
         run_dict["Inputs"] = parameters
         run_dict["Inputs"]["ElevatoinRaster"] = elev_raster.source()
         run_dict["Inputs"]["LandUseRaster"] = lu_raster.source()
