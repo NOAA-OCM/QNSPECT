@@ -215,6 +215,7 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
         feedback.setCurrentStep(2)
         if feedback.isCanceled():
             return {}
+        # All final outputs that are not returned to user should be saved in outputs
         c_factor_raster = outputs["C-Factor"] = self.create_c_factor_raster(
             lookup_layer=lookup_layer,
             land_use_raster_layer=land_use_raster,

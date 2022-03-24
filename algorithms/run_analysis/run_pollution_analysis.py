@@ -427,9 +427,6 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
                 )
 
         # Concentration Calculations
-        feedback.setCurrentStep(1)
-        if feedback.isCanceled():
-            return {}
         if conc_out:
             for pol in desired_pollutants:
                 feedback.setCurrentStep(current_step)
@@ -462,7 +459,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
                     )
 
         # Configuration file
-        feedback.setCurrentStep(1)
+        feedback.setCurrentStep(current_step)
         if feedback.isCanceled():
             return {}
         run_dict["Inputs"] = parameters
