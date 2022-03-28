@@ -9,7 +9,7 @@
                               -------------------
         begin                : 2021-12-29
         copyright            : (C) 2021 by NOAA
-        email                : shan dot burkhalter at noaa dot gov
+        email                : ocm dot nspect dot admins at noaa dot gov
  ***************************************************************************/
 
 /***************************************************************************
@@ -108,12 +108,12 @@ class QNSPECTRunAlgorithm(QNSPECTAlgorithm):
                 os.path.join(
                     self._LAND_USE_PATH, f"{self._LAND_USE_TABLES[land_use_type]}.csv"
                 ),
-                "Land Use Lookup Table",
+                "Land Cover Lookup Table",
                 "delimitedtext",
             )
         else:
             raise QgsProcessingException(
-                "Land Use Lookup Table must be provided with Custom Land Use Type.\n"
+                "Land Cover Lookup Table must be provided with Custom Land Cover Type.\n"
             )
 
     def handle_post_processing(self, entity: str, layer, display_name, context) -> None:

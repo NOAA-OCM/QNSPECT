@@ -35,7 +35,7 @@ import processing
 from QNSPECT.qnspect_algorithm import QNSPECTAlgorithm
 
 
-class ModifyLandUseByName(QNSPECTAlgorithm):
+class ModifyLandCoverByName(QNSPECTAlgorithm):
     inputTable = "InputTable"
     inputVector = "InputVector"
     inputRaster = "InputRaster"
@@ -46,7 +46,7 @@ class ModifyLandUseByName(QNSPECTAlgorithm):
         self.addParameter(
             QgsProcessingParameterVectorLayer(
                 self.inputTable,
-                "Land Use Lookup Table",
+                "Land Cover Lookup Table",
                 types=[QgsProcessing.TypeVector],
                 defaultValue=None,
             )
@@ -54,7 +54,7 @@ class ModifyLandUseByName(QNSPECTAlgorithm):
         self.addParameter(
             QgsProcessingParameterString(
                 self.landUse,
-                "Name of Land Use to Apply",
+                "Name of Land Cover to Apply",
                 multiLine=False,
                 defaultValue="",
             )
@@ -69,13 +69,13 @@ class ModifyLandUseByName(QNSPECTAlgorithm):
         )
         self.addParameter(
             QgsProcessingParameterRasterLayer(
-                self.inputRaster, "Land Use Raster", defaultValue=None
+                self.inputRaster, "Land Cover Raster", defaultValue=None
             )
         )
         self.addParameter(
             QgsProcessingParameterRasterDestination(
                 self.output,
-                "Modified Land Use Raster",
+                "Modified Land Cover Raster",
                 createByDefault=True,
                 defaultValue=None,
             )
@@ -150,10 +150,10 @@ class ModifyLandUseByName(QNSPECTAlgorithm):
         return results
 
     def name(self):
-        return "modify_land_use_custom_lookup_table"
+        return "modify_land_cover_custom_lookup_table"
 
     def displayName(self):
-        return self.tr("Modify Land Use (Custom Lookup Table)")
+        return self.tr("Modify Land Cover (Custom Lookup Table)")
 
     def group(self):
         return self.tr("Data Preparation")
@@ -162,7 +162,7 @@ class ModifyLandUseByName(QNSPECTAlgorithm):
         return "data_preparation"
 
     def createInstance(self):
-        return ModifyLandUseByName()
+        return ModifyLandCoverByName()
 
     def shortHelpString(self):
         return """<html><body>
@@ -170,27 +170,27 @@ class ModifyLandUseByName(QNSPECTAlgorithm):
 
 <h2>Algorithm Description</h2>
 
-<p>The `Modify Land Use (Custom Lookup Table)` algorithm changes a section of a raster based on the land use name in a custom lookup table. 
-This tool is designed to make it easy to change a raster's values in an area based on the name of the new land use. 
-The pixels of the input raster layer that overlap with the areas of the input vector layer will be changed to the land use code of the name selected.</p>
+<p>The `Modify Land Cover (Custom Lookup Table)` algorithm changes a section of a raster based on the land cover name in a custom lookup table. 
+This tool is designed to make it easy to change a raster's values in an area based on the name of the new land cover. 
+The pixels of the input raster layer that overlap with the areas of the input vector layer will be changed to the land cover code of the name selected.</p>
 
 <h2>Input Parameters</h2>
 
-<h3>Land Use Lookup Table</h3>
-<p>The lookup table used to map the land use name to a raster value. The lookup table must include the land use name in a field called "lu_name" and a corresponding value in a field called "lu_value".</p>
+<h3>Land Cover Lookup Table</h3>
+<p>The lookup table used to map the land cover name to a raster value. The lookup table must include the land cover name in a field called "lu_name" and a corresponding value in a field called "lu_value".</p>
 
-<h3>Name of Land Use to Apply</h3>
-<p>The name of the new land use.</p>
+<h3>Name of Land Cover to Apply</h3>
+<p>The name of the new land cover.</p>
 
 <h3>Areas to Modify</h3>
 <p>Polygon vector layer that overlaps the pixels that should be changed.</p>
 
-<h3>Land Use Raster</h3>
-<p>Land use raster that needs to be modified.</p>
+<h3>Land Cover Raster</h3>
+<p>Land cover raster that needs to be modified.</p>
 
 <h2>Outputs</h2>
 
-<h3>Modified Land Use Raster</h3>
-<p>The location the modified land use raster will be saved to.</p>
+<h3>Modified Land Cover Raster</h3>
+<p>The location the modified land cover raster will be saved to.</p>
 
 </body></html>"""

@@ -120,7 +120,7 @@ class ComparePollution(QNSPECTAlgorithm):
         self.addParameter(
             QgsProcessingParameterMatrix(
                 self.compareGrid,
-                "Desired Outputs",
+                "Pollutant Outputs",
                 optional=False,
                 headers=["Name", "Output? [Y/N]"],
                 defaultValue=[
@@ -188,7 +188,7 @@ class ComparePollution(QNSPECTAlgorithm):
             self.parameterAsMatrix(parameters, self.compareGrid, context)
         )
         if not pollutants:
-            raise QgsProcessingException("No pollutants were selected in the 'Desired Outputs' parameter.")
+            raise QgsProcessingException("No pollutants were selected in the 'Pollutant Outputs' parameter.")
 
         run_everything = "everything" in [pol.lower() for pol in pollutants]
         if run_everything:
@@ -302,7 +302,7 @@ The outputs of this algorithm are rasters that show the absolute and relative ma
 <h3>Compare Concentration Outputs</h3>
 <p>Select to run on the comparison on the concentration rasters.</p>
 
-<h3>Desired Outputs</h3>
+<h3>Pollutant Outputs</h3>
 <p>The comparison will be run on runoff and pollutants with Y in the Output column. If `Everything` is marked as Y, the comparison will be run on all pollutants that are shared between the scenarios.
 
 The user can add more pollutants to the table. To exclude an output from the analysis, write N in the Output column. You must click OK after editing to save your changes.</p>
