@@ -148,9 +148,9 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
         )
         self.addParameter(
             QgsProcessingParameterMatrix(
-                "DesiredOutputs",
+                "PollutantOutputs",
                 "Pollutant Outputs",
-                optional=True,
+                optional=False,
                 headers=["Name", "Output? [Y/N]"],
                 defaultValue=[
                     "Runoff",
@@ -215,7 +215,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
         land_use_type = self.parameterAsEnum(parameters, "LandUseType", context)
 
         desired_outputs = filter_matrix(
-            self.parameterAsMatrix(parameters, "DesiredOutputs", context)
+            self.parameterAsMatrix(parameters, "PollutantOutputs", context)
         )
         desired_pollutants = [pol for pol in desired_outputs if pol.lower() != "runoff"]
         dual_soil_type = self.parameterAsEnum(parameters, "DualSoils", context)
