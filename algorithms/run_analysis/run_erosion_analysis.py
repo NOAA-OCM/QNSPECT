@@ -63,7 +63,7 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
     rFactorRaster = "RFactorRaster"
     landUseRaster = "LandUseRaster"
     projectLocation = "ProjectLocation"
-    mfd = "MFD"
+    mfd = False #"MFD"
     rusle = "RUSLE"
     sedimentYieldLocal = "Sediment Local"
     sedimentYieldAccumulated = "Sediment Accumulated"
@@ -139,11 +139,14 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
                 defaultValue=True,
             )
         )
-        param = QgsProcessingParameterBoolean(
-            self.mfd, "Use Multi Flow Direction [MFD] Routing", defaultValue=False
-        )
-        param.setFlags(param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
-        self.addParameter(param)
+        # param = QgsProcessingParameterBoolean(
+        #     self.mfd, 
+        #     "Use Multi Flow Direction [MFD] Routing", 
+        #     defaultValue=False
+        # )
+        # param.setFlags(param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
+        # self.addParameter(param)
+
         param = QgsProcessingParameterEnum(
             self.dualSoils,
             "Treat Dual Category Soils as",
@@ -310,7 +313,7 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
         sediment_acc = self.run_sediment_yield_accumulated(
             sediment_yield=sediment_local,
             elev_raster=elev_raster,
-            mfd=self.parameterAsBool(parameters, self.mfd, context),
+            mfd= False, #self.parameterAsBool(parameters, self.mfd, context),
             context=context,
             feedback=feedback,
             output=sediment_acc_path,
@@ -606,8 +609,8 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
 
 <h2>Advanced Parameters</h2>
 
-<h3>Use Multi Flow Direction [MFD] Routing</h3>
-<p>By default, the Single Flow Direction [SFD] option is used for flow routing. Multi Flow Direction [MFD] routing will be utilized if this option is checked. The algorithm passes these flags to GRASS r.watershed function, which is the computational engine for accumulation calculations</p>
+<!--h3 >Use Multi Flow Direction [MFD] Routing</h3-->
+<!--p >By default, the Single Flow Direction [SFD] option is used for flow routing. Multi Flow Direction [MFD] routing will be utilized if this option is checked. The algorithm passes these flags to GRASS r.watershed function, which is the computational engine for accumulation calculations</p-->
 
 <h3>Treat Dual Category Soils as</h3>
 <p>Certain areas can have dual soil types (A/D, B/D, or C/D). These areas possess characteristics of Hydrologic Soil Group D during undrained conditions and characteristics of Hydrologic Soil Group A/B/C for drained conditions.</p>
