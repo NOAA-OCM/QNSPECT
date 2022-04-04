@@ -1,3 +1,5 @@
+# this package should only export algorithms and nothing else
+# or else loading the algorithms into the provider will fail
 from .align_rasters.align_rasters import AlignRasters
 from .rasterize_soil.rasterize_soil import RasterizeSoil
 from .modify_land_cover.modify_land_cover_by_field import ModifyLandCover

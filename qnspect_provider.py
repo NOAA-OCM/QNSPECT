@@ -58,14 +58,8 @@ class QNSPECTProvider(QgsProcessingProvider):
         Loads all algorithms belonging to this provider.
         """
 
-        alg_classes = [
-            m[1]
-            for m in inspect.getmembers(algorithms, inspect.isclass)
-            if issubclass(m[1], QNSPECTAlgorithm)
-        ]
-
-        for alg_class in alg_classes:
-            self.addAlgorithm(alg_class())
+        for alg in inspect.getmembers(algorithms, inspect.isclass):
+            self.addAlgorithm(alg[1]())
 
     def id(self):
         """
