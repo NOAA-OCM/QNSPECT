@@ -289,6 +289,13 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
         # All final outputs that are not returned to user should be saved in outputs
         outputs["CN"] = cn.generate_cn_raster()
 
+        # Determine time unit label
+        if rainy_days > 1:
+            time_unit = "/year"
+        else:
+            time_unit = "/event"
+
+
         # Calculate Q (Runoff) (Liters)
         # using elev layer here because everything should have same units and crs
         feedback.setCurrentStep(2)
@@ -313,7 +320,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
                 self.handle_post_processing(
                     "runoff",
                     outputs["Runoff Local"]["OUTPUT"],
-                    "Runoff Local (L)",
+                    "Runoff Local (L" + time_unit + ")",
                     context,
                 )
         else:
@@ -353,7 +360,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
                 self.handle_post_processing(
                     pol.lower(),
                     outputs[pol + " Local"]["OUTPUT"],
-                    f"{pol} Local (mg)",
+                    f"{pol} Local (mg" + time_unit + ")",
                     context,
                 )
 
@@ -378,7 +385,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
                 self.handle_post_processing(
                     "runoff",
                     outputs["Runoff Accumulated"]["OUTPUT"],
-                    "Runoff Accumulated (L)",
+                    "Runoff Accumulated (L" + time_unit + ")",
                     context,
                 )
         else:
@@ -422,7 +429,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
                 self.handle_post_processing(
                     pol.lower(),
                     outputs[pol + " Accumulated"]["OUTPUT"],
-                    f"{pol} Accumulated (kg)",
+                    f"{pol} Accumulated (kg" + time_unit + ")",
                     context,
                 )
 
