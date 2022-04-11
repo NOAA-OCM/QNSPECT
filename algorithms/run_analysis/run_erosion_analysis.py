@@ -303,7 +303,7 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
 
         if load_outputs:
             self.handle_post_processing(
-                "sediment", sediment_local_path, "Sediment Local (kg)", context
+                "sediment", sediment_local_path, "Sediment Local (kg/year)", context
             )
 
         feedback.setCurrentStep(9)
@@ -324,7 +324,7 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
 
         if load_outputs:
             self.handle_post_processing(
-                "sediment", sediment_acc, "Sediment Accumulation (Mg)", context
+                "sediment", sediment_acc, "Sediment Accumulation (Mg/year)", context
             )
 
         feedback.setCurrentStep(10)

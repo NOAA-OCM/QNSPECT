@@ -113,8 +113,8 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
         )
         self.addParameter(
             QgsProcessingParameterNumber(
-                "RainyDays",
-                "Number of Rainy Days in a Year",
+                "RainingDays",
+                "Number of Raining Days in a Year",
                 type=QgsProcessingParameterNumber.Integer,
                 minValue=1,
                 maxValue=366,
@@ -221,7 +221,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
         dual_soil_type = self.parameterAsEnum(parameters, "DualSoils", context)
 
         precip_units = self.parameterAsEnum(parameters, "PrecipUnits", context)
-        rainy_days = self.parameterAsInt(parameters, "RainyDays", context)
+        raining_days = self.parameterAsInt(parameters, "RainingDays", context)
 
         mfd = self.parameterAsBool(parameters, "MFD", context)
         conc_out = self.parameterAsBool(parameters, "ConcOutputs", context)
@@ -289,6 +289,13 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
         # All final outputs that are not returned to user should be saved in outputs
         outputs["CN"] = cn.generate_cn_raster()
 
+        # Determine time unit label
+        if raining_days > 1:
+            time_unit = "/year"
+        else:
+            time_unit = "/event"
+
+
         # Calculate Q (Runoff) (Liters)
         # using elev layer here because everything should have same units and crs
         feedback.setCurrentStep(2)
@@ -299,7 +306,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
             outputs["CN"]["OUTPUT"],
             elev_raster,
             precip_units,
-            rainy_days,
+            raining_days,
             context,
             feedback,
         )
@@ -313,7 +320,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
                 self.handle_post_processing(
                     "runoff",
                     outputs["Runoff Local"]["OUTPUT"],
-                    "Runoff Local (L)",
+                    "Runoff Local (L" + time_unit + ")",
                     context,
                 )
         else:
@@ -353,7 +360,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
                 self.handle_post_processing(
                     pol.lower(),
                     outputs[pol + " Local"]["OUTPUT"],
-                    f"{pol} Local (mg)",
+                    f"{pol} Local (mg" + time_unit + ")",
                     context,
                 )
 
@@ -378,7 +385,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
                 self.handle_post_processing(
                     "runoff",
                     outputs["Runoff Accumulated"]["OUTPUT"],
-                    "Runoff Accumulated (L)",
+                    "Runoff Accumulated (L" + time_unit + ")",
                     context,
                 )
         else:
@@ -422,7 +429,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
                 self.handle_post_processing(
                     pol.lower(),
                     outputs[pol + " Accumulated"]["OUTPUT"],
-                    f"{pol} Accumulated (kg)",
+                    f"{pol} Accumulated (kg" + time_unit + ")",
                     context,
                 )
 
@@ -503,11 +510,11 @@ GRASS `r.watershed`function is used by the algorithm under the hood to calculate
 <h3>Soil Raster</h3>
 <p>Hydrologic Soil Group raster for the area of interest with following mapping <code>{'A': 1, 'B': 2, 'C': 3, 'D':4, 'A/D':5, 'B/D':6, 'C/D':7, 'W':8, Null: 9}</code>. The soil raster is used to generate runoff estimates using NRCS Curve Number method.</p>
 <h3>Precipitation Raster</h3>
-<p>Annual precipitation amounts in inches or millimeters for the area of interest. The precipitation values are used to calculate access runoff.</p>
+<p>Precipitation amounts in inches or millimeters for the area of interest. The precipitation values are used to calculate access runoff.</p>
 <h3>Precipitation Raster Units</h3>
 <p>Units of the precipitation raster, inches or millimeters.</p>
-<h3>Number of Rainy Days in a Year</h3>
-<p>This field indicates the average number of days rain occurs in one year in the area of interest. A rainy day is a day on which there was enough rain to produce runoff. The higher number of rainy days reduces excess runoff volume by increasing retention.</p>
+<h3>Number of Raining Days</h3>
+<p>This field indicates the average number of days rain occurs in one year in the area of interest. A raining day is defined as a day on which there was enough rain to produce runoff. A higher number of raining days reduces runoff volume by increasing total retention. A value of 1 raining day can be used to simulate runoff from a single event. </p>
 <h3>Land Cover Raster</h3>
 <p>Land Cover/Classification raster for the area of interest. The algorithm uses Land Cover Raster and Lookup Table to determine each cell's runoff and pollution potential.</p>
 <h3>Land Cover Type</h3>

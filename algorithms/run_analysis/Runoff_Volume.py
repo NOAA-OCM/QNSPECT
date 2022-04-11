@@ -48,7 +48,7 @@ class Runoff_Volume:
         cn_raster: str,
         ref_raster: QgsRasterLayer,
         precip_units: int,
-        rainy_days: int,
+        raining_days: int,
         context: QgsProcessingContext,
         feedback: QgsProcessingMultiStepFeedback,
     ):
@@ -56,7 +56,7 @@ class Runoff_Volume:
         self.cn_raster = cn_raster
         self.ref_raster = ref_raster
         self.precip_units = precip_units
-        self.rainy_days = rainy_days
+        self.raining_days = raining_days
         self.context = context
         self.feedback = feedback
         self.outputs = {}
@@ -133,8 +133,8 @@ class Runoff_Volume:
 
         # (Volume) (L)
         self.outputs["Q_TEMP"] = perform_raster_math(
-            # (((Precip-(0.2*S*rainy_days))**2)/(Precip+(0.8*S*rainy_days))     *  [If (Precip-0.2S)<0, set to 0]    *  cell area to convert to vol * (28.3168/12) to convert inches to feet and cubic feet to Liters",
-            f"(((A-(0.2*B*{self.rainy_days}))**2)/(A+(0.8*B*{self.rainy_days})) * ((A-(0.2*B*{self.rainy_days}))>0)) * {cell_area_sq_feet} * 2.35973722 ",
+            # (((Precip-(0.2*S*raining_days))**2)/(Precip+(0.8*S*raining_days))     *  [If (Precip-0.2S)<0, set to 0]    *  cell area to convert to vol * (28.3168/12) to convert inches to feet and cubic feet to Liters",
+            f"(((A-(0.2*B*{self.raining_days}))**2)/(A+(0.8*B*{self.raining_days})) * ((A-(0.2*B*{self.raining_days}))>0)) * {cell_area_sq_feet} * 2.35973722 ",
             input_params,
             self.context,
             self.feedback,
