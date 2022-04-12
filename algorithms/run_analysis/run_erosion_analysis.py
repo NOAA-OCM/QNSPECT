@@ -309,9 +309,22 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
         feedback.setCurrentStep(9)
         if feedback.isCanceled():
             return {}
+
+        # convert to Mg
+        input_params = {
+            "input_a": sediment_local,
+            "band_a": "1",
+        }
+        sediments_local_Mg = perform_raster_math(
+            "(A / 1000)",
+            input_params,
+            context,
+            feedback
+        )["OUTPUT"]            
+
         sediment_acc_path = str(run_out_dir / (self.sedimentYieldAccumulated + ".tif"))
         sediment_acc = self.run_sediment_yield_accumulated(
-            sediment_yield=sediment_local,
+            sediment_yield= sediments_local_Mg,
             elev_raster=elev_raster,
             mfd= False, #self.parameterAsBool(parameters, self.mfd, context),
             context=context,
