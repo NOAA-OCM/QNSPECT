@@ -48,8 +48,8 @@ cmd_folder = os.path.split(inspect.getfile(inspect.currentframe()))[0]
 sys.path.append(cmd_folder)
 sys.path.append(os.path.dirname(cmd_folder))
 
-from Curve_Number import Curve_Number
-from Runoff_Volume import Runoff_Volume
+from curve_number import CurveNumber
+from runoff_volume import RunoffVolume
 from qnspect_utils import (
     perform_raster_math,
     grass_material_transport,
@@ -277,7 +277,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
         feedback.setCurrentStep(1)
         if feedback.isCanceled():
             return {}
-        cn = Curve_Number(
+        cn = CurveNumber(
             parameters["LandUseRaster"],
             parameters["HSGRaster"],
             dual_soil_type,
@@ -301,7 +301,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
         feedback.setCurrentStep(2)
         if feedback.isCanceled():
             return {}
-        runoff_vol = Runoff_Volume(
+        runoff_vol = RunoffVolume(
             parameters["PrecipRaster"],
             outputs["CN"]["OUTPUT"],
             elev_raster,
@@ -403,27 +403,29 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
             current_step += 1
             if feedback.isCanceled():
                 return {}
-            # Accumulated Pollutant (mg)
-            outputs[pol + "accum_mg"] = grass_material_transport(
-                parameters["ElevatoinRaster"],
-                outputs[pol + " Local"]["OUTPUT"],
-                context,
-                feedback,
-                mfd,
-            )
 
-            # convert to kg
+            # convert local pollutants to kg
             input_params = {
-                "input_a": outputs[pol + "accum_mg"]["OUTPUT"],
+                "input_a": outputs[pol + " Local"]["OUTPUT"],
                 "band_a": "1",
             }
-            outputs[pol + " Accumulated"] = perform_raster_math(
+            outputs[pol + " local_kg"] = perform_raster_math(
                 "(A / 1000000)",
                 input_params,
                 context,
                 feedback,
+            )
+
+            # Accumulated Pollutant (mg)
+            outputs[pol + " Accumulated"] = grass_material_transport(
+                parameters["ElevatoinRaster"],
+                outputs[pol + " local_kg"]["OUTPUT"],
+                context,
+                feedback,
+                mfd,
                 os.path.join(run_out_dir, f"{pol} Accumulated.tif"),
             )
+
             results[pol + " Accumulated"] = outputs[pol + " Accumulated"]["OUTPUT"]
             if load_outputs:
                 self.handle_post_processing(

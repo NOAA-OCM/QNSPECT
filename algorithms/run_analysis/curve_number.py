@@ -38,7 +38,7 @@ sys.path.append(cmd_folder)
 from qnspect_utils import perform_raster_math
 
 
-class Curve_Number:
+class CurveNumber:
     """Class to generate and store Curve Number Raster"""
 
     dual_soil_reclass = {0: [5, 9, 4], 1: [5, 5, 1, 6, 6, 2, 7, 7, 3, 8, 9, 4]}

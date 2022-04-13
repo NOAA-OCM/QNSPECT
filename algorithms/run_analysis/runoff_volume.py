@@ -39,7 +39,7 @@ sys.path.append(os.path.dirname(cmd_folder))
 from qnspect_utils import perform_raster_math
 
 
-class Runoff_Volume:
+class RunoffVolume:
     """Class to generate and store Runoff Volume Raster"""
 
     def __init__(
@@ -131,14 +131,34 @@ class Runoff_Volume:
             "band_b": "1",
         }
 
-        # (Volume) (L)
-        self.outputs["Q_TEMP"] = perform_raster_math(
-            # (((Precip-(0.2*S*raining_days))**2)/(Precip+(0.8*S*raining_days))     *  [If (Precip-0.2S)<0, set to 0]    *  cell area to convert to vol * (28.3168/12) to convert inches to feet and cubic feet to Liters",
-            f"(((A-(0.2*B*{self.raining_days}))**2)/(A+(0.8*B*{self.raining_days})) * ((A-(0.2*B*{self.raining_days}))>0)) * {cell_area_sq_feet} * 2.35973722 ",
+        ## Volume calculations
+        # doing the following calculations in two steps because https://github.com/OSGeo/gdal/issues/5609
+        self.outputs["P-Ia"] = perform_raster_math(
+            # (Precip-(0.2*S*raining_days))
+            f"(A-(0.2*B*{self.raining_days}))",
             input_params,
             self.context,
             self.feedback,
         )
+
+        input_params = {
+            "input_a": self.precip_raster,
+            "band_a": "1",
+            "input_b": self.outputs["S"]["OUTPUT"],
+            "band_b": "1",
+            "input_c": self.outputs["P-Ia"]["OUTPUT"],
+            "band_c": "1",            
+        }
+
+        # (Volume) (L)
+        self.outputs["Q_TEMP"] = perform_raster_math(
+            # (((Precip-(0.2*S*raining_days))**2)/(Precip+(0.8*S*raining_days))     *  [If (Precip-0.2S)<0, set to 0]    *  cell area to convert to vol * (28.3168/12) to convert inches to feet and cubic feet to Liters",
+            f"((C**2)/(A+(0.8*B*{self.raining_days}))) * (C>0) * {cell_area_sq_feet} * 2.35973722 ",
+            input_params,
+            self.context,
+            self.feedback,
+        )
+
 
         input_params = {
             "input_a": self.outputs["Q_TEMP"]["OUTPUT"],

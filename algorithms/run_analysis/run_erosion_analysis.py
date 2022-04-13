@@ -31,7 +31,7 @@ from analysis_utils import (
     convert_raster_data_type_to_float,
     check_raster_values_in_lookup_table,
 )
-from Curve_Number import Curve_Number
+from curve_number import CurveNumber
 from relief_length_ratio import create_relief_length_ratio_raster
 
 DEFAULT_URBAN_K_FACTOR_VALUE = 0.3
@@ -262,7 +262,7 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
         feedback.setCurrentStep(6)
         if feedback.isCanceled():
             return {}
-        cn = Curve_Number(
+        cn = CurveNumber(
             parameters[self.landUseRaster],
             parameters[self.soilRaster],
             dual_soil_type=self.parameterAsEnum(parameters, self.dualSoils, context),
