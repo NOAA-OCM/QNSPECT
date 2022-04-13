@@ -403,27 +403,29 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
             current_step += 1
             if feedback.isCanceled():
                 return {}
-            # Accumulated Pollutant (mg)
-            outputs[pol + "accum_mg"] = grass_material_transport(
-                parameters["ElevatoinRaster"],
-                outputs[pol + " Local"]["OUTPUT"],
-                context,
-                feedback,
-                mfd,
-            )
 
-            # convert to kg
+            # convert local pollutants to kg
             input_params = {
-                "input_a": outputs[pol + "accum_mg"]["OUTPUT"],
+                "input_a": outputs[pol + " Local"]["OUTPUT"],
                 "band_a": "1",
             }
-            outputs[pol + " Accumulated"] = perform_raster_math(
+            outputs[pol + " local_kg"] = perform_raster_math(
                 "(A / 1000000)",
                 input_params,
                 context,
                 feedback,
+            )
+
+            # Accumulated Pollutant (mg)
+            outputs[pol + " Accumulated"] = grass_material_transport(
+                parameters["ElevatoinRaster"],
+                outputs[pol + " local_kg"]["OUTPUT"],
+                context,
+                feedback,
+                mfd,
                 os.path.join(run_out_dir, f"{pol} Accumulated.tif"),
             )
+
             results[pol + " Accumulated"] = outputs[pol + " Accumulated"]["OUTPUT"]
             if load_outputs:
                 self.handle_post_processing(
