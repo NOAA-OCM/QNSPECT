@@ -20,7 +20,7 @@ __copyright__ = "(C) 2022 by NOAA"
 __revision__ = "$Format:%H$"
 
 from pathlib import Path
-import sys
+import os
 import math
 import datetime
 import json
@@ -429,19 +429,29 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
         feedback,
     ) -> str:
         """Runs a raster calculator using QGIS's native raster calculator class.
-        GDAL does not allow float^float operations, so 'perform_raster_math' cannot be used here."""
+        Modifies given tif names."""
+
+        # GDAL perform raster math function producing correct results but giving RuntimeWarning in power
+        # thus using qgis native raster calculator
+        # expression for GDAL Raster math 1.366 * (10**(-11)) * ((({math.sqrt(cell_size_sq_meters)} / 1000.0) ** 2) **(-0.0998)) * (A **0.3629) * (B**5.444)
+
+        relief_length_new = Path(relief_length).with_stem("relief_length").as_posix()
+        curve_number_new = Path(curve_number).with_stem("curve_number").as_posix()
+        os.rename(relief_length, relief_length_new)
+        os.rename(curve_number, curve_number_new)
+
         expr = " * ".join(
             [
                 "1.366",
                 "(10 ^ -11)",
                 f"({(math.sqrt(cell_size_sq_meters) / 1_000.0) ** 2} ^ -0.0998)",  # convert to sq km
-                f'("{Path(relief_length).stem}@1" ^ 0.3629)',
-                f'("{Path(curve_number).stem}@1" ^ 5.444)',
+                '("relief_length@1" ^ 0.3629)',
+                '("curve_number@1" ^ 5.444)',
             ]
         )
         alg_params = {
             "EXPRESSION": expr,
-            "LAYERS": [relief_length, curve_number],
+            "LAYERS": [relief_length_new, curve_number_new],
             "OUTPUT": QgsProcessing.TEMPORARY_OUTPUT,
         }
         return processing.run(
