@@ -39,7 +39,7 @@ sys.path.append(os.path.dirname(cmd_folder))
 from qnspect_utils import perform_raster_math
 
 
-class Runoff_Volume:
+class RunoffVolume:
     """Class to generate and store Runoff Volume Raster"""
 
     def __init__(
