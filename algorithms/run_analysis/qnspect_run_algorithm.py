@@ -39,7 +39,7 @@ from QNSPECT.qnspect_algorithm import QNSPECTAlgorithm
 from qgis.core import QgsVectorLayer, QgsProcessingException, QgsLayerTreeGroup
 from qgis.utils import iface
 
-from qnspect_utils import create_alg_styler, select_group
+from qnspect_utils import LayerPostProcessor, select_group
 
 class QNSPECTRunAlgorithm(QNSPECTAlgorithm):
     """
@@ -57,7 +57,7 @@ class QNSPECTRunAlgorithm(QNSPECTAlgorithm):
 
     def __init__(self):
         super().__init__()
-        self.styler_dict = {}
+        self.styler_dict = {} # necessary to store LayerPostProcessor instances in dict, for background see https://gis.stackexchange.com/questions/423650   
 
     def group(self):
         return self.tr("Analysis")
@@ -129,7 +129,7 @@ class QNSPECTRunAlgorithm(QNSPECTAlgorithm):
 
         colors = self._STYLE_COLORS.get(entity, self._STYLE_COLORS["default"])
         if context.willLoadLayerOnCompletion(layer):
-            self.styler_dict[layer] = create_alg_styler(display_name, colors[0], colors[1])
+            self.styler_dict[layer] = LayerPostProcessor(display_name, colors[0], colors[1])
             context.layerToLoadOnCompletionDetails(layer).setPostProcessor(
                 self.styler_dict[layer]
             )

@@ -18,6 +18,35 @@ from qgis.PyQt.QtCore import *
 import processing
 
 
+class LayerPostProcessor(QgsProcessingLayerPostProcessorInterface):
+    def __init__(self, display_name, layer_color1, layer_color2):
+        super().__init__()
+        self.display_name = display_name
+        self.layer_color1 = layer_color1
+        self.layer_color2 = layer_color2
+
+    def postProcessLayer(self, layer, context, feedback):
+        if layer.isValid():
+            layer.setName(self.display_name)
+
+            prov = layer.dataProvider()
+            stats = prov.bandStatistics(
+                1, QgsRasterBandStats.All, layer.extent(), 0
+            )
+            min = stats.minimumValue
+            max = stats.maximumValue
+            renderer = QgsSingleBandPseudoColorRenderer(
+                layer.dataProvider(), band=1
+            )
+            color_ramp = QgsGradientColorRamp(
+                QColor(*self.layer_color1), QColor(*self.layer_color2)
+            )
+            renderer.setClassificationMin(min)
+            renderer.setClassificationMax(max)
+            renderer.createShader(color_ramp)
+            layer.setRenderer(renderer)
+
+
 def select_group(name: str) -> bool:
     """
     Select group item of a node tree
@@ -41,39 +70,6 @@ def select_group(name: str) -> bool:
 
     else:
         return False
-
-
-def create_alg_styler(display_name, layer_color1, layer_color2):
-    """Create a New Post Processor class and returns it"""
-    # Just simply creating a new instance of the class was not working
-    # for details see https://gis.stackexchange.com/questions/423650/qgsprocessinglayerpostprocessorinterface-only-processing-the-last-layer
-    class LayerPostProcessor(QgsProcessingLayerPostProcessorInterface):
-
-        def __init__(self):
-            super().__init__()
-
-        def postProcessLayer(self, layer, context, feedback):
-            if layer.isValid():
-                layer.setName(display_name)
-
-                prov = layer.dataProvider()
-                stats = prov.bandStatistics(
-                    1, QgsRasterBandStats.All, layer.extent(), 0
-                )
-                min = stats.minimumValue
-                max = stats.maximumValue
-                renderer = QgsSingleBandPseudoColorRenderer(
-                    layer.dataProvider(), band=1
-                )
-                color_ramp = QgsGradientColorRamp(
-                    QColor(*layer_color1), QColor(*layer_color2)
-                )
-                renderer.setClassificationMin(min)
-                renderer.setClassificationMax(max)
-                renderer.createShader(color_ramp)
-                layer.setRenderer(renderer)
-
-    return LayerPostProcessor()
 
 
 def filter_matrix(matrix: list) -> list:
