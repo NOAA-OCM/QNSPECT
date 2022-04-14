@@ -31,7 +31,6 @@ __copyright__ = "(C) 2021 by NOAA"
 __revision__ = "$Format:%H$"
 
 import os
-import sys
 from pathlib import Path
 from json import load
 
@@ -40,8 +39,7 @@ from QNSPECT.qnspect_algorithm import QNSPECTAlgorithm
 from qgis.core import QgsVectorLayer, QgsProcessingException, QgsLayerTreeGroup
 from qgis.utils import iface
 
-from qnspect_utils import run_alg_styler, select_group
-
+from qnspect_utils import create_alg_styler, select_group
 
 class QNSPECTRunAlgorithm(QNSPECTAlgorithm):
     """
@@ -56,6 +54,10 @@ class QNSPECTRunAlgorithm(QNSPECTAlgorithm):
         f"{Path(__file__).parent.parent.parent / 'resources' / 'style-colors.json'}"
     ) as json_f:
         _STYLE_COLORS = load(json_f)
+
+    def __init__(self):
+        super().__init__()
+        self.styler_dict = {}
 
     def group(self):
         return self.tr("Analysis")
@@ -127,6 +129,7 @@ class QNSPECTRunAlgorithm(QNSPECTAlgorithm):
 
         colors = self._STYLE_COLORS.get(entity, self._STYLE_COLORS["default"])
         if context.willLoadLayerOnCompletion(layer):
+            self.styler_dict[layer] = create_alg_styler(display_name, colors[0], colors[1])
             context.layerToLoadOnCompletionDetails(layer).setPostProcessor(
-                run_alg_styler(display_name, colors[0], colors[1])
+                self.styler_dict[layer]
             )
