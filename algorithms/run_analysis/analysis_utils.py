@@ -65,7 +65,7 @@ def reclassify_land_use_raster_by_table_field(
         "MAX_FIELD": "lu_value",
         "MIN_FIELD": "lu_value",
         "NODATA_FOR_MISSING": True,
-        "NO_DATA": -9999,
+        "NO_DATA": -32768,
         "RANGE_BOUNDARIES": 2,
         "RASTER_BAND": 1,
         "VALUE_FIELD": value_field,
