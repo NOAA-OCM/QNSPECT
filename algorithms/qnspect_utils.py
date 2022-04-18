@@ -116,7 +116,7 @@ def perform_raster_math(
         "INPUT_D": input_dict.get("input_d", None),
         "INPUT_E": input_dict.get("input_e", None),
         "INPUT_F": input_dict.get("input_f", None),
-        "NO_DATA": -32768,
+        "NO_DATA": -999999,
         "OPTIONS": "",
         "RTYPE": 5,
         "OUTPUT": output,

@@ -141,7 +141,7 @@ class RasterizeSoil(QNSPECTAlgorithm):
                 "INIT": None,
                 "INPUT": parameters["HydrologicSoilGroupLayer"],
                 "INVERT": False,
-                "NODATA": -32768,
+                "NODATA": -999999,
                 "OPTIONS": "",
                 "UNITS": 1,
                 "WIDTH": parameters["RasterCellSize"],

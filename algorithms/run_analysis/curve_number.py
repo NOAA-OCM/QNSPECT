@@ -162,7 +162,7 @@ class CurveNumber:
         alg_params = {
             "IGNORE_NODATA": True,
             "INPUT": rasters,
-            "OUTPUT_NODATA_VALUE": -32768,
+            "OUTPUT_NODATA_VALUE": -999999,
             "REFERENCE_LAYER": rasters[0],
             "STATISTIC": 2,
             "OUTPUT": QgsProcessing.TEMPORARY_OUTPUT,
