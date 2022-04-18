@@ -416,7 +416,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
                 feedback,
             )
 
-            # Accumulated Pollutant (mg)
+            # Accumulated Pollutant (kg)
             outputs[pol + " Accumulated"] = grass_material_transport(
                 parameters["ElevationRaster"],
                 outputs[pol + " local_kg"]["OUTPUT"],
@@ -444,13 +444,13 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
                     return {}
                 # Concentration Pollutant (mg/L)
                 input_params = {
-                    "input_a": outputs[pol + " local_kg"]["OUTPUT"],
+                    "input_a": outputs[pol + " Accumulated"]["OUTPUT"],
                     "band_a": "1",
                     "input_b": outputs["Runoff Accumulated"]["OUTPUT"],
                     "band_b": "1",
                 }
                 outputs[pol + " Concentration"] = perform_raster_math(
-                    "((A * 1e6) / B)",    # Convert kg back to mg
+                    "(A / B ) * 1e6",    # Convert kg back to mg
                     input_params,
                     context,
                     feedback,
