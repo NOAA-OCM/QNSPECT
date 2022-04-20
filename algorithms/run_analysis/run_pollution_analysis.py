@@ -80,7 +80,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
         )
         self.addParameter(
             QgsProcessingParameterRasterLayer(
-                "ElevatoinRaster",
+                "ElevationRaster",
                 "Elevation Raster",
                 optional=False,
                 defaultValue=None,
@@ -231,7 +231,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
         proj_loc = self.parameterAsString(parameters, "ProjectLocation", context)
 
         elev_raster = self.parameterAsRasterLayer(
-            parameters, "ElevatoinRaster", context
+            parameters, "ElevationRaster", context
         )
         soil_raster = self.parameterAsRasterLayer(parameters, "HSGRaster", context)
         lu_raster = self.parameterAsRasterLayer(parameters, "LandUseRaster", context)
@@ -373,7 +373,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
             runoff_output = os.path.join(run_out_dir, f"Runoff Accumulated.tif")
 
             outputs["Runoff Accumulated"] = grass_material_transport(
-                parameters["ElevatoinRaster"],
+                parameters["ElevationRaster"],
                 outputs["Runoff Local"]["OUTPUT"],
                 context,
                 feedback,
@@ -390,7 +390,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
                 )
         else:
             outputs["Runoff Accumulated"] = grass_material_transport(
-                parameters["ElevatoinRaster"],
+                parameters["ElevationRaster"],
                 outputs["Runoff Local"]["OUTPUT"],
                 context,
                 feedback,
@@ -410,15 +410,15 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
                 "band_a": "1",
             }
             outputs[pol + " local_kg"] = perform_raster_math(
-                "(A / 1000000)",
+                "(A * 1e-6)",
                 input_params,
                 context,
                 feedback,
             )
 
-            # Accumulated Pollutant (mg)
+            # Accumulated Pollutant (kg)
             outputs[pol + " Accumulated"] = grass_material_transport(
-                parameters["ElevatoinRaster"],
+                parameters["ElevationRaster"],
                 outputs[pol + " local_kg"]["OUTPUT"],
                 context,
                 feedback,
@@ -444,13 +444,13 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
                     return {}
                 # Concentration Pollutant (mg/L)
                 input_params = {
-                    "input_a": outputs[pol + "accum_mg"]["OUTPUT"],
+                    "input_a": outputs[pol + " Accumulated"]["OUTPUT"],
                     "band_a": "1",
                     "input_b": outputs["Runoff Accumulated"]["OUTPUT"],
                     "band_b": "1",
                 }
                 outputs[pol + " Concentration"] = perform_raster_math(
-                    "(A / B)",
+                    "(A / B ) * 1e6",    # Convert kg back to mg
                     input_params,
                     context,
                     feedback,
@@ -472,7 +472,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
         if feedback.isCanceled():
             return {}
         run_dict["Inputs"] = parameters
-        run_dict["Inputs"]["ElevatoinRaster"] = elev_raster.source()
+        run_dict["Inputs"]["ElevationRaster"] = elev_raster.source()
         run_dict["Inputs"]["LandUseRaster"] = lu_raster.source()
         run_dict["Inputs"]["PrecipRaster"] = precip_raster.source()
         run_dict["Inputs"]["HSGRaster"] = soil_raster.source()
