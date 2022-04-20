@@ -212,8 +212,6 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
         run_dict = {}
 
         ## Extract inputs
-        land_use_type = self.parameterAsEnum(parameters, "LandUseType", context)
-
         desired_outputs = filter_matrix(
             self.parameterAsMatrix(parameters, "PollutantOutputs", context)
         )
