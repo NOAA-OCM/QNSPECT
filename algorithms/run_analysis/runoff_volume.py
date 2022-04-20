@@ -84,23 +84,9 @@ class RunoffVolume:
             "band_a": "1",
         }
 
-        # replace 0 CNs with 1 for avoid division by 0 error
-        # will later change the Q raster to 0 for these values
-        # there maybe a better way to do this using gdalwarp -srcnodata flag
-        self.outputs["CN_NON_ZERO"] = perform_raster_math(
-            "(A==0) * 1 + (A != 0) * A",
-            input_params,
-            self.context,
-            self.feedback,
-        )
-
-        input_params = {
-            "input_a": self.outputs["CN_NON_ZERO"]["OUTPUT"],
-            "band_a": "1",
-        }
-
         self.outputs["S"] = perform_raster_math(
-            "(1000/A)-10",
+            # maximum needed here because without it numpy/GDAL is calculating min value as -0
+            'numpy.maximum((numpy.divide(1000, A, out=numpy.zeros_like(A), where=(A!=0)) - 10), 0)',            
             input_params,
             self.context,
             self.feedback,

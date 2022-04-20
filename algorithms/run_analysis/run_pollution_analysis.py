@@ -212,8 +212,6 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
         run_dict = {}
 
         ## Extract inputs
-        land_use_type = self.parameterAsEnum(parameters, "LandUseType", context)
-
         desired_outputs = filter_matrix(
             self.parameterAsMatrix(parameters, "PollutantOutputs", context)
         )
@@ -450,7 +448,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
                     "band_b": "1",
                 }
                 outputs[pol + " Concentration"] = perform_raster_math(
-                    "(A / B ) * 1e6",    # Convert kg back to mg
+                    'numpy.divide(A, B, out=numpy.zeros_like(A), where=(B!=0)) * 1e6', # Convert kg back to mg
                     input_params,
                     context,
                     feedback,
