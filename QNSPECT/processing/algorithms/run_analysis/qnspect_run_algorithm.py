@@ -34,7 +34,7 @@ import os
 from pathlib import Path
 from json import load
 
-from QNSPECT.qnspect_algorithm import QNSPECTAlgorithm
+from QNSPECT.processing.qnspect_algorithm import QNSPECTAlgorithm
 
 from qgis.core import QgsVectorLayer, QgsProcessingException, QgsLayerTreeGroup
 from qgis.utils import iface
@@ -49,10 +49,10 @@ class QNSPECTRunAlgorithm(QNSPECTAlgorithm):
 
     _LAND_USE_TABLES = {1: "C-CAP", 2: "NLCD"}
     _LAND_USE_PATH = (
-        f"file:///{Path(__file__).parent.parent.parent / 'resources' / 'coefficients'}"
+        f"file:///{Path(__file__).parents[3] / 'resources' / 'coefficients'}"
     )
     with open(
-        f"{Path(__file__).parent.parent.parent / 'resources' / 'style-colors.json'}"
+        f"{Path(__file__).parents[3]  / 'resources' / 'style-colors.json'}"
     ) as json_f:
         _STYLE_COLORS = load(json_f)
 

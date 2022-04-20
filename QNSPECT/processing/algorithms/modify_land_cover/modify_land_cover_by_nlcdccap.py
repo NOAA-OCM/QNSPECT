@@ -35,7 +35,7 @@ import csv
 import processing
 from pathlib import Path
 
-from QNSPECT.qnspect_algorithm import QNSPECTAlgorithm
+from QNSPECT.processing.qnspect_algorithm import QNSPECTAlgorithm
 
 
 class ModifyLandCoverByNLCDCCAP(QNSPECTAlgorithm):
@@ -46,7 +46,7 @@ class ModifyLandCoverByNLCDCCAP(QNSPECTAlgorithm):
 
     def initAlgorithm(self, config=None):
         self.coefficients: Dict[str, int] = {}
-        root = Path(__file__).parent.parent.parent
+        root = Path(__file__).parents[3]
         coef_dir = root / "resources" / "coefficients"
         for csvfile in coef_dir.iterdir():
             if csvfile.suffix.lower() == ".csv":

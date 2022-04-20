@@ -36,7 +36,7 @@ from qgis.core import (
 import processing
 import os
 
-from QNSPECT.qnspect_algorithm import QNSPECTAlgorithm
+from QNSPECT.processing.qnspect_algorithm import QNSPECTAlgorithm
 
 
 class AlignRasters(QNSPECTAlgorithm):

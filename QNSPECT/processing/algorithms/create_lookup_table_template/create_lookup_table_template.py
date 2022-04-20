@@ -34,7 +34,7 @@ import processing
 import os
 from pathlib import Path
 
-from QNSPECT.qnspect_algorithm import QNSPECTAlgorithm
+from QNSPECT.processing.qnspect_algorithm import QNSPECTAlgorithm
 
 
 class CreateLookupTableTemplate(QNSPECTAlgorithm):
@@ -137,5 +137,5 @@ class CreateLookupTableTemplate(QNSPECTAlgorithm):
         return CreateLookupTableTemplate()
 
     def coefficient_dir(self):
-        root = Path(__file__).parent.parent.parent
+        root = Path(__file__).parents[3]
         return root / "resources" / "coefficients"

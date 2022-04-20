@@ -34,10 +34,10 @@ from pathlib import Path
 import sys
 
 sys.path.append(str(Path(__file__).parent))
-sys.path.append(str(Path(__file__).parent.parent))
+sys.path.append(str(Path(__file__).parents[1]))
 from comparison_utils import run_direct_and_percent_comparisons
 
-from QNSPECT.qnspect_algorithm import QNSPECTAlgorithm
+from QNSPECT.processing.qnspect_algorithm import QNSPECTAlgorithm
 
 
 class CompareErosion(QNSPECTAlgorithm):

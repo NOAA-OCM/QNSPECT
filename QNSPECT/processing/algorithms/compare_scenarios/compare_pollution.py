@@ -36,7 +36,7 @@ from pathlib import Path
 import sys
 
 sys.path.append(str(Path(__file__).parent))
-sys.path.append(str(Path(__file__).parent.parent))
+sys.path.append(str(Path(__file__).parents[1]))
 from comparison_utils import run_direct_and_percent_comparisons
 from qnspect_utils import filter_matrix
 
@@ -66,7 +66,7 @@ def retrieve_scenario_file_stems(scenario_dir: Path, comparison_types: list) -> 
     return stems
 
 
-from QNSPECT.qnspect_algorithm import QNSPECTAlgorithm
+from QNSPECT.processing.qnspect_algorithm import QNSPECTAlgorithm
 
 
 class ComparePollution(QNSPECTAlgorithm):

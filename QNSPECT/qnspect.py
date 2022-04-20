@@ -22,7 +22,7 @@
  ***************************************************************************/
 """
 
-__author__ = "NOAA"
+__author__ = "Abdul Raheem Siddiqui"
 __date__ = "2021-12-29"
 __copyright__ = "(C) 2021 by NOAA"
 
@@ -31,27 +31,30 @@ __copyright__ = "(C) 2021 by NOAA"
 __revision__ = "$Format:%H$"
 
 import os
+import sys
 import inspect
-from qgis.PyQt.QtGui import QIcon
 
-from qgis.PyQt.QtCore import QCoreApplication
-from qgis.core import QgsProcessingAlgorithm
+from qgis.core import QgsProcessingAlgorithm, QgsApplication
+from QNSPECT.processing import QNSPECTProvider
+
+cmd_folder = os.path.split(inspect.getfile(inspect.currentframe()))[0]
+
+if cmd_folder not in sys.path:
+    sys.path.insert(0, cmd_folder)
 
 
-class QNSPECTAlgorithm(QgsProcessingAlgorithm):
-    """
-    Base class for QNSPECT Algorithms
-    """
+class QNSPECTPlugin(object):
+    def __init__(self, iface):
+        self.provider = None
+        self.iface = iface
 
-    _version = 0.1
+    def initProcessing(self):
+        """Init Processing provider for QGIS >= 3.8."""
+        self.provider = QNSPECTProvider()
+        QgsApplication.processingRegistry().addProvider(self.provider)
 
-    def icon(self):
-        """
-        Returns the algorithm's icon.
-        """
-        cmd_folder = os.path.split(inspect.getfile(inspect.currentframe()))[0]
-        icon = QIcon(os.path.join(cmd_folder, "resources/branding/icon.svg"))
-        return icon
+    def initGui(self):
+        self.initProcessing()
 
-    def tr(self, string):
-        return QCoreApplication.translate("Processing", string)
+    def unload(self):
+        QgsApplication.processingRegistry().removeProvider(self.provider)
