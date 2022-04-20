@@ -1,4 +1,4 @@
-![QNSPECT banner](resources/branding/banner.svg)
+![QNSPECT banner](QNSPECT/resources/branding/banner.svg)
 
 # QNSPECT
 
