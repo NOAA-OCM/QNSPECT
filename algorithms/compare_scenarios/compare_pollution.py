@@ -188,7 +188,9 @@ class ComparePollution(QNSPECTAlgorithm):
             self.parameterAsMatrix(parameters, self.compareGrid, context)
         )
         if not pollutants:
-            raise QgsProcessingException("No pollutants were selected in the 'Pollutant Outputs' parameter.")
+            raise QgsProcessingException(
+                "No pollutants were selected in the 'Pollutant Outputs' parameter."
+            )
 
         run_everything = "everything" in [pol.lower() for pol in pollutants]
         if run_everything:
@@ -196,7 +198,9 @@ class ComparePollution(QNSPECTAlgorithm):
                 scenario_dir_a, scenario_dir_b, comparison_types
             )
             if not matching_names:
-                raise QgsProcessingException("No valid comparisons were found between the two scenario folders.")
+                raise QgsProcessingException(
+                    "No valid comparisons were found between the two scenario folders."
+                )
             total_steps = len(matching_names)
         else:
             total_steps = len(pollutants)

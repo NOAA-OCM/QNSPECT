@@ -11,26 +11,28 @@
  ***************************************************************************/
 """
 
-__author__ = 'Ian Todd'
-__date__ = '2021-12-29'
-__copyright__ = '(C) 2021 by NOAA'
+__author__ = "Ian Todd"
+__date__ = "2021-12-29"
+__copyright__ = "(C) 2021 by NOAA"
 
 # This will get replaced with a git SHA1 when you do a git archive
 
-__revision__ = '$Format:%H$'
+__revision__ = "$Format:%H$"
 
 
-from qgis.core import (QgsProcessing,
+from qgis.core import (
+    QgsProcessing,
     QgsProcessingAlgorithm,
     QgsProcessingMultiStepFeedback,
     QgsProcessingParameterFeatureSource,
     QgsProcessingParameterRasterLayer,
     QgsProcessingParameterField,
-    QgsProcessingParameterRasterDestination
+    QgsProcessingParameterRasterDestination,
 )
 import processing
 
 from QNSPECT.qnspect_algorithm import QNSPECTAlgorithm
+
 
 class ModifyLandCover(QNSPECTAlgorithm):
     inputVector = "InputVector"

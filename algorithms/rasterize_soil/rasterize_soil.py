@@ -11,13 +11,13 @@
  ***************************************************************************/
 """
 
-__author__ = 'Abdul Raheem Siddiqui'
-__date__ = '2021-12-29'
-__copyright__ = '(C) 2021 by NOAA'
+__author__ = "Abdul Raheem Siddiqui"
+__date__ = "2021-12-29"
+__copyright__ = "(C) 2021 by NOAA"
 
 # This will get replaced with a git SHA1 when you do a git archive
 
-__revision__ = '$Format:%H$'
+__revision__ = "$Format:%H$"
 
 
 from qgis.core import (
@@ -27,7 +27,7 @@ from qgis.core import (
     QgsProcessingParameterVectorLayer,
     QgsProcessingParameterDistance,
     QgsProcessingParameterField,
-    QgsProcessingParameterRasterDestination
+    QgsProcessingParameterRasterDestination,
 )
 import processing
 
@@ -35,7 +35,6 @@ from QNSPECT.qnspect_algorithm import QNSPECTAlgorithm
 
 
 class RasterizeSoil(QNSPECTAlgorithm):
-
     def initAlgorithm(self, config=None):
         self.addParameter(
             QgsProcessingParameterVectorLayer(
@@ -118,7 +117,8 @@ class RasterizeSoil(QNSPECTAlgorithm):
                 ]:
                     error_message = f"""Field {hsg_field} contain value(s) other than allowed Hydrologic Soil Groups [Null, 'A', 'B', 'C' , 'D', 'A/D', 'B/D', 'C/D', 'W']"""
                     feedback.reportError(
-                        error_message, True,
+                        error_message,
+                        True,
                     )
                     return {}
 

@@ -22,9 +22,9 @@
  This script initializes the plugin, making it known to QGIS.
 """
 
-__author__ = 'Abdul Raheem Siddiqui'
-__date__ = '2021-12-29'
-__copyright__ = '(C) 2021 by NOAA'
+__author__ = "Abdul Raheem Siddiqui"
+__date__ = "2021-12-29"
+__copyright__ = "(C) 2021 by NOAA"
 
 
 # noinspection PyPep8Naming
@@ -36,4 +36,5 @@ def classFactory(iface):  # pylint: disable=invalid-name
     """
     #
     from .qnspect import QNSPECTPlugin
+
     return QNSPECTPlugin(iface)

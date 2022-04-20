@@ -57,7 +57,7 @@ from qnspect_utils import (
 )
 from analysis_utils import (
     reclassify_land_use_raster_by_table_field,
-    check_raster_values_in_lookup_table
+    check_raster_values_in_lookup_table,
 )
 
 from qnspect_run_algorithm import QNSPECTRunAlgorithm
@@ -238,7 +238,8 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
         ## Total steps based on necessary steps plus two times for each pollutant
         total_steps = 4 + (len(desired_pollutants) * 2)
         if conc_out:
-            total_steps += len(desired_outputs) # additional round if concentration is returned
+            # additional round if concentration is returned
+            total_steps += len(desired_outputs)
         feedback = QgsProcessingMultiStepFeedback(total_steps, model_feedback)
 
         ## Extract Lookup Table
@@ -248,7 +249,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
             raster=lu_raster,
             lookup_table_layer=lookup_layer,
             context=context,
-            feedback=feedback
+            feedback=feedback,
         )
 
         # handle different cases in input matrix and lookup layer
@@ -292,7 +293,6 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
             time_unit = "/year"
         else:
             time_unit = "/event"
-
 
         # Calculate Q (Runoff) (Liters)
         # using elev layer here because everything should have same units and crs
@@ -448,7 +448,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
                     "band_b": "1",
                 }
                 outputs[pol + " Concentration"] = perform_raster_math(
-                    'numpy.divide(A, B, out=numpy.zeros_like(A), where=(B!=0)) * 1e6', # Convert kg back to mg
+                    "numpy.divide(A, B, out=numpy.zeros_like(A), where=(B!=0)) * 1e6",  # Convert kg back to mg
                     input_params,
                     context,
                     feedback,

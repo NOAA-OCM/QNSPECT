@@ -118,8 +118,9 @@ class CompareErosion(QNSPECTAlgorithm):
                 "Neither local nor accumulated outputs were selected."
             )
 
-        feedback = QgsProcessingMultiStepFeedback(int(compare_local) + int(compare_acc),
-                                                  model_feedback)
+        feedback = QgsProcessingMultiStepFeedback(
+            int(compare_local) + int(compare_acc), model_feedback
+        )
 
         current_step = 1
         feedback.pushInfo("Comparing outputs...")
