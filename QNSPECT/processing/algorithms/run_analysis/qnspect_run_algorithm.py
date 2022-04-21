@@ -34,12 +34,13 @@ import os
 from pathlib import Path
 from json import load
 
-from QNSPECT.qnspect_algorithm import QNSPECTAlgorithm
+from QNSPECT.processing.qnspect_algorithm import QNSPECTAlgorithm
 
 from qgis.core import QgsVectorLayer, QgsProcessingException, QgsLayerTreeGroup
 from qgis.utils import iface
 
 from qnspect_utils import LayerPostProcessor, select_group
+
 
 class QNSPECTRunAlgorithm(QNSPECTAlgorithm):
     """
@@ -48,16 +49,17 @@ class QNSPECTRunAlgorithm(QNSPECTAlgorithm):
 
     _LAND_USE_TABLES = {1: "C-CAP", 2: "NLCD"}
     _LAND_USE_PATH = (
-        f"file:///{Path(__file__).parent.parent.parent / 'resources' / 'coefficients'}"
+        f"file:///{Path(__file__).parents[3] / 'resources' / 'coefficients'}"
     )
     with open(
-        f"{Path(__file__).parent.parent.parent / 'resources' / 'style-colors.json'}"
+        f"{Path(__file__).parents[3]  / 'resources' / 'style-colors.json'}"
     ) as json_f:
         _STYLE_COLORS = load(json_f)
 
     def __init__(self):
         super().__init__()
-        self.styler_dict = {} # necessary to store LayerPostProcessor instances in dict, for background see https://gis.stackexchange.com/questions/423650   
+        # necessary to store LayerPostProcessor instances in class variable because of scoping issue
+        self.styler_dict = {}
 
     def group(self):
         return self.tr("Analysis")
@@ -129,7 +131,9 @@ class QNSPECTRunAlgorithm(QNSPECTAlgorithm):
 
         colors = self._STYLE_COLORS.get(entity, self._STYLE_COLORS["default"])
         if context.willLoadLayerOnCompletion(layer):
-            self.styler_dict[layer] = LayerPostProcessor(display_name, colors[0], colors[1])
+            self.styler_dict[layer] = LayerPostProcessor(
+                display_name, colors[0], colors[1]
+            )
             context.layerToLoadOnCompletionDetails(layer).setPostProcessor(
                 self.styler_dict[layer]
             )

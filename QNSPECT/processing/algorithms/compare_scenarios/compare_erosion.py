@@ -34,10 +34,10 @@ from pathlib import Path
 import sys
 
 sys.path.append(str(Path(__file__).parent))
-sys.path.append(str(Path(__file__).parent.parent))
+sys.path.append(str(Path(__file__).parents[1]))
 from comparison_utils import run_direct_and_percent_comparisons
 
-from QNSPECT.qnspect_algorithm import QNSPECTAlgorithm
+from QNSPECT.processing.qnspect_algorithm import QNSPECTAlgorithm
 
 
 class CompareErosion(QNSPECTAlgorithm):
@@ -118,8 +118,9 @@ class CompareErosion(QNSPECTAlgorithm):
                 "Neither local nor accumulated outputs were selected."
             )
 
-        feedback = QgsProcessingMultiStepFeedback(int(compare_local) + int(compare_acc),
-                                                  model_feedback)
+        feedback = QgsProcessingMultiStepFeedback(
+            int(compare_local) + int(compare_acc), model_feedback
+        )
 
         current_step = 1
         feedback.pushInfo("Comparing outputs...")

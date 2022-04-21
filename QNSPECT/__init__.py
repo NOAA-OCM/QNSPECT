@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 """
 /***************************************************************************
  QNSPECT
@@ -20,38 +19,22 @@
  *   (at your option) any later version.                                   *
  *                                                                         *
  ***************************************************************************/
+ This script initializes the plugin, making it known to QGIS.
 """
 
-__author__ = "NOAA"
+__author__ = "Abdul Raheem Siddiqui"
 __date__ = "2021-12-29"
 __copyright__ = "(C) 2021 by NOAA"
 
-# This will get replaced with a git SHA1 when you do a git archive
 
-__revision__ = "$Format:%H$"
+# noinspection PyPep8Naming
+def classFactory(iface):  # pylint: disable=invalid-name
+    """Load QNSPECT class from file QNSPECT.
 
-import os
-import inspect
-from qgis.PyQt.QtGui import QIcon
-
-from qgis.PyQt.QtCore import QCoreApplication
-from qgis.core import QgsProcessingAlgorithm
-
-
-class QNSPECTAlgorithm(QgsProcessingAlgorithm):
+    :param iface: A QGIS interface instance.
+    :type iface: QgsInterface
     """
-    Base class for QNSPECT Algorithms
-    """
+    #
+    from .qnspect import QNSPECTPlugin
 
-    _version = 0.1
-
-    def icon(self):
-        """
-        Returns the algorithm's icon.
-        """
-        cmd_folder = os.path.split(inspect.getfile(inspect.currentframe()))[0]
-        icon = QIcon(os.path.join(cmd_folder, "resources/branding/icon.svg"))
-        return icon
-
-    def tr(self, string):
-        return QCoreApplication.translate("Processing", string)
+    return QNSPECTPlugin(iface)

@@ -35,8 +35,7 @@ import inspect
 from qgis.PyQt.QtGui import QIcon
 
 from qgis.core import QgsProcessingProvider
-from QNSPECT.qnspect_algorithm import QNSPECTAlgorithm
-from QNSPECT import algorithms
+from QNSPECT.processing import algorithms
 
 
 class QNSPECTProvider(QgsProcessingProvider):
@@ -85,7 +84,7 @@ class QNSPECTProvider(QgsProcessingProvider):
         """
         cmd_folder = os.path.split(inspect.getfile(inspect.currentframe()))[0]
         icon = QIcon(
-            os.path.join(os.path.join(cmd_folder, "resources/branding/icon.svg"))
+            os.path.join(os.path.join(os.path.dirname(cmd_folder), "resources/branding/icon.svg"))
         )
         return icon
 

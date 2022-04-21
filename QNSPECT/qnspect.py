@@ -22,20 +22,20 @@
  ***************************************************************************/
 """
 
-__author__ = 'Abdul Raheem Siddiqui'
-__date__ = '2021-12-29'
-__copyright__ = '(C) 2021 by NOAA'
+__author__ = "Abdul Raheem Siddiqui"
+__date__ = "2021-12-29"
+__copyright__ = "(C) 2021 by NOAA"
 
 # This will get replaced with a git SHA1 when you do a git archive
 
-__revision__ = '$Format:%H$'
+__revision__ = "$Format:%H$"
 
 import os
 import sys
 import inspect
 
 from qgis.core import QgsProcessingAlgorithm, QgsApplication
-from .qnspect_provider import QNSPECTProvider
+from QNSPECT.processing import QNSPECTProvider
 
 cmd_folder = os.path.split(inspect.getfile(inspect.currentframe()))[0]
 
@@ -44,7 +44,6 @@ if cmd_folder not in sys.path:
 
 
 class QNSPECTPlugin(object):
-
     def __init__(self, iface):
         self.provider = None
         self.iface = iface

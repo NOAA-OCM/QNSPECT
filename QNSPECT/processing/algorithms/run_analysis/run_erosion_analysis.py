@@ -63,7 +63,7 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
     rFactorRaster = "RFactorRaster"
     landUseRaster = "LandUseRaster"
     projectLocation = "ProjectLocation"
-    mfd = False #"MFD"
+    mfd = False  # "MFD"
     rusle = "RUSLE"
     sedimentYieldLocal = "Sediment Local"
     sedimentYieldAccumulated = "Sediment Accumulated"
@@ -140,8 +140,8 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
             )
         )
         # param = QgsProcessingParameterBoolean(
-        #     self.mfd, 
-        #     "Use Multi Flow Direction [MFD] Routing", 
+        #     self.mfd,
+        #     "Use Multi Flow Direction [MFD] Routing",
         #     defaultValue=False
         # )
         # param.setFlags(param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
@@ -316,17 +316,14 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
             "band_a": "1",
         }
         sediments_local_Mg = perform_raster_math(
-            "(A / 1000)",
-            input_params,
-            context,
-            feedback
-        )["OUTPUT"]            
+            "(A / 1000)", input_params, context, feedback
+        )["OUTPUT"]
 
         sediment_acc_path = str(run_out_dir / (self.sedimentYieldAccumulated + ".tif"))
         sediment_acc = self.run_sediment_yield_accumulated(
-            sediment_yield= sediments_local_Mg,
+            sediment_yield=sediments_local_Mg,
             elev_raster=elev_raster,
-            mfd= False, #self.parameterAsBool(parameters, self.mfd, context),
+            mfd=False,  # self.parameterAsBool(parameters, self.mfd, context),
             context=context,
             feedback=feedback,
             output=sediment_acc_path,

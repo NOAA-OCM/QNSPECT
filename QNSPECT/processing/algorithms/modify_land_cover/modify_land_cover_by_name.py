@@ -11,50 +11,59 @@
  ***************************************************************************/
 """
 
-__author__ = 'Ian Todd'
-__date__ = '2021-12-29'
-__copyright__ = '(C) 2021 by NOAA'
+__author__ = "Ian Todd"
+__date__ = "2021-12-29"
+__copyright__ = "(C) 2021 by NOAA"
 
 # This will get replaced with a git SHA1 when you do a git archive
 
-__revision__ = '$Format:%H$'
+__revision__ = "$Format:%H$"
 
 
-from qgis.core import (QgsProcessing,
+from qgis.core import (
+    QgsProcessing,
     QgsProcessingAlgorithm,
     QgsProcessingMultiStepFeedback,
-    QgsProcessingParameterFeatureSource,
+    QgsProcessingParameterVectorLayer,
     QgsProcessingParameterRasterLayer,
-    QgsProcessingParameterField,
-    QgsProcessingParameterRasterDestination
+    QgsProcessingParameterRasterDestination,
+    QgsProcessingParameterString,
+    QgsProcessingParameterFeatureSource,
 )
 import processing
 
-from QNSPECT.qnspect_algorithm import QNSPECTAlgorithm
+from QNSPECT.processing.qnspect_algorithm import QNSPECTAlgorithm
 
-class ModifyLandCover(QNSPECTAlgorithm):
+
+class ModifyLandCoverByName(QNSPECTAlgorithm):
+    inputTable = "InputTable"
     inputVector = "InputVector"
-    field = "Field"
     inputRaster = "InputRaster"
     output = "OutputRaster"
+    landUse = "LandUse"
 
     def initAlgorithm(self, config=None):
+        self.addParameter(
+            QgsProcessingParameterVectorLayer(
+                self.inputTable,
+                "Land Cover Lookup Table",
+                types=[QgsProcessing.TypeVector],
+                defaultValue=None,
+            )
+        )
+        self.addParameter(
+            QgsProcessingParameterString(
+                self.landUse,
+                "Name of Land Cover to Apply",
+                multiLine=False,
+                defaultValue="",
+            )
+        )
         self.addParameter(
             QgsProcessingParameterFeatureSource(
                 self.inputVector,
                 "Areas to Modify",
                 types=[QgsProcessing.TypeVectorPolygon],
-                defaultValue=None,
-            )
-        )
-        self.addParameter(
-            QgsProcessingParameterField(
-                self.field,
-                "Land Cover Value Field",
-                optional=True,
-                type=QgsProcessingParameterField.Numeric,
-                parentLayerParameterName=self.inputVector,
-                allowMultiple=False,
                 defaultValue=None,
             )
         )
@@ -75,10 +84,30 @@ class ModifyLandCover(QNSPECTAlgorithm):
     def processAlgorithm(self, parameters, context, model_feedback):
         # Use a multi-step feedback, so that individual child algorithm progress reports are adjusted for the
         # overall progress through the model
-        # Rasterize with overwrite was the best method for accomplishing this. Since it directly changes the input, the original needs to be copied prior to execution
         feedback = QgsProcessingMultiStepFeedback(2, model_feedback)
         results = {}
         outputs = {}
+
+        # Find the named values
+        coefficient_name = self.parameterAsString(parameters, self.landUse, context)
+        name_compare = coefficient_name.lower().replace(" ", "")
+        table = self.parameterAsVectorLayer(parameters, self.inputTable, context)
+        if "lu_name" not in table.fields().names():
+            feedback.reportError('Field "lu_name" required for the coefficients table.')
+            return {}
+        if "lu_value" not in table.fields().names():
+            feedback.reportError(
+                'Field "lu_value" required for the coefficients table.'
+            )
+            return {}
+        for feature in table.getFeatures():
+            candidate = feature.attribute("lu_name").lower().replace(" ", "")
+            if candidate == name_compare:
+                lu_value = int(feature.attribute("lu_value"))
+                break
+        else:
+            feedback.reportError(f"Unable to find {coefficient_name} in the table.")
+            return {}
 
         # Uses clip raster to get a copy of the original raster
         # Some other method of copying in a way that allows for temporary output would be better for this part
@@ -103,29 +132,28 @@ class ModifyLandCover(QNSPECTAlgorithm):
         if feedback.isCanceled():
             return {}
 
-        # Rasterize (overwrite with attribute)
+        # Rasterize (overwrite with fixed value)
         alg_params = {
             "ADD": False,
+            "BURN": lu_value,
             "EXTRA": "",
-            "FIELD": parameters[self.field],
             "INPUT": parameters[self.inputVector],
             "INPUT_RASTER": outputs["ClipRasterByExtent"]["OUTPUT"],
         }
-        outputs["RasterizeOverwriteWithAttribute"] = processing.run(
-            "gdal:rasterize_over",
+        outputs["RasterizeOverwriteWithFixedValue"] = processing.run(
+            "gdal:rasterize_over_fixed_value",
             alg_params,
             context=context,
             feedback=feedback,
             is_child_algorithm=True,
         )
-
         return results
 
     def name(self):
-        return "modify_land_cover_vector_field"
+        return "modify_land_cover_custom_lookup_table"
 
     def displayName(self):
-        return self.tr("Modify Land Cover (Vector Field)")
+        return self.tr("Modify Land Cover (Custom Lookup Table)")
 
     def group(self):
         return self.tr("Data Preparation")
@@ -134,7 +162,7 @@ class ModifyLandCover(QNSPECTAlgorithm):
         return "data_preparation"
 
     def createInstance(self):
-        return ModifyLandCover()
+        return ModifyLandCoverByName()
 
     def shortHelpString(self):
         return """<html><body>
@@ -142,16 +170,20 @@ class ModifyLandCover(QNSPECTAlgorithm):
 
 <h2>Algorithm Description</h2>
 
-<p>The `Modify Land Cover (Vector Field)` algorithm changes a section of a raster based on the land cover numeric value in a polygon vector layer.
-The pixels of the input raster layer that overlap with each polygon of the input vector layer will be changed to the land cover code of the polygon's land cover field.</p>
+<p>The `Modify Land Cover (Custom Lookup Table)` algorithm changes a section of a raster based on the land cover name in a custom lookup table. 
+This tool is designed to make it easy to change a raster's values in an area based on the name of the new land cover. 
+The pixels of the input raster layer that overlap with the areas of the input vector layer will be changed to the land cover code of the name selected.</p>
 
 <h2>Input Parameters</h2>
 
+<h3>Land Cover Lookup Table</h3>
+<p>The lookup table used to map the land cover name to a raster value. The lookup table must include the land cover name in a field called "lu_name" and a corresponding value in a field called "lu_value".</p>
+
+<h3>Name of Land Cover to Apply</h3>
+<p>The name of the new land cover.</p>
+
 <h3>Areas to Modify</h3>
 <p>Polygon vector layer that overlaps the pixels that should be changed.</p>
-
-<h3>Land Cover Value Field</h3>
-<p>The field with the land cover value the raster pixels will be changed to. If this is left blank, the algorithm will try to use a field called "lu_value".</p>
 
 <h3>Land Cover Raster</h3>
 <p>Land cover raster that needs to be modified.</p>

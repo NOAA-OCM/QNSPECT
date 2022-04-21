@@ -30,14 +30,10 @@ class LayerPostProcessor(QgsProcessingLayerPostProcessorInterface):
             layer.setName(self.display_name)
 
             prov = layer.dataProvider()
-            stats = prov.bandStatistics(
-                1, QgsRasterBandStats.All, layer.extent(), 0
-            )
+            stats = prov.bandStatistics(1, QgsRasterBandStats.All, layer.extent(), 0)
             min = stats.minimumValue
             max = stats.maximumValue
-            renderer = QgsSingleBandPseudoColorRenderer(
-                layer.dataProvider(), band=1
-            )
+            renderer = QgsSingleBandPseudoColorRenderer(layer.dataProvider(), band=1)
             color_ramp = QgsGradientColorRamp(
                 QColor(*self.layer_color1), QColor(*self.layer_color2)
             )

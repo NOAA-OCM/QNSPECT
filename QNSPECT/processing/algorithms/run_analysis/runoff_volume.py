@@ -86,7 +86,7 @@ class RunoffVolume:
 
         self.outputs["S"] = perform_raster_math(
             # maximum needed here because without it numpy/GDAL is calculating min value as -0
-            'numpy.maximum((numpy.divide(1000, A, out=numpy.zeros_like(A), where=(A!=0)) - 10), 0)',            
+            "numpy.maximum((numpy.divide(1000, A, out=numpy.zeros_like(A), where=(A!=0)) - 10), 0)",
             input_params,
             self.context,
             self.feedback,
@@ -133,7 +133,7 @@ class RunoffVolume:
             "input_b": self.outputs["S"]["OUTPUT"],
             "band_b": "1",
             "input_c": self.outputs["P-Ia"]["OUTPUT"],
-            "band_c": "1",            
+            "band_c": "1",
         }
 
         # (Volume) (L)
@@ -144,7 +144,6 @@ class RunoffVolume:
             self.context,
             self.feedback,
         )
-
 
         input_params = {
             "input_a": self.outputs["Q_TEMP"]["OUTPUT"],

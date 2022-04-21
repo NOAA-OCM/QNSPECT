@@ -11,13 +11,13 @@
  ***************************************************************************/
 """
 
-__author__ = 'Ian Todd'
-__date__ = '2021-12-29'
-__copyright__ = '(C) 2021 by NOAA'
+__author__ = "Ian Todd"
+__date__ = "2021-12-29"
+__copyright__ = "(C) 2021 by NOAA"
 
 # This will get replaced with a git SHA1 when you do a git archive
 
-__revision__ = '$Format:%H$'
+__revision__ = "$Format:%H$"
 
 
 from qgis.core import (
@@ -34,7 +34,7 @@ import processing
 import os
 from pathlib import Path
 
-from QNSPECT.qnspect_algorithm import QNSPECTAlgorithm
+from QNSPECT.processing.qnspect_algorithm import QNSPECTAlgorithm
 
 
 class CreateLookupTableTemplate(QNSPECTAlgorithm):
@@ -137,5 +137,5 @@ class CreateLookupTableTemplate(QNSPECTAlgorithm):
         return CreateLookupTableTemplate()
 
     def coefficient_dir(self):
-        root = Path(__file__).parent.parent.parent
+        root = Path(__file__).parents[3]
         return root / "resources" / "coefficients"

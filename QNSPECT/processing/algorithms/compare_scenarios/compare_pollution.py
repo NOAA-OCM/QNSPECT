@@ -36,7 +36,7 @@ from pathlib import Path
 import sys
 
 sys.path.append(str(Path(__file__).parent))
-sys.path.append(str(Path(__file__).parent.parent))
+sys.path.append(str(Path(__file__).parents[1]))
 from comparison_utils import run_direct_and_percent_comparisons
 from qnspect_utils import filter_matrix
 
@@ -66,7 +66,7 @@ def retrieve_scenario_file_stems(scenario_dir: Path, comparison_types: list) -> 
     return stems
 
 
-from QNSPECT.qnspect_algorithm import QNSPECTAlgorithm
+from QNSPECT.processing.qnspect_algorithm import QNSPECTAlgorithm
 
 
 class ComparePollution(QNSPECTAlgorithm):
@@ -188,7 +188,9 @@ class ComparePollution(QNSPECTAlgorithm):
             self.parameterAsMatrix(parameters, self.compareGrid, context)
         )
         if not pollutants:
-            raise QgsProcessingException("No pollutants were selected in the 'Pollutant Outputs' parameter.")
+            raise QgsProcessingException(
+                "No pollutants were selected in the 'Pollutant Outputs' parameter."
+            )
 
         run_everything = "everything" in [pol.lower() for pol in pollutants]
         if run_everything:
@@ -196,7 +198,9 @@ class ComparePollution(QNSPECTAlgorithm):
                 scenario_dir_a, scenario_dir_b, comparison_types
             )
             if not matching_names:
-                raise QgsProcessingException("No valid comparisons were found between the two scenario folders.")
+                raise QgsProcessingException(
+                    "No valid comparisons were found between the two scenario folders."
+                )
             total_steps = len(matching_names)
         else:
             total_steps = len(pollutants)
