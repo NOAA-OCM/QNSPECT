@@ -266,7 +266,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
                 + f"Missing Pollutants:\n{[pol.lower() for pol in desired_pollutants if not pol.lower() in lookup_fields.keys()]}\n"
             )
 
-        # assert all Raster CRS are same and Raster Pixel Units too
+        # to do: assert all Raster CRS are same and Raster Pixel Units too
 
         # Folder I/O
         run_out_dir = os.path.join(proj_loc, self.run_name)
@@ -276,6 +276,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
         feedback.setCurrentStep(1)
         if feedback.isCanceled():
             return {}
+        feedback.pushInfo("Generating curve numbers ...")
         cn = CurveNumber(
             parameters["LandUseRaster"],
             parameters["HSGRaster"],
@@ -299,6 +300,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
         feedback.setCurrentStep(2)
         if feedback.isCanceled():
             return {}
+        feedback.pushInfo("Generating local runoff volume ...")
         runoff_vol = RunoffVolume(
             parameters["PrecipRaster"],
             outputs["CN"]["OUTPUT"],
@@ -332,6 +334,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
             if feedback.isCanceled():
                 return {}
             # Calculate pollutant per LU (mg/L)
+            feedback.pushInfo(f"Generating {pol} raster using lookup table ...")
             outputs[pol + "_lu"] = reclassify_land_use_raster_by_table_field(
                 parameters["LandUseRaster"],
                 lookup_layer,
@@ -367,6 +370,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
         current_step += 1
         if feedback.isCanceled():
             return {}
+        feedback.pushInfo("Generating accumulated runoff volume ...")
         if "runoff" in [out.lower() for out in desired_outputs]:
             runoff_output = os.path.join(run_out_dir, f"Runoff Accumulated.tif")
 
@@ -403,6 +407,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
                 return {}
 
             # convert local pollutants to kg
+            feedback.pushInfo(f"Generating {pol} accumulated raster ...")
             input_params = {
                 "input_a": outputs[pol + " Local"]["OUTPUT"],
                 "band_a": "1",
@@ -441,6 +446,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
                 if feedback.isCanceled():
                     return {}
                 # Concentration Pollutant (mg/L)
+                feedback.pushInfo(f"Generating {pol} concentration raster ...")
                 input_params = {
                     "input_a": outputs[pol + " Accumulated"]["OUTPUT"],
                     "band_a": "1",
@@ -469,6 +475,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
         feedback.setCurrentStep(current_step)
         if feedback.isCanceled():
             return {}
+        feedback.pushInfo("Creating run configuration file ...")
         run_dict["Inputs"] = parameters
         run_dict["Inputs"]["ElevationRaster"] = elev_raster.source()
         run_dict["Inputs"]["LandUseRaster"] = lu_raster.source()
