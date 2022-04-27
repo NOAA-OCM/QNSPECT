@@ -50,7 +50,9 @@ class QNSPECTAlgorithm(QgsProcessingAlgorithm):
         Returns the algorithm's icon.
         """
         cmd_folder = os.path.split(inspect.getfile(inspect.currentframe()))[0]
-        icon = QIcon(os.path.join(os.path.dirname(cmd_folder), "resources/branding/icon.svg"))
+        icon = QIcon(
+            os.path.join(os.path.dirname(cmd_folder), "resources/branding/icon.svg")
+        )
         return icon
 
     def tr(self, string):

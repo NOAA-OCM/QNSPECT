@@ -71,7 +71,7 @@ class QNSPECTRunAlgorithm(QNSPECTAlgorithm):
         root = project.instance().layerTreeRoot()  # get base level node
 
         create_group(self.run_name, root)
-        select_group(self.run_name) # so that layers are spit out within group
+        select_group(self.run_name)  # so that layers are spit out within group
 
         return {}
 

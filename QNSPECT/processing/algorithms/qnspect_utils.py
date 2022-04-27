@@ -51,9 +51,7 @@ def create_group(name: str, root: QgsLayerTree) -> None:
 
     group = root.findGroup(name)  # find group in whole hierarchy
     if not group:  # if group does not already exists
-        selected_nodes = (
-            iface.layerTreeView().selectedNodes()
-        )  # get all selected nodes
+        selected_nodes = iface.layerTreeView().selectedNodes()  # get all selected nodes
         if selected_nodes:  # if a node is selected
             # check the first node is group
             if isinstance(selected_nodes[0], QgsLayerTreeGroup):

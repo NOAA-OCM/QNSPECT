@@ -54,7 +54,7 @@ class QNSPECTCompareAlgorithm(QNSPECTAlgorithm):
             root = project.instance().layerTreeRoot()  # get base level node
 
             create_group(self.name, root)
-            select_group(self.name) # so that layers are spit out within group
+            select_group(self.name)  # so that layers are spit out within group
 
         return {}
 

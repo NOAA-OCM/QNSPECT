@@ -38,8 +38,8 @@ sys.path.append(str(Path(__file__).parents[1]))
 from comparison_utils import run_direct_and_percent_comparisons
 from qnspect_compare_algorithm import QNSPECTCompareAlgorithm
 
-class CompareErosion(QNSPECTCompareAlgorithm):
 
+class CompareErosion(QNSPECTCompareAlgorithm):
     def initAlgorithm(self, config=None):
         self.addParameter(
             QgsProcessingParameterFile(
@@ -102,7 +102,9 @@ class CompareErosion(QNSPECTCompareAlgorithm):
         self.name = f"{self.scenario_dir_a.name} vs {self.scenario_dir_b.name}"
         self.load_outputs = self.parameterAsBool(parameters, self.loadOutputs, context)
 
-        self.output_dir = Path(self.parameterAsString(parameters, self.outputDir, context))
+        self.output_dir = Path(
+            self.parameterAsString(parameters, self.outputDir, context)
+        )
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
         compare_local = self.parameterAsBool(parameters, self.compareLocal, context)

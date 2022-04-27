@@ -54,6 +54,7 @@ def find_all_matching(
                     matches.append(stem)
     return matches
 
+
 def retrieve_scenario_file_stems(scenario_dir: Path, comparison_types: list) -> list:
     stems = []
     for file in scenario_dir.iterdir():
