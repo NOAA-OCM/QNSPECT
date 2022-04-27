@@ -21,8 +21,6 @@ __revision__ = "$Format:%H$"
 
 
 from qgis.core import (
-    QgsProcessing,
-    QgsProcessingAlgorithm,
     QgsProcessingMultiStepFeedback,
     QgsProcessingParameterFile,
     QgsProcessingParameterBoolean,
@@ -67,7 +65,7 @@ def retrieve_scenario_file_stems(scenario_dir: Path, comparison_types: list) -> 
 
 
 from QNSPECT.processing.qnspect_algorithm import QNSPECTAlgorithm
-
+from qnspect_utils import select_group, create_group
 
 class ComparePollution(QNSPECTAlgorithm):
     scenarioA = "ScenarioA"
@@ -78,6 +76,10 @@ class ComparePollution(QNSPECTAlgorithm):
     compareGrid = "Grid"
     outputDir = "Output"
     loadOutputs = "LoadOutputs"
+
+    def __init__(self):
+        super().__init__()
+        self.name = ""
 
     def initAlgorithm(self, config=None):
         self.addParameter(
@@ -169,6 +171,8 @@ class ComparePollution(QNSPECTAlgorithm):
         scenario_dir_b = Path(
             self.parameterAsString(parameters, self.scenarioB, context)
         )
+        self.name = f"{scenario_dir_a.name} VS {scenario_dir_b.name}"
+
         load_outputs = self.parameterAsBool(parameters, self.loadOutputs, context)
         output_dir = Path(self.parameterAsString(parameters, self.outputDir, context))
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -263,6 +267,16 @@ class ComparePollution(QNSPECTAlgorithm):
                     )
 
         return results
+
+    def postProcessAlgorithm(self, context, feedback):
+        project = context.project()
+        root = project.instance().layerTreeRoot()  # get base level node
+
+        create_group(self.name, root)
+        select_group(self.name) # so that layers are spit out within group
+
+        return {}
+
 
     def name(self):
         return "compare_scenarios_pollution"

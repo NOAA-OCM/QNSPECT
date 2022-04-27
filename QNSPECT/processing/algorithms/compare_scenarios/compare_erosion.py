@@ -38,7 +38,7 @@ sys.path.append(str(Path(__file__).parents[1]))
 from comparison_utils import run_direct_and_percent_comparisons
 
 from QNSPECT.processing.qnspect_algorithm import QNSPECTAlgorithm
-
+from qnspect_utils import select_group, create_group
 
 class CompareErosion(QNSPECTAlgorithm):
     scenarioA = "ScenarioA"
@@ -47,6 +47,11 @@ class CompareErosion(QNSPECTAlgorithm):
     compareAccumulate = "Accumulated"
     loadOutputs = "LoadOutputs"
     outputDir = "Output"
+
+    def __init__(self):
+        super().__init__()
+        self.name = ""
+        self.load_outputs = False
 
     def initAlgorithm(self, config=None):
         self.addParameter(
@@ -107,7 +112,9 @@ class CompareErosion(QNSPECTAlgorithm):
         scenario_dir_b = Path(
             self.parameterAsString(parameters, self.scenarioB, context)
         )
-        load_outputs = self.parameterAsBool(parameters, self.loadOutputs, context)
+        self.name = f"{scenario_dir_a.name} VS {scenario_dir_b.name}"
+        self.load_outputs = self.parameterAsBool(parameters, self.loadOutputs, context)
+
         output_dir = Path(self.parameterAsString(parameters, self.outputDir, context))
         output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -155,6 +162,16 @@ class CompareErosion(QNSPECTAlgorithm):
             )
 
         return results
+
+    def postProcessAlgorithm(self, context, feedback):
+        if self.load_outputs:
+            project = context.project()
+            root = project.instance().layerTreeRoot()  # get base level node
+
+            create_group(self.name, root)
+            select_group(self.name) # so that layers are spit out within group
+
+        return {}
 
     def name(self):
         return "compare_scenarios_erosion"
