@@ -45,7 +45,7 @@ class CurveNumber:
 
     def __init__(
         self,
-        lu_raster: str,
+        lc_raster: str,
         soil_raster: str,
         dual_soil_type: int,
         lookup_layer: QgsVectorLayer,
@@ -54,7 +54,7 @@ class CurveNumber:
     ):
         self.outputs = {}
         self.lookup_layer = lookup_layer
-        self.lu_raster = lu_raster
+        self.lc_raster = lc_raster
         self.soil_raster = soil_raster
         self.dual_soil_type = dual_soil_type
         self.context = context
@@ -66,7 +66,7 @@ class CurveNumber:
         # Build CN Expression
         cn_calc_expr = []
         for feat in self.lookup_layer.getFeatures():
-            lu = feat.attribute("lu_value")
+            lu = feat.attribute("lc_value")
             for i, hsg in enumerate(["a", "b", "c", "d"]):
                 cn = feat.attribute(f"cn_{hsg}")
                 cn_calc_expr.append(f"logical_and(A=={lu},B=={i+1})*{cn}")
@@ -93,7 +93,7 @@ class CurveNumber:
         self.preprocess_soil()
 
         input_params = {
-            "input_a": self.lu_raster,
+            "input_a": self.lc_raster,
             "band_a": "1",
         }
 

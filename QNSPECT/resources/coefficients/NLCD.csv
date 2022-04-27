@@ -1,4 +1,4 @@
-lu_value,lu_name,cn_a,cn_b,cn_c,cn_d,c_factor,tss,lead,zinc,nitrogen,phosphorus
+lc_value,lc_name,cn_a,cn_b,cn_c,cn_d,c_factor,tss,lead,zinc,nitrogen,phosphorus
 11,Water,0,0,0,0,0,0,0,0,0,0
 12,Perennial Ice / Snow,0,0,0,0,0,100,0,0,0,0
 21,Developed Open Space,49,69,79,84,0.005,0,0.03,0.03,1.25,0

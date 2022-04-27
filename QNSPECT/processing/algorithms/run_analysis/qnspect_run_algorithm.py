@@ -47,8 +47,8 @@ class QNSPECTRunAlgorithm(QNSPECTAlgorithm):
     Base class for QNSPECT Run Algorithms
     """
 
-    _LAND_USE_TABLES = {1: "C-CAP", 2: "NLCD"}
-    _LAND_USE_PATH = (
+    _land_cover_TABLES = {1: "C-CAP", 2: "NLCD"}
+    _land_cover_PATH = (
         f"file:///{Path(__file__).parents[3] / 'resources' / 'coefficients'}"
     )
     with open(
@@ -106,11 +106,11 @@ class QNSPECTRunAlgorithm(QNSPECTAlgorithm):
         if parameters["LookupTable"]:
             return self.parameterAsVectorLayer(parameters, "LookupTable", context)
 
-        land_use_type = self.parameterAsEnum(parameters, "LandUseType", context)
-        if land_use_type > 0:
+        land_cover_type = self.parameterAsEnum(parameters, "LandCoverType", context)
+        if land_cover_type > 0:
             return QgsVectorLayer(
                 os.path.join(
-                    self._LAND_USE_PATH, f"{self._LAND_USE_TABLES[land_use_type]}.csv"
+                    self._land_cover_PATH, f"{self._land_cover_TABLES[land_cover_type]}.csv"
                 ),
                 "Land Cover Lookup Table",
                 "delimitedtext",

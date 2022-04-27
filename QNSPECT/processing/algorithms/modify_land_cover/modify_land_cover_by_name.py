@@ -40,7 +40,7 @@ class ModifyLandCoverByName(QNSPECTAlgorithm):
     inputVector = "InputVector"
     inputRaster = "InputRaster"
     output = "OutputRaster"
-    landUse = "LandUse"
+    landCover = "LandCover"
 
     def initAlgorithm(self, config=None):
         self.addParameter(
@@ -53,7 +53,7 @@ class ModifyLandCoverByName(QNSPECTAlgorithm):
         )
         self.addParameter(
             QgsProcessingParameterString(
-                self.landUse,
+                self.landCover,
                 "Name of Land Cover to Apply",
                 multiLine=False,
                 defaultValue="",
@@ -89,21 +89,21 @@ class ModifyLandCoverByName(QNSPECTAlgorithm):
         outputs = {}
 
         # Find the named values
-        coefficient_name = self.parameterAsString(parameters, self.landUse, context)
+        coefficient_name = self.parameterAsString(parameters, self.landCover, context)
         name_compare = coefficient_name.lower().replace(" ", "")
         table = self.parameterAsVectorLayer(parameters, self.inputTable, context)
-        if "lu_name" not in table.fields().names():
-            feedback.reportError('Field "lu_name" required for the coefficients table.')
+        if "lc_name" not in table.fields().names():
+            feedback.reportError('Field "lc_name" required for the coefficients table.')
             return {}
-        if "lu_value" not in table.fields().names():
+        if "lc_value" not in table.fields().names():
             feedback.reportError(
-                'Field "lu_value" required for the coefficients table.'
+                'Field "lc_value" required for the coefficients table.'
             )
             return {}
         for feature in table.getFeatures():
-            candidate = feature.attribute("lu_name").lower().replace(" ", "")
+            candidate = feature.attribute("lc_name").lower().replace(" ", "")
             if candidate == name_compare:
-                lu_value = int(feature.attribute("lu_value"))
+                lc_value = int(feature.attribute("lc_value"))
                 break
         else:
             feedback.reportError(f"Unable to find {coefficient_name} in the table.")
@@ -135,8 +135,8 @@ class ModifyLandCoverByName(QNSPECTAlgorithm):
         # Rasterize (overwrite with fixed value)
         alg_params = {
             "ADD": False,
-            "BURN": lu_value,
-            "EXTRA": "",
+            "BURN": lc_value,
+            "EXTRA":lc_value
             "INPUT": parameters[self.inputVector],
             "INPUT_RASTER": outputs["ClipRasterByExtent"]["OUTPUT"],
         }
@@ -177,8 +177,8 @@ The pixels of the input raster layer that overlap with the areas of the input ve
 <h2>Input Parameters</h2>
 
 <h3>Land Cover Lookup Table</h3>
-<p>The lookup table used to map the land cover name to a raster value. The lookup table must include the land cover name in a field called "lu_name" and a corresponding value in a field called "lu_value".</p>
-
+<p>The lookup table used to map the land cover name to a raster value. The lookup table must include the land cover name in a field called "lc_name" and a corresponding value in a field called "lc_value".</p>
+lc_value
 <h3>Name of Land Cover to Apply</h3>
 <p>The name of the new land cover.</p>
 
