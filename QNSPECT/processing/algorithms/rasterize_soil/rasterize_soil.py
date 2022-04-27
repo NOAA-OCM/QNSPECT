@@ -128,7 +128,7 @@ class RasterizeSoil(QNSPECTAlgorithm):
 
         if parameters["KFactorField"]:
 
-            parameters["K_factor"].destinationName = "K_Factor"
+            parameters["K_factor"].destinationName = "K-Factor"
 
             # Rasterize K-Factor
             alg_params = {

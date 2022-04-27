@@ -82,6 +82,7 @@ class ModifyLandCover(QNSPECTAlgorithm):
         results = {}
         outputs = {}
 
+        parameters[self.output].destinationName = "Modified Land Cover"
         # Uses clip raster to get a copy of the original raster
         # Some other method of copying in a way that allows for temporary output would be better for this part
         alg_params = {
