@@ -84,7 +84,7 @@ class QNSPECTProvider(QgsProcessingProvider):
         """
         cmd_folder = os.path.split(inspect.getfile(inspect.currentframe()))[0]
         icon = QIcon(
-            os.path.join(os.path.join(os.path.dirname(cmd_folder), "resources/branding/icon.svg"))
+                os.path.join(os.path.dirname(cmd_folder), "resources/branding/icon.svg")
         )
         return icon
 

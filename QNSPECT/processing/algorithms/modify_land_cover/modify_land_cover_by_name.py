@@ -109,6 +109,7 @@ class ModifyLandCoverByName(QNSPECTAlgorithm):
             feedback.reportError(f"Unable to find {coefficient_name} in the table.")
             return {}
 
+        parameters[self.output].destinationName = "Modified Land Cover"
         # Uses clip raster to get a copy of the original raster
         # Some other method of copying in a way that allows for temporary output would be better for this part
         alg_params = {

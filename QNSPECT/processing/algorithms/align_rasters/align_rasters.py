@@ -29,6 +29,7 @@ from qgis.core import (
     QgsProcessingParameterDistance,
     QgsProcessingParameterExtent,
     QgsProcessingParameterFolderDestination,
+    QgsProcessingParameterBoolean,
     QgsProcessingContext,
     QgsUnitTypes,
     QgsProcessingParameterNumber,
@@ -37,10 +38,15 @@ import processing
 import os
 
 from QNSPECT.processing.qnspect_algorithm import QNSPECTAlgorithm
+from QNSPECT.processing.algorithms.qnspect_utils import select_group, create_group
 
 
 class AlignRasters(QNSPECTAlgorithm):
     rasterCellSize: str = "RasterCellSize"
+
+    def __init__(self):
+        super().__init__()
+        self.load_outputs = False
 
     def initAlgorithm(self, config=None):
         self.addParameter(
@@ -107,6 +113,13 @@ class AlignRasters(QNSPECTAlgorithm):
             )
         )
         self.addParameter(
+            QgsProcessingParameterBoolean(
+                "LoadOutputs",
+                "Open output files after running algorithm",
+                defaultValue=True,
+            )
+        )        
+        self.addParameter(
             QgsProcessingParameterFolderDestination(
                 "OutputDirectory",
                 "Output Directory",
@@ -129,6 +142,7 @@ class AlignRasters(QNSPECTAlgorithm):
         outputs = {}
 
         output_dir = self.parameterAsString(parameters, "OutputDirectory", context)
+        self.load_outputs = self.parameterAsBool(parameters, "LoadOutputs", context)
         extent = parameters.get("ClippingExtent", "")
         ref_layer = self.parameterAsRasterLayer(parameters, "ReferenceRaster", context)
 
@@ -300,13 +314,13 @@ class AlignRasters(QNSPECTAlgorithm):
                 feedback=feedback,
                 is_child_algorithm=True,
             )
-
-            context.addLayerToLoadOnCompletion(
-                outputs[rast_name]["OUTPUT"],
-                QgsProcessingContext.LayerDetails(
-                    f"Aligned {rast_name}", context.project(), rast_name
-                ),  # to do: Remove Aligned from name and group layers
-            )
+            if self.load_outputs:
+                context.addLayerToLoadOnCompletion(
+                    outputs[rast_name]["OUTPUT"],
+                    QgsProcessingContext.LayerDetails(
+                        rast_name, context.project(), rast_name
+                    )
+                )
 
             results[rast_name] = outputs[rast_name]["OUTPUT"]
 
@@ -315,6 +329,16 @@ class AlignRasters(QNSPECTAlgorithm):
                 return {}
 
         return results
+
+    def postProcessAlgorithm(self, context, feedback):
+        if self.load_outputs:
+            project = context.project()
+            root = project.instance().layerTreeRoot()  # get base level node
+
+            create_group("Aligned", root)
+            select_group("Aligned") # so that layers are spit out within group
+
+        return {}
 
     def name(self):
         return "align_rasters"

@@ -36,18 +36,10 @@ import sys
 sys.path.append(str(Path(__file__).parent))
 sys.path.append(str(Path(__file__).parents[1]))
 from comparison_utils import run_direct_and_percent_comparisons
+from qnspect_compare_algorithm import QNSPECTCompareAlgorithm
 
-from QNSPECT.processing.qnspect_algorithm import QNSPECTAlgorithm
 
-
-class CompareErosion(QNSPECTAlgorithm):
-    scenarioA = "ScenarioA"
-    scenarioB = "ScenarioB"
-    compareLocal = "Local"
-    compareAccumulate = "Accumulated"
-    loadOutputs = "LoadOutputs"
-    outputDir = "Output"
-
+class CompareErosion(QNSPECTCompareAlgorithm):
     def initAlgorithm(self, config=None):
         self.addParameter(
             QgsProcessingParameterFile(
@@ -101,15 +93,19 @@ class CompareErosion(QNSPECTAlgorithm):
         results = {}
         outputs = {}
 
-        scenario_dir_a = Path(
+        self.scenario_dir_a = Path(
             self.parameterAsString(parameters, self.scenarioA, context)
         )
-        scenario_dir_b = Path(
+        self.scenario_dir_b = Path(
             self.parameterAsString(parameters, self.scenarioB, context)
         )
-        load_outputs = self.parameterAsBool(parameters, self.loadOutputs, context)
-        output_dir = Path(self.parameterAsString(parameters, self.outputDir, context))
-        output_dir.mkdir(parents=True, exist_ok=True)
+        self.name = f"{self.scenario_dir_a.name} vs {self.scenario_dir_b.name}"
+        self.load_outputs = self.parameterAsBool(parameters, self.loadOutputs, context)
+
+        self.output_dir = Path(
+            self.parameterAsString(parameters, self.outputDir, context)
+        )
+        self.output_dir.mkdir(parents=True, exist_ok=True)
 
         compare_local = self.parameterAsBool(parameters, self.compareLocal, context)
         compare_acc = self.parameterAsBool(parameters, self.compareAccumulate, context)
@@ -134,10 +130,6 @@ class CompareErosion(QNSPECTAlgorithm):
                 context=context,
                 outputs=outputs,
                 compare_type=self.compareLocal,
-                scenario_dir_a=scenario_dir_a,
-                scenario_dir_b=scenario_dir_b,
-                output_dir=output_dir,
-                load_outputs=load_outputs,
             )
         if compare_acc:
             feedback.setCurrentStep(current_step)
@@ -148,10 +140,6 @@ class CompareErosion(QNSPECTAlgorithm):
                 context=context,
                 outputs=outputs,
                 compare_type=self.compareAccumulate,
-                scenario_dir_a=scenario_dir_a,
-                scenario_dir_b=scenario_dir_b,
-                output_dir=output_dir,
-                load_outputs=load_outputs,
             )
 
         return results
@@ -177,24 +165,20 @@ class CompareErosion(QNSPECTAlgorithm):
         context,
         outputs,
         compare_type: str,
-        scenario_dir_a: Path,
-        scenario_dir_b: Path,
-        output_dir: Path,
-        load_outputs: bool,
     ):
         compare_name = f"Sediment {compare_type}"
-        raster_a = (scenario_dir_a / f"{compare_name}.tif").is_file()
-        raster_b = (scenario_dir_b / f"{compare_name}.tif").is_file()
+        raster_a = (self.scenario_dir_a / f"{compare_name}.tif").is_file()
+        raster_b = (self.scenario_dir_b / f"{compare_name}.tif").is_file()
         if raster_a and raster_b:
             run_direct_and_percent_comparisons(
-                scenario_dir_a=scenario_dir_a,
-                scenario_dir_b=scenario_dir_b,
-                output_dir=output_dir,
+                scenario_dir_a=self.scenario_dir_a,
+                scenario_dir_b=self.scenario_dir_b,
+                output_dir=self.output_dir,
                 name=compare_name,
                 feedback=feedback,
                 context=context,
                 outputs=outputs,
-                load_outputs=load_outputs,
+                load_outputs=self.load_outputs,
             )
         else:
             feedback.pushWarning(

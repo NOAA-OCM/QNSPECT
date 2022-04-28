@@ -283,7 +283,7 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
         feedback.setCurrentStep(7)
         if feedback.isCanceled():
             return {}
-        feedback.pushInfo("Performing SDR calculations ...") 
+        feedback.pushInfo("Performing SDR calculations ...")
         sdr = outputs["Sediment Delivery Ratio"] = self.run_sediment_delivery_ratio(
             cell_size_sq_meters=cell_size_sq_meters,
             relief_length=rl_raster,
@@ -296,7 +296,7 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
         feedback.setCurrentStep(8)
         if feedback.isCanceled():
             return {}
-        feedback.pushInfo("Generating local sediments raster ...")        
+        feedback.pushInfo("Generating local sediments raster ...")
         sediment_local_path = str(run_out_dir / (self.sedimentYieldLocal + ".tif"))
         sediment_local = self.run_sediment_yield(
             sediment_delivery_ratio=sdr,
@@ -319,7 +319,7 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
             return {}
 
         # convert to Mg
-        feedback.pushInfo("Generating accumulated sediments raster ...")        
+        feedback.pushInfo("Generating accumulated sediments raster ...")
         input_params = {
             "input_a": sediment_local,
             "band_a": "1",
@@ -348,7 +348,7 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
 
         feedback.setCurrentStep(10)
         if feedback.isCanceled():
-            return {}            
+            return {}
         feedback.pushInfo("Creating run configuration file ...")
         run_dict = self.create_config_file(
             parameters=parameters,

@@ -21,8 +21,6 @@ __revision__ = "$Format:%H$"
 
 
 from qgis.core import (
-    QgsProcessing,
-    QgsProcessingAlgorithm,
     QgsProcessingMultiStepFeedback,
     QgsProcessingParameterFile,
     QgsProcessingParameterBoolean,
@@ -39,6 +37,7 @@ sys.path.append(str(Path(__file__).parent))
 sys.path.append(str(Path(__file__).parents[1]))
 from comparison_utils import run_direct_and_percent_comparisons
 from qnspect_utils import filter_matrix
+from qnspect_compare_algorithm import QNSPECTCompareAlgorithm
 
 
 def find_all_matching(
@@ -66,18 +65,9 @@ def retrieve_scenario_file_stems(scenario_dir: Path, comparison_types: list) -> 
     return stems
 
 
-from QNSPECT.processing.qnspect_algorithm import QNSPECTAlgorithm
-
-
-class ComparePollution(QNSPECTAlgorithm):
-    scenarioA = "ScenarioA"
-    scenarioB = "ScenarioB"
-    compareLocal = "Local"
-    compareAccumulate = "Accumulated"
+class ComparePollution(QNSPECTCompareAlgorithm):
     compareConcentration = "Concentration"
     compareGrid = "Grid"
-    outputDir = "Output"
-    loadOutputs = "LoadOutputs"
 
     def initAlgorithm(self, config=None):
         self.addParameter(
@@ -169,7 +159,9 @@ class ComparePollution(QNSPECTAlgorithm):
         scenario_dir_b = Path(
             self.parameterAsString(parameters, self.scenarioB, context)
         )
-        load_outputs = self.parameterAsBool(parameters, self.loadOutputs, context)
+        self.name = f"{scenario_dir_a.name} vs {scenario_dir_b.name}"
+        self.load_outputs = self.parameterAsBool(parameters, self.loadOutputs, context)
+
         output_dir = Path(self.parameterAsString(parameters, self.outputDir, context))
         output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -222,7 +214,7 @@ class ComparePollution(QNSPECTAlgorithm):
                     feedback=feedback,
                     context=context,
                     outputs=outputs,
-                    load_outputs=load_outputs,
+                    load_outputs=self.load_outputs,
                 )
         else:
             for pollutant in pollutants:
@@ -259,7 +251,7 @@ class ComparePollution(QNSPECTAlgorithm):
                         feedback=feedback,
                         context=context,
                         outputs=outputs,
-                        load_outputs=load_outputs,
+                        load_outputs=self.load_outputs,
                     )
 
         return results
@@ -269,12 +261,6 @@ class ComparePollution(QNSPECTAlgorithm):
 
     def displayName(self):
         return self.tr("Compare Scenarios (Pollution)")
-
-    def group(self):
-        return self.tr("Comparison")
-
-    def groupId(self):
-        return "comparison"
 
     def createInstance(self):
         return ComparePollution()

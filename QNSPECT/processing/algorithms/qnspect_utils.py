@@ -1,13 +1,14 @@
 """
 Store common functions that are required by different QNSPECT Modules
 """
-
 from qgis.core import (
     QgsRasterBandStats,
     QgsSingleBandPseudoColorRenderer,
     QgsGradientColorRamp,
     QgsProcessingLayerPostProcessorInterface,
     QgsProcessing,
+    QgsLayerTreeGroup,
+    QgsLayerTree,
 )
 
 from qgis.PyQt.QtGui import QColor
@@ -41,6 +42,28 @@ class LayerPostProcessor(QgsProcessingLayerPostProcessorInterface):
             renderer.setClassificationMax(max)
             renderer.createShader(color_ramp)
             layer.setRenderer(renderer)
+
+
+def create_group(name: str, root: QgsLayerTree) -> None:
+    """
+    Create a group (if doesn't exist) in QGIS layer tree.
+    """
+
+    group = root.findGroup(name)  # find group in whole hierarchy
+    if not group:  # if group does not already exists
+        selected_nodes = iface.layerTreeView().selectedNodes()  # get all selected nodes
+        if selected_nodes:  # if a node is selected
+            # check the first node is group
+            if isinstance(selected_nodes[0], QgsLayerTreeGroup):
+                # if it is add a group inside
+                group = selected_nodes[0].insertGroup(0, name)
+            else:
+                parent = selected_nodes[0].parent()
+                # get current index so that new group can be inserted at that location
+                index = parent.children().index(selected_nodes[0])
+                group = parent.insertGroup(index, name)
+        else:
+            group = root.insertGroup(0, name)
 
 
 def select_group(name: str) -> bool:
