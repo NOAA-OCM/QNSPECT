@@ -33,7 +33,7 @@ from qgis.core import (
     QgsProcessingContext,
     QgsUnitTypes,
     QgsProcessingParameterNumber,
-    QgsRasterLayer
+    QgsRasterLayer,
 )
 import processing
 import os
@@ -44,18 +44,20 @@ from QNSPECT.processing.algorithms.qnspect_utils import select_group, create_gro
 
 class AlignRasters(QNSPECTAlgorithm):
     rasterCellSize: str = "RasterCellSize"
-    resamplingMethods = [('Nearest Neighbour', 'near'),
-                        ('Bilinear', 'bilinear'),
-                        ('Cubic', 'cubic'),
-                        ('Cubic Spline', 'cubicspline'),
-                        ('Lanczos Windowed Sinc', 'lanczos'),
-                        ('Average', 'average'),
-                        ('Mode', 'mode'),
-                        ('Maximum', 'max'),
-                        ('Minimum', 'min'),
-                        ('Median', 'med'),
-                        ('First Quartile', 'q1'),
-                        ('Third Quartile', 'q3')]    
+    resamplingMethods = [
+        ("Nearest Neighbour", "near"),
+        ("Bilinear", "bilinear"),
+        ("Cubic", "cubic"),
+        ("Cubic Spline", "cubicspline"),
+        ("Lanczos Windowed Sinc", "lanczos"),
+        ("Average", "average"),
+        ("Mode", "mode"),
+        ("Maximum", "max"),
+        ("Minimum", "min"),
+        ("Median", "med"),
+        ("First Quartile", "q1"),
+        ("Third Quartile", "q3"),
+    ]
 
     def __init__(self):
         super().__init__()
@@ -87,7 +89,15 @@ class AlignRasters(QNSPECTAlgorithm):
                 defaultValue=0,
             )
         )
-        self.addParameter(QgsProcessingParameterFeatureSource('MaskLayer', 'Mask Layer', optional=True, types=[QgsProcessing.TypeVectorPolygon], defaultValue=None))
+        self.addParameter(
+            QgsProcessingParameterFeatureSource(
+                "MaskLayer",
+                "Mask Layer",
+                optional=True,
+                types=[QgsProcessing.TypeVectorPolygon],
+                defaultValue=None,
+            )
+        )
         self.addParameter(
             QgsProcessingParameterDistance(
                 "MaskBuffer",
@@ -114,7 +124,7 @@ class AlignRasters(QNSPECTAlgorithm):
                 "Open output files after running algorithm",
                 defaultValue=True,
             )
-        )        
+        )
         self.addParameter(
             QgsProcessingParameterFolderDestination(
                 "OutputDirectory",
@@ -140,7 +150,9 @@ class AlignRasters(QNSPECTAlgorithm):
         output_dir = self.parameterAsString(parameters, "OutputDirectory", context)
         self.load_outputs = self.parameterAsBool(parameters, "LoadOutputs", context)
         ref_layer = self.parameterAsRasterLayer(parameters, "ReferenceRaster", context)
-        resample_method = self.resamplingMethods[self.parameterAsEnum(parameters, "ResamplingMethod", context)][1]
+        resample_method = self.resamplingMethods[
+            self.parameterAsEnum(parameters, "ResamplingMethod", context)
+        ][1]
 
         # Check if the reference raster is in a geographic CRS and terminate if it is
         # This will:
@@ -155,16 +167,17 @@ class AlignRasters(QNSPECTAlgorithm):
             return {}
 
         if parameters["MaskLayer"]:
-            if all([
+            if all(
+                [
                     parameters["MaskBuffer"],
                     parameters["MaskBuffer"] != 0,
                 ]
             ):
 
-            # Reprojecting Mask Layer to Reference Raster CRS because
-            # Mask Layer and Buffer distance can be in different CRS
-            # If the distance is in projected units (meters etc) and Mask Layer in Geographic (degrees)
-            # the buffer algorithm will treat distance in degrees ignoring actual buffer distance units
+                # Reprojecting Mask Layer to Reference Raster CRS because
+                # Mask Layer and Buffer distance can be in different CRS
+                # If the distance is in projected units (meters etc) and Mask Layer in Geographic (degrees)
+                # the buffer algorithm will treat distance in degrees ignoring actual buffer distance units
                 alg_params = {
                     "INPUT": parameters["MaskLayer"],
                     "OPERATION": "",
@@ -203,7 +216,9 @@ class AlignRasters(QNSPECTAlgorithm):
                 )
                 mask_layer = outputs["Buffer"]["OUTPUT"]
             else:
-                mask_layer = self.parameterAsVectorLayer(parameters, "MaskLayer", context)
+                mask_layer = self.parameterAsVectorLayer(
+                    parameters, "MaskLayer", context
+                )
 
         feedback.setCurrentStep(2)
         if feedback.isCanceled():
@@ -246,22 +261,22 @@ class AlignRasters(QNSPECTAlgorithm):
                 if parameters["MaskLayer"]:
                     # Clip raster by mask layer
                     alg_params = {
-                        'ALPHA_BAND': False,
-                        'CROP_TO_CUTLINE': i == enum_start,
-                        'DATA_TYPE': 0,  # Use Input Layer Data Type
-                        'EXTRA': extra,
-                        'INPUT': rast,
-                        'KEEP_RESOLUTION': False,
-                        'MASK': mask_layer,
-                        'MULTITHREADING': False,
-                        'NODATA': None,
-                        'OPTIONS': '',
-                        'SET_RESOLUTION': False,
-                        'SOURCE_CRS': None,
-                        'TARGET_CRS': target_crs,
-                        'X_RESOLUTION': None,
-                        'Y_RESOLUTION': None,
-                        'OUTPUT': out_path
+                        "ALPHA_BAND": False,
+                        "CROP_TO_CUTLINE": i == enum_start,
+                        "DATA_TYPE": 0,  # Use Input Layer Data Type
+                        "EXTRA": extra,
+                        "INPUT": rast,
+                        "KEEP_RESOLUTION": False,
+                        "MASK": mask_layer,
+                        "MULTITHREADING": False,
+                        "NODATA": None,
+                        "OPTIONS": "",
+                        "SET_RESOLUTION": False,
+                        "SOURCE_CRS": None,
+                        "TARGET_CRS": target_crs,
+                        "X_RESOLUTION": None,
+                        "Y_RESOLUTION": None,
+                        "OUTPUT": out_path,
                     }
                     outputs[rast_name] = processing.run(
                         "gdal:cliprasterbymasklayer",
@@ -275,13 +290,15 @@ class AlignRasters(QNSPECTAlgorithm):
                             outputs[rast_name]["OUTPUT"],
                             QgsProcessingContext.LayerDetails(
                                 rast_name, context.project(), rast_name
-                            )
+                            ),
                         )
 
                     results[rast_name] = outputs[rast_name]["OUTPUT"]
 
                     if i == enum_start:
-                        ext = QgsRasterLayer(outputs[rast_name]["OUTPUT"], "ref layer").extent()
+                        ext = QgsRasterLayer(
+                            outputs[rast_name]["OUTPUT"], "ref layer"
+                        ).extent()
                         extra = f"-tr {res_x} {res_y} -te {ext.xMinimum()} {ext.yMinimum()} {ext.xMaximum()} {ext.yMaximum()} -r {resample_method}"
                         target_crs = parameters["ReferenceRaster"]
 
@@ -291,7 +308,7 @@ class AlignRasters(QNSPECTAlgorithm):
 
         else:
             for i, rast in enumerate(rasters_to_align, start=enum_start):
-            # Prevent the reference raster from being alignd multiple times
+                # Prevent the reference raster from being alignd multiple times
                 if (i != enum_start) and (rast.source() == ref_source):
                     continue
 
@@ -304,7 +321,7 @@ class AlignRasters(QNSPECTAlgorithm):
                     rast_name = f"{rast.name()}_{j}"
                     out_path = os.path.join(output_dir, f"{rast_name}.tif")
                     j += 1
-                all_out_paths.append(out_path)                
+                all_out_paths.append(out_path)
                 # Warp (reproject)
                 alg_params = {
                     "DATA_TYPE": 0,
@@ -319,7 +336,7 @@ class AlignRasters(QNSPECTAlgorithm):
                     "TARGET_EXTENT_CRS": None,
                     "TARGET_RESOLUTION": None,
                     "OUTPUT": out_path,
-                    "EXTRA":f"-tr {res_x} {res_y}"       
+                    "EXTRA": f"-tr {res_x} {res_y}",
                 }
                 outputs[rast_name] = processing.run(
                     "gdal:warpreproject",
@@ -333,7 +350,7 @@ class AlignRasters(QNSPECTAlgorithm):
                         outputs[rast_name]["OUTPUT"],
                         QgsProcessingContext.LayerDetails(
                             rast_name, context.project(), rast_name
-                        )
+                        ),
                     )
 
                 results[rast_name] = outputs[rast_name]["OUTPUT"]
@@ -350,7 +367,7 @@ class AlignRasters(QNSPECTAlgorithm):
             root = project.instance().layerTreeRoot()  # get base level node
 
             create_group("Aligned", root)
-            select_group("Aligned") # so that layers are spit out within group
+            select_group("Aligned")  # so that layers are spit out within group
 
         return {}
 
