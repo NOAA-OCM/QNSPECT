@@ -20,6 +20,10 @@ __copyright__ = "(C) 2021 by NOAA"
 __revision__ = "$Format:%H$"
 
 
+import processing
+import os
+from typing import Union
+
 from qgis.core import (
     QgsProcessing,
     QgsProcessingMultiStepFeedback,
@@ -34,9 +38,8 @@ from qgis.core import (
     QgsUnitTypes,
     QgsProcessingParameterNumber,
     QgsRasterLayer,
+    QgsVectorLayer
 )
-import processing
-import os
 
 from QNSPECT.processing.qnspect_algorithm import QNSPECTAlgorithm
 from QNSPECT.processing.algorithms.qnspect_utils import select_group, create_group
@@ -150,9 +153,7 @@ class AlignRasters(QNSPECTAlgorithm):
         output_dir = self.parameterAsString(parameters, "OutputDirectory", context)
         self.load_outputs = self.parameterAsBool(parameters, "LoadOutputs", context)
         ref_layer = self.parameterAsRasterLayer(parameters, "ReferenceRaster", context)
-        resample_method = self.resamplingMethods[
-            self.parameterAsEnum(parameters, "ResamplingMethod", context)
-        ][1]
+        resample_method = self.parameterAsEnum(parameters, "ResamplingMethod", context)
 
         # Check if the reference raster is in a geographic CRS and terminate if it is
         # This will:
@@ -224,140 +225,69 @@ class AlignRasters(QNSPECTAlgorithm):
         if feedback.isCanceled():
             return {}
         os.makedirs(output_dir, exist_ok=True)
-        res_x, res_y = self.find_pixel_size(ref_layer, parameters, context)
+        res_x, res_y, user_size = self.find_pixel_size(ref_layer, parameters, context)
 
         # Reference raster will always be aligned for this reason:
-        # QGIS will write other new rasters with standard projection string
+        # GDAL will write other new rasters with standard projection string
         # if reference is not aligned, it will have old projection which will be same
         # in theory but some software like ArcGIS can interpret both projections as different
         ref_source = ref_layer.source()
         rasters_to_align = [ref_layer]
         rasters_to_align += self.parameterAsLayerList(
             parameters, "RastersToAlign", context
-        )
+        )        
 
         all_out_paths = []
-        extra = ""
-        target_crs = None
 
         enum_start = 3
-        if parameters["MaskLayer"]:
-            for i, rast in enumerate(rasters_to_align, start=enum_start):
-                # Prevent the reference raster from being alignd multiple times
-                if (i != enum_start) and (rast.source() == ref_source):
-                    continue
+        for i, rast in enumerate(rasters_to_align, start=enum_start):
+            # Prevent the reference raster from being alignd multiple times
+            if (i != enum_start) and (rast.source() == ref_source):
+                continue
 
-                rast_name = rast.name()
+            rast_name = rast.name()
+            out_path = os.path.join(output_dir, f"{rast_name}.tif")
+
+            j = 1  # prevent self overwriting in algorithm outputs if two rasters have same display name
+            while out_path in all_out_paths:
+                rast_name = f"{rast.name()}_{j}"
                 out_path = os.path.join(output_dir, f"{rast_name}.tif")
+                j += 1
+            all_out_paths.append(out_path)
 
-                # prevent self overwriting in algorithm outputs if two rasters have same display name
-                j = 1
-                while out_path in all_out_paths:
-                    rast_name = f"{rast.name()}_{j}"
-                    out_path = os.path.join(output_dir, f"{rast_name}.tif")
-                    j += 1
-                all_out_paths.append(out_path)
-
+            if i == enum_start: # first item will be ref_layer
                 if parameters["MaskLayer"]:
-                    # Clip raster by mask layer
-                    alg_params = {
-                        "ALPHA_BAND": False,
-                        "CROP_TO_CUTLINE": i == enum_start,
-                        "DATA_TYPE": 0,  # Use Input Layer Data Type
-                        "EXTRA": extra,
-                        "INPUT": rast,
-                        "KEEP_RESOLUTION": False,
-                        "MASK": mask_layer,
-                        "MULTITHREADING": False,
-                        "NODATA": None,
-                        "OPTIONS": "",
-                        "SET_RESOLUTION": False,
-                        "SOURCE_CRS": None,
-                        "TARGET_CRS": target_crs,
-                        "X_RESOLUTION": None,
-                        "Y_RESOLUTION": None,
-                        "OUTPUT": out_path,
-                    }
-                    outputs[rast_name] = processing.run(
-                        "gdal:cliprasterbymasklayer",
-                        alg_params,
-                        context=context,
-                        feedback=feedback,
-                        is_child_algorithm=True,
+                    if not user_size:
+                        # mask ref layer with crop_to_cutline=True to match original cell alignment to preserve integrity
+                        outputs[rast_name] = self.mask_raster(rast, mask_layer, out_path, True, context=context, feedback=feedback)
+                    else:
+                        temp_rast_layer = self.warp_raster(rast, ref_layer, mask_layer, resample_method, res_x, res_y, context=context, feedback=feedback)["OUTPUT"]
+                        outputs[rast_name] = self.mask_raster(temp_rast_layer, mask_layer, out_path, False, context=context, feedback=feedback)                        
+                    ref_layer = QgsRasterLayer(
+                        outputs[rast_name]["OUTPUT"], "ref layer"
                     )
-                    if self.load_outputs:
-                        context.addLayerToLoadOnCompletion(
-                            outputs[rast_name]["OUTPUT"],
-                            QgsProcessingContext.LayerDetails(
-                                rast_name, context.project(), rast_name
-                            ),
-                        )
+                else:
+                    outputs[rast_name] = self.warp_raster(rast, ref_layer, ref_layer, resample_method, res_x, res_y, out_path, context=context, feedback=feedback)
 
-                    results[rast_name] = outputs[rast_name]["OUTPUT"]
+            elif parameters["MaskLayer"]:
+                temp_rast_layer = self.warp_raster(rast, ref_layer, ref_layer, resample_method, res_x, res_y, context=context, feedback=feedback)["OUTPUT"]
+                outputs[rast_name] = self.mask_raster(temp_rast_layer, mask_layer, out_path, False, context=context, feedback=feedback)
 
-                    if i == enum_start:
-                        ext = QgsRasterLayer(
-                            outputs[rast_name]["OUTPUT"], "ref layer"
-                        ).extent()
-                        extra = f"-tr {res_x} {res_y} -te {ext.xMinimum()} {ext.yMinimum()} {ext.xMaximum()} {ext.yMaximum()} -r {resample_method}"
-                        target_crs = parameters["ReferenceRaster"]
-
-                    feedback.setCurrentStep(i)
-                    if feedback.isCanceled():
-                        return {}
-
-        else:
-            for i, rast in enumerate(rasters_to_align, start=enum_start):
-                # Prevent the reference raster from being alignd multiple times
-                if (i != enum_start) and (rast.source() == ref_source):
-                    continue
-
-                rast_name = rast.name()
-                out_path = os.path.join(output_dir, f"{rast_name}.tif")
-
-                # prevent self overwriting in algorithm outputs if two rasters have same display name
-                j = 1
-                while out_path in all_out_paths:
-                    rast_name = f"{rast.name()}_{j}"
-                    out_path = os.path.join(output_dir, f"{rast_name}.tif")
-                    j += 1
-                all_out_paths.append(out_path)
-                # Warp (reproject)
-                alg_params = {
-                    "DATA_TYPE": 0,
-                    "INPUT": rast,
-                    "MULTITHREADING": False,
-                    "NODATA": None,
-                    "OPTIONS": "",
-                    "RESAMPLING": parameters["ResamplingMethod"],
-                    "SOURCE_CRS": None,
-                    "TARGET_CRS": parameters["ReferenceRaster"],
-                    "TARGET_EXTENT": parameters["ReferenceRaster"],
-                    "TARGET_EXTENT_CRS": None,
-                    "TARGET_RESOLUTION": None,
-                    "OUTPUT": out_path,
-                    "EXTRA": f"-tr {res_x} {res_y}",
-                }
-                outputs[rast_name] = processing.run(
-                    "gdal:warpreproject",
-                    alg_params,
-                    context=context,
-                    feedback=feedback,
-                    is_child_algorithm=True,
+            else:
+                outputs[rast_name] = self.warp_raster(rast, ref_layer, ref_layer, resample_method, res_x, res_y, out_path, context=context, feedback=feedback)
+            
+            if self.load_outputs:
+                context.addLayerToLoadOnCompletion(
+                    outputs[rast_name]["OUTPUT"],
+                    QgsProcessingContext.LayerDetails(
+                        rast_name, context.project(), rast_name
+                    ),
                 )
-                if self.load_outputs:
-                    context.addLayerToLoadOnCompletion(
-                        outputs[rast_name]["OUTPUT"],
-                        QgsProcessingContext.LayerDetails(
-                            rast_name, context.project(), rast_name
-                        ),
-                    )
+            results[rast_name] = outputs[rast_name]["OUTPUT"]
 
-                results[rast_name] = outputs[rast_name]["OUTPUT"]
-
-                feedback.setCurrentStep(i)
-                if feedback.isCanceled():
-                    return {}
+            feedback.setCurrentStep(i)
+            if feedback.isCanceled():
+                return {}
 
         return results
 
@@ -408,11 +338,65 @@ class AlignRasters(QNSPECTAlgorithm):
     def createInstance(self):
         return AlignRasters()
 
-    def find_pixel_size(self, ref_layer, parameters, context) -> tuple:
+    def find_pixel_size(self, rast_layer, parameters, context) -> tuple:
         user_size = self.parameterAsInt(parameters, self.rasterCellSize, context)
         if user_size:
-            return user_size, user_size
+            return user_size, user_size, True
         else:
-            ref_size_x = ref_layer.rasterUnitsPerPixelX()
-            ref_size_y = ref_layer.rasterUnitsPerPixelY()
-            return ref_size_x, ref_size_y
+            ras_size_x = rast_layer.rasterUnitsPerPixelX()
+            ras_size_y = rast_layer.rasterUnitsPerPixelY()
+            return ras_size_x, ras_size_y, False
+
+    def mask_raster(self, rast: QgsRasterLayer, mask_layer: Union[str, QgsVectorLayer], out_path: str = QgsProcessing.TEMPORARY_OUTPUT, crop_to_cutline: bool = False, extra: str = "", context=None, feedback=None):
+        # Clip raster by mask layer
+        alg_params = {
+            "ALPHA_BAND": False,
+            "CROP_TO_CUTLINE": crop_to_cutline,
+            "DATA_TYPE": 0,  # Use Input Layer Data Type
+            "EXTRA": extra,
+            "INPUT": rast,
+            "KEEP_RESOLUTION": False,
+            "MASK": mask_layer,
+            "MULTITHREADING": False,
+            "NODATA": None,
+            "OPTIONS": "",
+            "SET_RESOLUTION": False,
+            "SOURCE_CRS": None,
+            "TARGET_CRS": None,
+            "X_RESOLUTION": None,
+            "Y_RESOLUTION": None,
+            "OUTPUT": out_path,
+        }
+        return processing.run(
+            "gdal:cliprasterbymasklayer",
+            alg_params,
+            context=context,
+            feedback=feedback,
+            is_child_algorithm=True,
+        )
+
+    def warp_raster(self, rast: QgsRasterLayer, ref_layer, extent_layer, resample: int, res_x:float, res_y:float, out_path: str = QgsProcessing.TEMPORARY_OUTPUT, extra: str = "", context=None, feedback=None):
+        # Warp (reproject)
+        alg_params = {
+            "DATA_TYPE": 0,
+            "INPUT": rast,
+            "MULTITHREADING": False,
+            "NODATA": None,
+            "OPTIONS": "",
+            "RESAMPLING": resample,
+            "SOURCE_CRS": None,
+            "TARGET_CRS": ref_layer,
+            "TARGET_EXTENT": extent_layer,
+            "TARGET_EXTENT_CRS": None,
+            "TARGET_RESOLUTION": None,
+            "OUTPUT": out_path,
+            "EXTRA": f"-tr {res_x} {res_y} {extra}",
+        }
+        return processing.run(
+            "gdal:warpreproject",
+            alg_params,
+            context=context,
+            feedback=feedback,
+            is_child_algorithm=True,
+        )
+
