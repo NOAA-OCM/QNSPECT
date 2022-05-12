@@ -38,7 +38,7 @@ from qgis.core import (
     QgsUnitTypes,
     QgsProcessingParameterNumber,
     QgsRasterLayer,
-    QgsVectorLayer
+    QgsVectorLayer,
 )
 
 from QNSPECT.processing.qnspect_algorithm import QNSPECTAlgorithm
@@ -235,7 +235,7 @@ class AlignRasters(QNSPECTAlgorithm):
         rasters_to_align = [ref_layer]
         rasters_to_align += self.parameterAsLayerList(
             parameters, "RastersToAlign", context
-        )        
+        )
 
         all_out_paths = []
 
@@ -255,27 +255,86 @@ class AlignRasters(QNSPECTAlgorithm):
                 j += 1
             all_out_paths.append(out_path)
 
-            if i == enum_start: # first item will be ref_layer
+            if i == enum_start:  # first item will be ref_layer
                 if parameters["MaskLayer"]:
                     if not user_size:
                         # mask ref layer with crop_to_cutline=True to match original cell alignment to preserve integrity
-                        outputs[rast_name] = self.mask_raster(rast, mask_layer, out_path, True, context=context, feedback=feedback)
+                        outputs[rast_name] = self.mask_raster(
+                            rast,
+                            mask_layer,
+                            out_path,
+                            True,
+                            context=context,
+                            feedback=feedback,
+                        )
                     else:
-                        temp_rast_layer = self.warp_raster(rast, ref_layer, mask_layer, resample_method, res_x, res_y, context=context, feedback=feedback)["OUTPUT"]
-                        outputs[rast_name] = self.mask_raster(temp_rast_layer, mask_layer, out_path, False, context=context, feedback=feedback)                        
+                        temp_rast_layer = self.warp_raster(
+                            rast,
+                            ref_layer,
+                            mask_layer,
+                            resample_method,
+                            res_x,
+                            res_y,
+                            context=context,
+                            feedback=feedback,
+                        )["OUTPUT"]
+                        outputs[rast_name] = self.mask_raster(
+                            temp_rast_layer,
+                            mask_layer,
+                            out_path,
+                            False,
+                            context=context,
+                            feedback=feedback,
+                        )
                     ref_layer = QgsRasterLayer(
                         outputs[rast_name]["OUTPUT"], "ref layer"
                     )
                 else:
-                    outputs[rast_name] = self.warp_raster(rast, ref_layer, ref_layer, resample_method, res_x, res_y, out_path, context=context, feedback=feedback)
+                    outputs[rast_name] = self.warp_raster(
+                        rast,
+                        ref_layer,
+                        ref_layer,
+                        resample_method,
+                        res_x,
+                        res_y,
+                        out_path,
+                        context=context,
+                        feedback=feedback,
+                    )
 
             elif parameters["MaskLayer"]:
-                temp_rast_layer = self.warp_raster(rast, ref_layer, ref_layer, resample_method, res_x, res_y, context=context, feedback=feedback)["OUTPUT"]
-                outputs[rast_name] = self.mask_raster(temp_rast_layer, mask_layer, out_path, False, context=context, feedback=feedback)
+                temp_rast_layer = self.warp_raster(
+                    rast,
+                    ref_layer,
+                    ref_layer,
+                    resample_method,
+                    res_x,
+                    res_y,
+                    context=context,
+                    feedback=feedback,
+                )["OUTPUT"]
+                outputs[rast_name] = self.mask_raster(
+                    temp_rast_layer,
+                    mask_layer,
+                    out_path,
+                    False,
+                    context=context,
+                    feedback=feedback,
+                )
 
             else:
-                outputs[rast_name] = self.warp_raster(rast, ref_layer, ref_layer, resample_method, res_x, res_y, out_path, context=context, feedback=feedback)
-            
+                outputs[rast_name] = self.warp_raster(
+                    rast,
+                    ref_layer,
+                    ref_layer,
+                    resample_method,
+                    res_x,
+                    res_y,
+                    out_path,
+                    context=context,
+                    feedback=feedback,
+                )
+
             if self.load_outputs:
                 context.addLayerToLoadOnCompletion(
                     outputs[rast_name]["OUTPUT"],
@@ -347,7 +406,16 @@ class AlignRasters(QNSPECTAlgorithm):
             ras_size_y = rast_layer.rasterUnitsPerPixelY()
             return ras_size_x, ras_size_y, False
 
-    def mask_raster(self, rast: QgsRasterLayer, mask_layer: Union[str, QgsVectorLayer], out_path: str = QgsProcessing.TEMPORARY_OUTPUT, crop_to_cutline: bool = False, extra: str = "", context=None, feedback=None):
+    def mask_raster(
+        self,
+        rast: QgsRasterLayer,
+        mask_layer: Union[str, QgsVectorLayer],
+        out_path: str = QgsProcessing.TEMPORARY_OUTPUT,
+        crop_to_cutline: bool = False,
+        extra: str = "-wo CUTLINE_ALL_TOUCHED=TRUE",
+        context=None,
+        feedback=None,
+    ):
         # Clip raster by mask layer
         alg_params = {
             "ALPHA_BAND": False,
@@ -375,7 +443,19 @@ class AlignRasters(QNSPECTAlgorithm):
             is_child_algorithm=True,
         )
 
-    def warp_raster(self, rast: QgsRasterLayer, ref_layer, extent_layer, resample: int, res_x:float, res_y:float, out_path: str = QgsProcessing.TEMPORARY_OUTPUT, extra: str = "", context=None, feedback=None):
+    def warp_raster(
+        self,
+        rast: QgsRasterLayer,
+        ref_layer,
+        extent_layer,
+        resample: int,
+        res_x: float,
+        res_y: float,
+        out_path: str = QgsProcessing.TEMPORARY_OUTPUT,
+        extra: str = "",
+        context=None,
+        feedback=None,
+    ):
         # Warp (reproject)
         alg_params = {
             "DATA_TYPE": 0,
@@ -399,4 +479,3 @@ class AlignRasters(QNSPECTAlgorithm):
             feedback=feedback,
             is_child_algorithm=True,
         )
-
