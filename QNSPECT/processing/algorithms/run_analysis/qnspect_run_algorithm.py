@@ -59,6 +59,7 @@ class QNSPECTRunAlgorithm(QNSPECTAlgorithm):
         super().__init__()
         # necessary to store LayerPostProcessor instances in class variable because of scoping issue
         self.styler_dict = {}
+        self.load_outputs = False
 
     def group(self):
         return self.tr("Analysis")
@@ -67,11 +68,12 @@ class QNSPECTRunAlgorithm(QNSPECTAlgorithm):
         return "analysis"
 
     def postProcessAlgorithm(self, context, feedback):
-        project = context.project()
-        root = project.instance().layerTreeRoot()  # get base level node
+        if self.load_outputs:
+            project = context.project()
+            root = project.instance().layerTreeRoot()  # get base level node
 
-        create_group(self.run_name, root)
-        select_group(self.run_name)  # so that layers are spit out within group
+            create_group(self.run_name, root)
+            select_group(self.run_name)  # so that layers are spit out within group
 
         return {}
 
