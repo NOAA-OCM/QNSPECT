@@ -41,7 +41,7 @@ def run_direct_and_percent_comparisons(
         input_dict=input_dict,
         name=name,
         compare_type="Percent",
-        expression="100 * ((A - B) / A)",
+        expression="100 * ((A - B) / B)",  # example A = [[5,1]] and B = [[1,2]] result = [[400%,-50%]] interpreted as [[A increased 400%, A decreased 50%]]
         feedback=feedback,
         context=context,
         outputs=outputs,

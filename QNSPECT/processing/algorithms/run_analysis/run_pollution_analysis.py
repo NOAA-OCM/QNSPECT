@@ -223,7 +223,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
 
         mfd = self.parameterAsBool(parameters, "MFD", context)
         conc_out = self.parameterAsBool(parameters, "ConcOutputs", context)
-        load_outputs = self.parameterAsBool(parameters, "LoadOutputs", context)
+        self.load_outputs = self.parameterAsBool(parameters, "LoadOutputs", context)
 
         self.run_name = self.parameterAsString(parameters, "RunName", context)
         proj_loc = self.parameterAsString(parameters, "ProjectLocation", context)
@@ -316,7 +316,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
             runoff_output = os.path.join(run_out_dir, f"Runoff Local.tif")
             outputs["Runoff Local"] = runoff_vol.calculate_Q(runoff_output)
             results["Runoff Local"] = outputs["Runoff Local"]["OUTPUT"]
-            if load_outputs:
+            if self.load_outputs:
                 self.handle_post_processing(
                     "runoff",
                     outputs["Runoff Local"]["OUTPUT"],
@@ -357,7 +357,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
                 os.path.join(run_out_dir, f"{pol} Local.tif"),
             )
             results[pol + " Local"] = outputs[pol + " Local"]["OUTPUT"]
-            if load_outputs:
+            if self.load_outputs:
                 self.handle_post_processing(
                     pol.lower(),
                     outputs[pol + " Local"]["OUTPUT"],
@@ -383,7 +383,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
                 runoff_output,
             )
             results["Runoff Accumulated"] = outputs["Runoff Accumulated"]["OUTPUT"]
-            if load_outputs:
+            if self.load_outputs:
                 self.handle_post_processing(
                     "runoff",
                     outputs["Runoff Accumulated"]["OUTPUT"],
@@ -430,7 +430,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
             )
 
             results[pol + " Accumulated"] = outputs[pol + " Accumulated"]["OUTPUT"]
-            if load_outputs:
+            if self.load_outputs:
                 self.handle_post_processing(
                     pol.lower(),
                     outputs[pol + " Accumulated"]["OUTPUT"],
@@ -463,7 +463,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
                 results[pol + " Concentration"] = outputs[pol + " Concentration"][
                     "OUTPUT"
                 ]
-                if load_outputs:
+                if self.load_outputs:
                     self.handle_post_processing(
                         pol.lower(),
                         outputs[pol + " Concentration"]["OUTPUT"],

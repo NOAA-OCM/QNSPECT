@@ -174,7 +174,7 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
         outputs = {}
         run_dict = {}
 
-        load_outputs: bool = self.parameterAsBool(parameters, self.loadOutputs, context)
+        self.load_outputs = self.parameterAsBool(parameters, self.loadOutputs, context)
 
         elev_raster = self.parameterAsRasterLayer(
             parameters, self.elevationRaster, context
@@ -309,7 +309,7 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
         outputs[self.sedimentYieldLocal] = sediment_local
         results[self.sedimentYieldLocal] = sediment_local
 
-        if load_outputs:
+        if self.load_outputs:
             self.handle_post_processing(
                 "sediment", sediment_local_path, "Sediment Local (kg/year)", context
             )
@@ -341,7 +341,7 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
         outputs[self.sedimentYieldAccumulated] = sediment_acc
         results[self.sedimentYieldAccumulated] = sediment_acc
 
-        if load_outputs:
+        if self.load_outputs:
             self.handle_post_processing(
                 "sediment", sediment_acc, "Sediment Accumulation (Mg/year)", context
             )
