@@ -32,7 +32,7 @@ __revision__ = "$Format:%H$"
 
 
 from QNSPECT.processing.qnspect_algorithm import QNSPECTAlgorithm
-from qnspect_utils import select_group, create_group
+from QNSPECT.processing.algorithms.qnspect_utils import select_group, create_group
 
 
 class QNSPECTCompareAlgorithm(QNSPECTAlgorithm):
