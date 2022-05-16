@@ -37,7 +37,11 @@ from json import load
 from qgis.core import QgsVectorLayer, QgsProcessingException
 
 from QNSPECT.processing.qnspect_algorithm import QNSPECTAlgorithm
-from QNSPECT.processing.algorithms.qnspect_utils import LayerPostProcessor, select_group, create_group
+from QNSPECT.processing.algorithms.qnspect_utils import (
+    LayerPostProcessor,
+    select_group,
+    create_group,
+)
 
 
 class QNSPECTRunAlgorithm(QNSPECTAlgorithm):
@@ -89,7 +93,8 @@ class QNSPECTRunAlgorithm(QNSPECTAlgorithm):
         if land_cover_type > 0:
             return QgsVectorLayer(
                 os.path.join(
-                    self._land_cover_PATH, f"{self._land_cover_TABLES[land_cover_type]}.csv"
+                    self._land_cover_PATH,
+                    f"{self._land_cover_TABLES[land_cover_type]}.csv",
                 ),
                 "Land Cover Lookup Table",
                 "delimitedtext",

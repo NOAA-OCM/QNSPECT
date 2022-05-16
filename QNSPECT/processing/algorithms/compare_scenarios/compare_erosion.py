@@ -30,8 +30,12 @@ from qgis.core import (
 )
 import processing
 
-from QNSPECT.processing.algorithms.compare_scenarios.comparison_utils import run_direct_and_percent_comparisons
-from QNSPECT.processing.algorithms.compare_scenarios.qnspect_compare_algorithm import QNSPECTCompareAlgorithm
+from QNSPECT.processing.algorithms.compare_scenarios.comparison_utils import (
+    run_direct_and_percent_comparisons,
+)
+from QNSPECT.processing.algorithms.compare_scenarios.qnspect_compare_algorithm import (
+    QNSPECTCompareAlgorithm,
+)
 
 
 class CompareErosion(QNSPECTCompareAlgorithm):

@@ -12,6 +12,7 @@ from qgis.core import (
 )
 import processing
 
+
 def convert_raster_data_type_to_float(
     raster_layer: QgsRasterLayer,
     context,
