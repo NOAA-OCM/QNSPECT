@@ -28,15 +28,8 @@ from qgis.core import (
     QgsProcessing,
     QgsProcessingContext,
 )
-import sys
-import os
-import inspect
 
-cmd_folder = os.path.split(inspect.getfile(inspect.currentframe()))[0]
-sys.path.append(cmd_folder)
-sys.path.append(os.path.dirname(cmd_folder))
-
-from qnspect_utils import perform_raster_math
+from QNSPECT.processing.algorithms.qnspect_utils import perform_raster_math
 
 
 class RunoffVolume:

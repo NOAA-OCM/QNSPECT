@@ -11,11 +11,6 @@ from qgis.core import (
     QgsProcessingException,
 )
 import processing
-import os
-from pathlib import Path
-
-import processing
-
 
 def convert_raster_data_type_to_float(
     raster_layer: QgsRasterLayer,

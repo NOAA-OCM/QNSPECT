@@ -19,22 +19,13 @@ __copyright__ = "(C) 2022 by NOAA"
 
 __revision__ = "$Format:%H$"
 
-from pathlib import Path
+
 import os
 import math
 import datetime
 import json
 
-from qnspect_utils import perform_raster_math, grass_material_transport
-from analysis_utils import (
-    reclassify_land_use_raster_by_table_field,
-    convert_raster_data_type_to_float,
-    check_raster_values_in_lookup_table,
-)
-from curve_number import CurveNumber
-from relief_length_ratio import create_relief_length_ratio_raster
-
-DEFAULT_URBAN_K_FACTOR_VALUE = 0.3
+from pathlib import Path
 
 from qgis.core import (
     QgsProcessing,
@@ -51,7 +42,17 @@ from qgis.core import (
 )
 import processing
 
-from qnspect_run_algorithm import QNSPECTRunAlgorithm
+from QNSPECT.processing.algorithms.qnspect_utils import perform_raster_math, grass_material_transport
+from QNSPECT.processing.algorithms.run_analysis.analysis_utils import (
+    reclassify_land_use_raster_by_table_field,
+    convert_raster_data_type_to_float,
+    check_raster_values_in_lookup_table,
+)
+from QNSPECT.processing.algorithms.run_analysis.curve_number import CurveNumber
+from QNSPECT.processing.algorithms.run_analysis.relief_length_ratio import create_relief_length_ratio_raster
+from QNSPECT.processing.algorithms.run_analysis.qnspect_run_algorithm import QNSPECTRunAlgorithm
+
+DEFAULT_URBAN_K_FACTOR_VALUE = 0.3
 
 
 class RunErosionAnalysis(QNSPECTRunAlgorithm):

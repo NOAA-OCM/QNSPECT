@@ -1,11 +1,9 @@
-import sys
 import math
-from pathlib import Path
-from qgis.core import QgsUnitTypes, QgsRasterLayer, QgsProcessing
+
+from qgis.core import QgsRasterLayer, QgsProcessing
 import processing
 
-sys.path.append(str(Path(__file__).parents[1]))
-from qnspect_utils import perform_raster_math
+from QNSPECT.processing.algorithms.qnspect_utils import perform_raster_math
 
 __all__ = ("create_relief_length_ratio_raster",)
 

@@ -34,11 +34,10 @@ import os
 from pathlib import Path
 from json import load
 
-from QNSPECT.processing.qnspect_algorithm import QNSPECTAlgorithm
-
 from qgis.core import QgsVectorLayer, QgsProcessingException
 
-from qnspect_utils import LayerPostProcessor, select_group, create_group
+from QNSPECT.processing.qnspect_algorithm import QNSPECTAlgorithm
+from QNSPECT.processing.algorithms.qnspect_utils import LayerPostProcessor, select_group, create_group
 
 
 class QNSPECTRunAlgorithm(QNSPECTAlgorithm):

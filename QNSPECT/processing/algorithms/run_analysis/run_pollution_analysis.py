@@ -19,6 +19,10 @@ __copyright__ = "(C) 2021 by NOAA"
 
 __revision__ = "$Format:%H$"
 
+import os
+from datetime import datetime
+from json import dumps
+
 from qgis.core import (
     QgsProcessing,
     QgsProcessingMultiStepFeedback,
@@ -33,34 +37,20 @@ from qgis.core import (
     QgsProcessingParameterDefinition,
     QgsProcessingException,
 )
-
 import processing
-import os
-from datetime import datetime
-from json import dumps
-from pathlib import Path
 
-import sys
-import os
-import inspect
-
-cmd_folder = os.path.split(inspect.getfile(inspect.currentframe()))[0]
-sys.path.append(cmd_folder)
-sys.path.append(os.path.dirname(cmd_folder))
-
-from curve_number import CurveNumber
-from runoff_volume import RunoffVolume
-from qnspect_utils import (
+from QNSPECT.processing.algorithms.run_analysis.curve_number import CurveNumber
+from QNSPECT.processing.algorithms.run_analysis.runoff_volume import RunoffVolume
+from QNSPECT.processing.algorithms.qnspect_utils import (
     perform_raster_math,
     grass_material_transport,
     filter_matrix,
 )
-from analysis_utils import (
+from QNSPECT.processing.algorithms.run_analysis.analysis_utils import (
     reclassify_land_use_raster_by_table_field,
     check_raster_values_in_lookup_table,
 )
-
-from qnspect_run_algorithm import QNSPECTRunAlgorithm
+from QNSPECT.processing.algorithms.run_analysis.qnspect_run_algorithm import QNSPECTRunAlgorithm
 
 
 class RunPollutionAnalysis(QNSPECTRunAlgorithm):

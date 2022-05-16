@@ -1,12 +1,9 @@
-from qgis.core import QgsProcessing
-from qgis.core import QgsProcessingContext
 import processing
 from pathlib import Path
 
-import sys
+from qgis.core import QgsProcessingContext
 
-sys.path.append(Path(__file__).parents[1])
-from qnspect_utils import perform_raster_math
+from QNSPECT.processing.algorithms.qnspect_utils import perform_raster_math
 
 
 def run_direct_and_percent_comparisons(

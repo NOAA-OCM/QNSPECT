@@ -32,8 +32,8 @@ __revision__ = "$Format:%H$"
 
 import os
 import inspect
-from qgis.PyQt.QtGui import QIcon
 
+from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtCore import QCoreApplication
 from qgis.core import QgsProcessingAlgorithm
 

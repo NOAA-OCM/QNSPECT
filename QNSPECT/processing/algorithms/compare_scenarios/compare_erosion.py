@@ -19,6 +19,7 @@ __copyright__ = "(C) 2021 by NOAA"
 
 __revision__ = "$Format:%H$"
 
+from pathlib import Path
 
 from qgis.core import (
     QgsProcessingMultiStepFeedback,
@@ -27,16 +28,10 @@ from qgis.core import (
     QgsProcessingParameterFolderDestination,
     QgsProcessingException,
 )
-
 import processing
-from pathlib import Path
 
-import sys
-
-sys.path.append(str(Path(__file__).parent))
-sys.path.append(str(Path(__file__).parents[1]))
-from comparison_utils import run_direct_and_percent_comparisons
-from qnspect_compare_algorithm import QNSPECTCompareAlgorithm
+from QNSPECT.processing.algorithms.compare_scenarios.comparison_utils import run_direct_and_percent_comparisons
+from QNSPECT.processing.algorithms.compare_scenarios.qnspect_compare_algorithm import QNSPECTCompareAlgorithm
 
 
 class CompareErosion(QNSPECTCompareAlgorithm):
