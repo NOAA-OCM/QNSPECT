@@ -44,6 +44,7 @@ import processing
 
 from QNSPECT.processing.algorithms.qnspect_utils import perform_raster_math, grass_material_transport
 from QNSPECT.processing.algorithms.run_analysis.analysis_utils import (
+    reclassify_land_cover_raster_by_table_field,
     convert_raster_data_type_to_float,
     check_raster_values_in_lookup_table,
 )

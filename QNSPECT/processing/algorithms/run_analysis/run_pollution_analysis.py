@@ -47,6 +47,7 @@ from QNSPECT.processing.algorithms.qnspect_utils import (
     filter_matrix,
 )
 from QNSPECT.processing.algorithms.run_analysis.analysis_utils import (
+    reclassify_land_cover_raster_by_table_field,
     check_raster_values_in_lookup_table,
 )
 from QNSPECT.processing.algorithms.run_analysis.qnspect_run_algorithm import QNSPECTRunAlgorithm
