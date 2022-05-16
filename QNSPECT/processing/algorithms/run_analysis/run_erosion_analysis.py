@@ -44,7 +44,6 @@ import processing
 
 from QNSPECT.processing.algorithms.qnspect_utils import perform_raster_math, grass_material_transport
 from QNSPECT.processing.algorithms.run_analysis.analysis_utils import (
-    reclassify_land_use_raster_by_table_field,
     convert_raster_data_type_to_float,
     check_raster_values_in_lookup_table,
 )
@@ -57,12 +56,12 @@ DEFAULT_URBAN_K_FACTOR_VALUE = 0.3
 
 class RunErosionAnalysis(QNSPECTRunAlgorithm):
     lookupTable = "LookupTable"
-    landUseType = "LandUseType"
+    landCoverType = "LandCoverType"
     soilRaster = "HSGRaster"
     kFactorRaster = "KFactorRaster"
     elevationRaster = "ElevationRaster"
     rFactorRaster = "RFactorRaster"
-    landUseRaster = "LandUseRaster"
+    landCoverRaster = "LandCoverRaster"
     projectLocation = "ProjectLocation"
     mfd = False  # "MFD"
     rusle = "RUSLE"
@@ -112,14 +111,14 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
         )
         self.addParameter(
             QgsProcessingParameterRasterLayer(
-                self.landUseRaster, "Land Cover Raster", defaultValue=None
+                self.landCoverRaster, "Land Cover Raster", defaultValue=None
             )
         )
         self.addParameter(
             QgsProcessingParameterEnum(
-                self.landUseType,
+                self.landCoverType,
                 "Land Cover Type",
-                options=["Custom"] + list(self._LAND_USE_TABLES.values()),
+                options=["Custom"] + list(self._land_cover_TABLES.values()),
                 allowMultiple=False,
                 defaultValue=None,
             )
@@ -180,8 +179,8 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
         elev_raster = self.parameterAsRasterLayer(
             parameters, self.elevationRaster, context
         )
-        land_use_raster = self.parameterAsRasterLayer(
-            parameters, self.landUseRaster, context
+        land_cover_raster = self.parameterAsRasterLayer(
+            parameters, self.landCoverRaster, context
         )
 
         cell_size_sq_meters = self.cell_size_in_sq_meters(elev_raster)
@@ -192,7 +191,7 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
         lookup_layer = self.extract_lookup_table(parameters, context)
 
         check_raster_values_in_lookup_table(
-            raster=land_use_raster,
+            raster=land_cover_raster,
             lookup_table_layer=lookup_layer,
             context=context,
             feedback=feedback,
@@ -224,7 +223,7 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
         # All final outputs that are not returned to user should be saved in outputs
         c_factor_raster = outputs["C-Factor"] = self.create_c_factor_raster(
             lookup_layer=lookup_layer,
-            land_use_raster_layer=land_use_raster,
+            land_cover_raster_layer=land_cover_raster,
             context=context,
             feedback=feedback,
         )
@@ -270,7 +269,7 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
             return {}
         feedback.pushInfo("Creating curve numbers ...")
         cn = CurveNumber(
-            parameters[self.landUseRaster],
+            parameters[self.landCoverRaster],
             parameters[self.soilRaster],
             dual_soil_type=self.parameterAsEnum(parameters, self.dualSoils, context),
             lookup_layer=lookup_layer,
@@ -358,7 +357,7 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
             run_out_dir=run_out_dir,
             lookup_layer=lookup_layer,
             elev_raster=elev_raster,
-            land_use_raster=land_use_raster,
+            land_cover_raster=land_cover_raster,
         )
 
         ## Uncomment following two lines to print debugging info
@@ -388,21 +387,21 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
         )["OUTPUT"]
 
     def create_c_factor_raster(
-        self, lookup_layer, land_use_raster_layer, context, feedback
+        self, lookup_layer, land_cover_raster_layer, context, feedback
     ) -> str:
         """"""
         # The c-factor raster will have floating-point values.
         # If the land cover raster used is an integer type,
         # the assignment process will convert the c-factor values to integers.
         # Converting the land cover raster to floating point type fixes that.
-        land_use_raster = convert_raster_data_type_to_float(
-            raster_layer=land_use_raster_layer,
+        land_cover_raster = convert_raster_data_type_to_float(
+            raster_layer=land_cover_raster_layer,
             context=context,
             feedback=feedback,
             output=QgsProcessing.TEMPORARY_OUTPUT,
         )
-        c_factor_raster = reclassify_land_use_raster_by_table_field(
-            lu_raster=land_use_raster,
+        c_factor_raster = reclassify_land_cover_raster_by_table_field(
+            lc_raster=land_cover_raster,
             lookup_layer=lookup_layer,
             value_field="c_factor",
             context=context,
@@ -551,14 +550,14 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
         run_out_dir: Path,
         lookup_layer,
         elev_raster,
-        land_use_raster,
+        land_cover_raster,
     ) -> dict:
         """Create a config file with the name of the run in the outputs folder.
         Uses the "ero" key word to differentiate it from the results of the pollution analysis."""
         config = {}
         config["Inputs"] = parameters
         config["Inputs"][self.elevationRaster] = elev_raster.source()
-        config["Inputs"][self.landUseRaster] = land_use_raster.source()
+        config["Inputs"][self.landCoverRaster] = land_cover_raster.source()
         config["Inputs"][self.kFactorRaster] = self.parameterAsRasterLayer(
             parameters, self.kFactorRaster, context
         ).source()

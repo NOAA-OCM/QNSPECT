@@ -42,7 +42,7 @@ class ModifyLandCoverByNLCDCCAP(QNSPECTAlgorithm):
     inputVector = "InputVector"
     inputRaster = "InputRaster"
     output = "OutputRaster"
-    landUse = "LandUse"
+    landCover = "LandCover"
 
     def initAlgorithm(self, config=None):
         self.coefficients: Dict[str, int] = {}
@@ -54,8 +54,8 @@ class ModifyLandCoverByNLCDCCAP(QNSPECTAlgorithm):
                 with csvfile.open(newline="") as file:
                     reader = csv.DictReader(file)
                     for row in reader:
-                        name = f"""{coef_type} - {row["lu_name"]}"""
-                        self.coefficients[name] = int(row["lu_value"])
+                        name = f"""{coef_type} - {row["lc_name"]}"""
+                        self.coefficients[name] = int(row["lc_value"])
         self.choices = sorted(self.coefficients)
 
         self.addParameter(
@@ -68,7 +68,7 @@ class ModifyLandCoverByNLCDCCAP(QNSPECTAlgorithm):
         )
         self.addParameter(
             QgsProcessingParameterEnum(
-                self.landUse,
+                self.landCover,
                 "Change to Land Cover Class",
                 options=self.choices,
                 allowMultiple=False,
@@ -120,13 +120,13 @@ class ModifyLandCoverByNLCDCCAP(QNSPECTAlgorithm):
         if feedback.isCanceled():
             return {}
 
-        enum_value = self.parameterAsInt(parameters, self.landUse, context)
-        land_use_name = self.choices[enum_value]
+        enum_value = self.parameterAsInt(parameters, self.landCover, context)
+        land_cover_name = self.choices[enum_value]
 
         # Rasterize (overwrite with fixed value)
         alg_params = {
             "ADD": False,
-            "BURN": self.coefficients[land_use_name],
+            "BURN": self.coefficients[land_cover_name],
             "EXTRA": "",
             "INPUT": parameters[self.inputVector],
             "INPUT_RASTER": outputs["ClipRasterByExtent"]["OUTPUT"],

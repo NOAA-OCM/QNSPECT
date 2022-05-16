@@ -1,4 +1,4 @@
-lu_value,lu_name,cn_a,cn_b,cn_c,cn_d,c_factor,tss,lead,zinc,nitrogen,phosphorus
+lc_value,lc_name,cn_a,cn_b,cn_c,cn_d,c_factor,tss,lead,zinc,nitrogen,phosphorus
 0,Background,0,0,0,0,0,0,0,0,0,0
 1,No Data,0,0,0,0,0,0,0,0,0,0
 2,High Intensity Developed,89,92,94,95,0,71,0.09,0.06,2.22,0.47

@@ -47,7 +47,6 @@ from QNSPECT.processing.algorithms.qnspect_utils import (
     filter_matrix,
 )
 from QNSPECT.processing.algorithms.run_analysis.analysis_utils import (
-    reclassify_land_use_raster_by_table_field,
     check_raster_values_in_lookup_table,
 )
 from QNSPECT.processing.algorithms.run_analysis.qnspect_run_algorithm import QNSPECTRunAlgorithm
@@ -112,7 +111,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
         )
         self.addParameter(
             QgsProcessingParameterRasterLayer(
-                "LandUseRaster",
+                "LandCoverRaster",
                 "Land Cover Raster",
                 optional=False,
                 defaultValue=None,
@@ -120,9 +119,9 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
         )
         self.addParameter(
             QgsProcessingParameterEnum(
-                "LandUseType",
+                "LandCoverType",
                 "Land Cover Type",
-                options=["Custom"] + list(self._LAND_USE_TABLES.values()),
+                options=["Custom"] + list(self._land_cover_TABLES.values()),
                 allowMultiple=False,
                 defaultValue=None,
             )
@@ -222,7 +221,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
             parameters, "ElevationRaster", context
         )
         soil_raster = self.parameterAsRasterLayer(parameters, "HSGRaster", context)
-        lu_raster = self.parameterAsRasterLayer(parameters, "LandUseRaster", context)
+        lc_raster = self.parameterAsRasterLayer(parameters, "LandCoverRaster", context)
         precip_raster = self.parameterAsRasterLayer(parameters, "PrecipRaster", context)
 
         ## Total steps based on necessary steps plus two times for each pollutant
@@ -236,7 +235,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
         lookup_layer = self.extract_lookup_table(parameters, context)
 
         check_raster_values_in_lookup_table(
-            raster=lu_raster,
+            raster=lc_raster,
             lookup_table_layer=lookup_layer,
             context=context,
             feedback=feedback,
@@ -268,7 +267,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
             return {}
         feedback.pushInfo("Generating curve numbers ...")
         cn = CurveNumber(
-            parameters["LandUseRaster"],
+            parameters["LandCoverRaster"],
             parameters["HSGRaster"],
             dual_soil_type,
             lookup_layer,
@@ -325,8 +324,8 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
                 return {}
             # Calculate pollutant per LU (mg/L)
             feedback.pushInfo(f"Generating {pol} raster using lookup table ...")
-            outputs[pol + "_lu"] = reclassify_land_use_raster_by_table_field(
-                parameters["LandUseRaster"],
+            outputs[pol + "_lu"] = reclassify_land_cover_raster_by_table_field(
+                parameters["LandCoverRaster"],
                 lookup_layer,
                 lookup_fields[pol.lower()],
                 context,
@@ -468,7 +467,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
         feedback.pushInfo("Creating run configuration file ...")
         run_dict["Inputs"] = parameters
         run_dict["Inputs"]["ElevationRaster"] = elev_raster.source()
-        run_dict["Inputs"]["LandUseRaster"] = lu_raster.source()
+        run_dict["Inputs"]["LandCoverRaster"] = lc_raster.source()
         run_dict["Inputs"]["PrecipRaster"] = precip_raster.source()
         run_dict["Inputs"]["HSGRaster"] = soil_raster.source()
         if parameters["LookupTable"]:

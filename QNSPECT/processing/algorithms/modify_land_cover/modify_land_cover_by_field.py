@@ -154,8 +154,8 @@ The pixels of the input raster layer that overlap with each polygon of the input
 <p>Polygon vector layer that overlaps the pixels that should be changed.</p>
 
 <h3>Land Cover Value Field</h3>
-<p>The field with the land cover value the raster pixels will be changed to. If this is left blank, the algorithm will try to use a field called "lu_value".</p>
-
+<p>The field with the land cover value the raster pixels will be changed to. If this is left blank, the algorithm will try to use a field called "lc_value".</p>
+lc_value
 <h3>Land Cover Raster</h3>
 <p>Land cover raster that needs to be modified.</p>
 
