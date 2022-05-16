@@ -46,8 +46,8 @@ def convert_raster_data_type_to_float(
     return raster_layer
 
 
-def reclassify_land_use_raster_by_table_field(
-    lu_raster: str,
+def reclassify_land_cover_raster_by_table_field(
+    lc_raster: str,
     lookup_layer: QgsVectorLayer,
     value_field: str,
     context,
@@ -60,10 +60,10 @@ def reclassify_land_use_raster_by_table_field(
 
     alg_params = {
         "DATA_TYPE": 5,
-        "INPUT_RASTER": lu_raster,
+        "INPUT_RASTER": lc_raster,
         "INPUT_TABLE": lookup_layer,
-        "MAX_FIELD": "lu_value",
-        "MIN_FIELD": "lu_value",
+        "MAX_FIELD": "lc_value",
+        "MIN_FIELD": "lc_value",
         "NODATA_FOR_MISSING": True,
         "NO_DATA": -999999,
         "RANGE_BOUNDARIES": 2,
@@ -88,9 +88,9 @@ def check_raster_values_in_lookup_table(
 ):
     """Finds the land cover lookup values, then compares with the raster.
     If there area any values in the raster that are not in the lookup table, a QgsProcessingException is raised."""
-    lu_codes = set()
-    for land_use in lookup_table_layer.getFeatures():
-        lu_codes.add(float(land_use["lu_value"]))
+    lc_codes = set()
+    for land_cover in lookup_table_layer.getFeatures():
+        lc_codes.add(float(land_cover["lc_value"]))
 
     alg_params = {
         "BAND": 1,
@@ -108,7 +108,7 @@ def check_raster_values_in_lookup_table(
 
     error_codes = []
     for feature in values_table_layer.getFeatures():
-        if feature["value"] not in lu_codes:
+        if feature["value"] not in lc_codes:
             error_codes.append(feature["value"])
     if error_codes:
         raise QgsProcessingException(
