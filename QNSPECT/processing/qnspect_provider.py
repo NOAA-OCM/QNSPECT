@@ -32,10 +32,12 @@ __revision__ = "$Format:%H$"
 
 import os
 import inspect
-from qgis.PyQt.QtGui import QIcon
 
+from qgis.PyQt.QtGui import QIcon
 from qgis.core import QgsProcessingProvider
+
 from QNSPECT.processing import algorithms
+from QNSPECT.processing.qnspect_algorithm import QNSPECTAlgorithm
 
 
 class QNSPECTProvider(QgsProcessingProvider):
@@ -57,8 +59,14 @@ class QNSPECTProvider(QgsProcessingProvider):
         Loads all algorithms belonging to this provider.
         """
 
-        for alg in inspect.getmembers(algorithms, inspect.isclass):
-            self.addAlgorithm(alg[1]())
+        alg_classes = [
+            m[1]
+            for m in inspect.getmembers(algorithms, inspect.isclass)
+            if issubclass(m[1], QNSPECTAlgorithm)
+        ]
+
+        for alg_class in alg_classes:
+            self.addAlgorithm(alg_class())
 
     def id(self):
         """
@@ -84,7 +92,7 @@ class QNSPECTProvider(QgsProcessingProvider):
         """
         cmd_folder = os.path.split(inspect.getfile(inspect.currentframe()))[0]
         icon = QIcon(
-                os.path.join(os.path.dirname(cmd_folder), "resources/branding/icon.svg")
+            os.path.join(os.path.dirname(cmd_folder), "resources/branding/icon.svg")
         )
         return icon
 

@@ -19,6 +19,10 @@ __copyright__ = "(C) 2021 by NOAA"
 
 __revision__ = "$Format:%H$"
 
+import csv
+import processing
+from typing import Dict
+from pathlib import Path
 
 from qgis.core import (
     QgsProcessing,
@@ -30,10 +34,6 @@ from qgis.core import (
     QgsProcessingParameterRasterDestination,
     QgsProcessingParameterFeatureSource,
 )
-from typing import Dict
-import csv
-import processing
-from pathlib import Path
 
 from QNSPECT.processing.qnspect_algorithm import QNSPECTAlgorithm
 

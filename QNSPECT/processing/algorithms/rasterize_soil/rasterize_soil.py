@@ -22,7 +22,6 @@ __revision__ = "$Format:%H$"
 
 from qgis.core import (
     QgsProcessing,
-    QgsProcessingAlgorithm,
     QgsProcessingMultiStepFeedback,
     QgsProcessingParameterVectorLayer,
     QgsProcessingParameterDistance,

@@ -19,10 +19,10 @@ __copyright__ = "(C) 2021 by NOAA"
 
 __revision__ = "$Format:%H$"
 
+from pathlib import Path
 
 from qgis.core import (
     QgsProcessing,
-    QgsProcessingAlgorithm,
     QgsProcessingMultiStepFeedback,
     QgsProcessingParameterEnum,
     QgsVectorLayer,
@@ -30,9 +30,6 @@ from qgis.core import (
     QgsFeatureSink,
     QgsFeature,
 )
-import processing
-import os
-from pathlib import Path
 
 from QNSPECT.processing.qnspect_algorithm import QNSPECTAlgorithm
 

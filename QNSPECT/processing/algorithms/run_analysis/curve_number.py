@@ -27,15 +27,8 @@ from qgis.core import (
     QgsProcessingContext,
 )
 import processing
-import sys
-import os
-import inspect
 
-cmd_folder = os.path.split(inspect.getfile(inspect.currentframe()))[0]
-sys.path.append(cmd_folder)
-
-
-from qnspect_utils import perform_raster_math
+from QNSPECT.processing.algorithms.qnspect_utils import perform_raster_math
 
 
 class CurveNumber:

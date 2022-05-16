@@ -19,14 +19,14 @@ __copyright__ = "(C) 2021 by NOAA"
 
 __revision__ = "$Format:%H$"
 
+import processing
+import json
+
 from qgis.core import (
     QgsProcessingMultiStepFeedback,
     QgsProcessingParameterFile,
     QgsProcessingException,
 )
-
-import processing
-import json
 
 from QNSPECT.processing.qnspect_algorithm import QNSPECTAlgorithm
 

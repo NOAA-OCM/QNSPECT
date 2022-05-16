@@ -137,7 +137,7 @@ class ModifyLandCoverByName(QNSPECTAlgorithm):
         alg_params = {
             "ADD": False,
             "BURN": lc_value,
-            "EXTRA":lc_value
+            "EXTRA": lc_value,
             "INPUT": parameters[self.inputVector],
             "INPUT_RASTER": outputs["ClipRasterByExtent"]["OUTPUT"],
         }
