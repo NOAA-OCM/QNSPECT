@@ -18,8 +18,4 @@ Meanwhile, the plugin can be installed with the following steps:
 1. Copy the "inside" QNSPECT folder to your QGIS python plugins folder
 1. Restart the QGIS to see the plugin
 
-## Design
-
-![Design Diagram](resources/design-diagram.png)
-
 ## Help

@@ -521,7 +521,7 @@ GRASS `r.watershed`function is used by the algorithm under the hood to calculate
 <h3>Land Cover Lookup Table [optional]</h3>
 <p>Lookup table to relate each land cover class with Curve Number and pollutant load. The user can skip providing a lookup table if the land cover
 type is not custom; the algorithm will utilize the default lookup table for the land cover type selected in the previous option.
-To create a custom lookup table, develop a table using <a href="https://raw.githubusercontent.com/Dewberry/QNSPECT/development/resources/coefficients/NLCD.csv">this format</a>. The table must contain all land cover classes available in the land cover raster and all pollutants that have Output = Y in the `Pollutant Outputs` parameter.</p>
+To create a custom lookup table, use `Create Lookup Table Template` tool. The table must contain all land cover classes available in the land cover raster and all pollutants that have Output = Y in the `Pollutant Outputs` parameter.</p>
 <h3>Pollutant Outputs</h3>
 <p>In addition to the runoff, the algorithm will output the following rasters for each pollutant added here with Output column as Y:
 - Local (per cell) pollutant load [mg]

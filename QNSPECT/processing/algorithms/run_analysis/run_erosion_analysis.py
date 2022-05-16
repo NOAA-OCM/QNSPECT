@@ -643,7 +643,7 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
 
 <h3>Land Cover Lookup Table [optional]</h3>
 <p>Lookup table to relate each land cover class with Curve Number and C-Factor. The user can skip providing a lookup table if the land cover type is not custom; the algorithm will utilize the default lookup table for the land cover type selected in the previous option.</p>
-<p>To create a custom lookup table, develop a table using <a href="https://raw.githubusercontent.com/Dewberry/QNSPECT/development/resources/coefficients/NLCD.csv">this format</a>. The table must contain all land cover classes available in the land cover raster.</p>
+<p>To create a custom lookup table, use `Create Lookup Table Template` tool. The table must contain all land cover classes available in the land cover raster.</p>
 
 <h2>Advanced Parameters</h2>
 
