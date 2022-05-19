@@ -54,9 +54,9 @@ class ModifyLandCoverByNLCDCCAP(QNSPECTAlgorithm):
                 with csvfile.open(newline="") as file:
                     reader = csv.DictReader(file)
                     for row in reader:
-                        name = f"""{coef_type} - {row["lc_name"]}"""
+                        name = f"""{coef_type}: {row["lc_value"]}, {row["lc_name"]}"""
                         self.coefficients[name] = int(row["lc_value"])
-        self.choices = sorted(self.coefficients)
+        self.choices = self.coefficients
 
         self.addParameter(
             QgsProcessingParameterFeatureSource(

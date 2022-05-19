@@ -72,16 +72,34 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
         )
         self.addParameter(
             QgsProcessingParameterRasterLayer(
-                "ElevationRaster",
-                "Elevation Raster",
+                "LandCoverRaster",
+                "Land Cover Raster",
                 optional=False,
                 defaultValue=None,
             )
         )
         self.addParameter(
+            QgsProcessingParameterEnum(
+                "LandCoverType",
+                "Land Cover Type",
+                options=["Custom"] + list(self._land_cover_TABLES.values()),
+                allowMultiple=False,
+                defaultValue=None,
+            )
+        )
+        self.addParameter(
+            QgsProcessingParameterVectorLayer(
+                "LookupTable",
+                "Land Cover Lookup Table [*required with Custom Land Cover Type]",
+                optional=True,
+                types=[QgsProcessing.TypeVector],
+                defaultValue=None,
+            )
+        )
+        self.addParameter(
             QgsProcessingParameterRasterLayer(
-                "HSGRaster",
-                "Hydrologic Soils Group Raster",
+                "ElevationRaster",
+                "Elevation Raster",
                 optional=False,
                 defaultValue=None,
             )
@@ -114,27 +132,9 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
         )
         self.addParameter(
             QgsProcessingParameterRasterLayer(
-                "LandCoverRaster",
-                "Land Cover Raster",
+                "HSGRaster",
+                "Hydrologic Soils Group Raster",
                 optional=False,
-                defaultValue=None,
-            )
-        )
-        self.addParameter(
-            QgsProcessingParameterEnum(
-                "LandCoverType",
-                "Land Cover Type",
-                options=["Custom"] + list(self._land_cover_TABLES.values()),
-                allowMultiple=False,
-                defaultValue=None,
-            )
-        )
-        self.addParameter(
-            QgsProcessingParameterVectorLayer(
-                "LookupTable",
-                "Land Cover Lookup Table [*required with Custom Land Cover Type]",
-                optional=True,
-                types=[QgsProcessing.TypeVector],
                 defaultValue=None,
             )
         )
