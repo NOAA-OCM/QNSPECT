@@ -626,15 +626,6 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
 <h3>Run Name</h3>
 <p>Name of the run. The algorithm will create a folder with this name and save all outputs and a configuration file in that folder.</p>
 
-<h3>Elevation Raster</h3>
-<p>Elevation raster for the area of interest. The CRS can be in any units, but the <span style="color: #ff9800">elevation must be in meters</span>. The algorithm uses elevation data to calculate ratios, flow direction, and flow accumulation throughout a watershed.</p>
-
-<h3>Hydrologic Soils Group Raster</h3>
-<p>Hydrologic Soil Group raster for the area of interest with following mapping {'A': 1, 'B': 2, 'C': 3, 'D':4, 'A/D':5, 'B/D':6, 'C/D':7, 'W':8, Null: 9}. The soil raster is used to generate runoff estimates using NRCS Curve Number method.</p>
-
-<h3>K-factor Raster</h3>
-<p>Soil erodibility raster for the area of interest. The K-factor is used in RUSLE equation.</p>
-
 <h3>Land Cover Raster</h3>
 <p>Land Cover/Classification raster for the area of interest. The algorithm uses Land Cover Raster and Lookup Table to determine each cell's erosion potential.</p>
 
@@ -644,6 +635,18 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
 <h3>Land Cover Lookup Table [optional]</h3>
 <p>Lookup table to relate each land cover class with Curve Number and C-Factor. The user can skip providing a lookup table if the land cover type is not custom; the algorithm will utilize the default lookup table for the land cover type selected in the previous option.</p>
 <p>To create a custom lookup table, use `Create Lookup Table Template` tool. The table must contain all land cover classes available in the land cover raster.</p>
+
+<h3>Elevation Raster</h3>
+<p>Elevation raster for the area of interest. The CRS can be in any units, but the <span style="color: #ff9800">elevation must be in meters</span>. The algorithm uses elevation data to calculate ratios, flow direction, and flow accumulation throughout a watershed.</p>
+
+<h3>R-Factor Raster</h3>
+<p>The rainfall-runoff erosivity factor (R-factor) quantifies the effects of raindrop impacts and reflects the amount and rate of runoff associated with the rain.  R-factor raster data for the coterminous United States and six of the main Hawaiian Islands are available from the NOAA Office for Coastal Management. For areas not covered by these data, a method to calculate R-factor is described in chapter 2 of the USDA Handbook Number 703 (Wischmeier and Smith, 1978)<a href="https://www.ars.usda.gov/ARSUserFiles/64080530/RUSLE/AH_703.pdf">PDF, 21.4 MB</a>.</p>
+
+<h3>Hydrologic Soils Group Raster</h3>
+<p>Hydrologic Soil Group raster for the area of interest with following mapping {'A': 1, 'B': 2, 'C': 3, 'D':4, 'A/D':5, 'B/D':6, 'C/D':7, 'W':8, Null: 9}. The soil raster is used to generate runoff estimates using NRCS Curve Number method.</p>
+
+<h3>K-factor Raster</h3>
+<p>Soil erodibility raster for the area of interest. The K-factor is used in RUSLE equation.</p>
 
 <h2>Advanced Parameters</h2>
 
