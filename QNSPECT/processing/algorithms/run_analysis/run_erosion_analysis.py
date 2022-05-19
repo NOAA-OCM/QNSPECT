@@ -95,6 +95,29 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
         )
         self.addParameter(
             QgsProcessingParameterRasterLayer(
+                self.landCoverRaster, "Land Cover Raster", defaultValue=None
+            )
+        )
+        self.addParameter(
+            QgsProcessingParameterEnum(
+                self.landCoverType,
+                "Land Cover Type",
+                options=["Custom"] + list(self._land_cover_TABLES.values()),
+                allowMultiple=False,
+                defaultValue=None,
+            )
+        )
+        self.addParameter(
+            QgsProcessingParameterVectorLayer(
+                self.lookupTable,
+                "Land Cover Lookup Table",
+                optional=True,
+                types=[QgsProcessing.TypeVector],
+                defaultValue=None,
+            )
+        )
+        self.addParameter(
+            QgsProcessingParameterRasterLayer(
                 self.elevationRaster,
                 "Elevation Raster",
                 defaultValue=None,
@@ -115,29 +138,6 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
         self.addParameter(
             QgsProcessingParameterRasterLayer(
                 self.kFactorRaster, "K-Factor Raster", defaultValue=None
-            )
-        )
-        self.addParameter(
-            QgsProcessingParameterRasterLayer(
-                self.landCoverRaster, "Land Cover Raster", defaultValue=None
-            )
-        )
-        self.addParameter(
-            QgsProcessingParameterEnum(
-                self.landCoverType,
-                "Land Cover Type",
-                options=["Custom"] + list(self._land_cover_TABLES.values()),
-                allowMultiple=False,
-                defaultValue=None,
-            )
-        )
-        self.addParameter(
-            QgsProcessingParameterVectorLayer(
-                self.lookupTable,
-                "Land Cover Lookup Table",
-                optional=True,
-                types=[QgsProcessing.TypeVector],
-                defaultValue=None,
             )
         )
         self.addParameter(
