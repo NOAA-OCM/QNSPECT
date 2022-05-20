@@ -72,16 +72,34 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
         )
         self.addParameter(
             QgsProcessingParameterRasterLayer(
-                "ElevationRaster",
-                "Elevation Raster",
+                "LandCoverRaster",
+                "Land Cover Raster",
                 optional=False,
                 defaultValue=None,
             )
         )
         self.addParameter(
+            QgsProcessingParameterEnum(
+                "LandCoverType",
+                "Land Cover Type",
+                options=["Custom"] + list(self._land_cover_TABLES.values()),
+                allowMultiple=False,
+                defaultValue=None,
+            )
+        )
+        self.addParameter(
+            QgsProcessingParameterVectorLayer(
+                "LookupTable",
+                "Land Cover Lookup Table [*required with Custom Land Cover Type]",
+                optional=True,
+                types=[QgsProcessing.TypeVector],
+                defaultValue=None,
+            )
+        )
+        self.addParameter(
             QgsProcessingParameterRasterLayer(
-                "HSGRaster",
-                "Hydrologic Soils Group Raster",
+                "ElevationRaster",
+                "Elevation Raster",
                 optional=False,
                 defaultValue=None,
             )
@@ -114,27 +132,9 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
         )
         self.addParameter(
             QgsProcessingParameterRasterLayer(
-                "LandCoverRaster",
-                "Land Cover Raster",
+                "HSGRaster",
+                "Hydrologic Soils Group Raster",
                 optional=False,
-                defaultValue=None,
-            )
-        )
-        self.addParameter(
-            QgsProcessingParameterEnum(
-                "LandCoverType",
-                "Land Cover Type",
-                options=["Custom"] + list(self._land_cover_TABLES.values()),
-                allowMultiple=False,
-                defaultValue=None,
-            )
-        )
-        self.addParameter(
-            QgsProcessingParameterVectorLayer(
-                "LookupTable",
-                "Land Cover Lookup Table [*required with Custom Land Cover Type]",
-                optional=True,
-                types=[QgsProcessing.TypeVector],
                 defaultValue=None,
             )
         )
@@ -504,16 +504,6 @@ GRASS `r.watershed`function is used by the algorithm under the hood to calculate
 <h2>Input Parameters</h2>
 <h3>Run Name</h3>
 <p>Name of the run. The algorithm will create a folder with this name and save all outputs and a configuration file in that folder.</p>
-<h3>Elevation Raster</h3>
-<p>Elevation raster for the area of interest. This can be in any elevation unit. The algorithm only uses elevation data to calculate flow direction and flow accumulation throughout a watershed. </p>
-<h3>Soil Raster</h3>
-<p>Hydrologic Soil Group raster for the area of interest with following mapping <code>{'A': 1, 'B': 2, 'C': 3, 'D':4, 'A/D':5, 'B/D':6, 'C/D':7, 'W':8, Null: 9}</code>. The soil raster is used to generate runoff estimates using NRCS Curve Number method.</p>
-<h3>Precipitation Raster</h3>
-<p>Precipitation amounts in inches or millimeters for the area of interest. The precipitation values are used to calculate access runoff.</p>
-<h3>Precipitation Raster Units</h3>
-<p>Units of the precipitation raster, inches or millimeters.</p>
-<h3>Number of Raining Days</h3>
-<p>This field indicates the average number of days rain occurs in one year in the area of interest. A raining day is defined as a day on which there was enough rain to produce runoff. A higher number of raining days reduces runoff volume by increasing total retention. A value of 1 raining day can be used to simulate runoff from a single event. </p>
 <h3>Land Cover Raster</h3>
 <p>Land Cover/Classification raster for the area of interest. The algorithm uses Land Cover Raster and Lookup Table to determine each cell's runoff and pollution potential.</p>
 <h3>Land Cover Type</h3>
@@ -522,6 +512,16 @@ GRASS `r.watershed`function is used by the algorithm under the hood to calculate
 <p>Lookup table to relate each land cover class with Curve Number and pollutant load. The user can skip providing a lookup table if the land cover
 type is not custom; the algorithm will utilize the default lookup table for the land cover type selected in the previous option.
 To create a custom lookup table, use `Create Lookup Table Template` tool. The table must contain all land cover classes available in the land cover raster and all pollutants that have Output = Y in the `Pollutant Outputs` parameter.</p>
+<h3>Elevation Raster</h3>
+<p>Elevation raster for the area of interest. This can be in any elevation unit. The algorithm only uses elevation data to calculate flow direction and flow accumulation throughout a watershed. </p>
+<h3>Precipitation Raster</h3>
+<p>Precipitation amounts in inches or millimeters for the area of interest. The precipitation values are used to calculate access runoff.</p>
+<h3>Precipitation Raster Units</h3>
+<p>Units of the precipitation raster, inches or millimeters.</p>
+<h3>Number of Raining Days</h3>
+<p>This field indicates the average number of days rain occurs in one year in the area of interest. A raining day is defined as a day on which there was enough rain to produce runoff. A higher number of raining days reduces runoff volume by increasing total retention. A value of 1 raining day can be used to simulate runoff from a single event. </p>
+<h3>Soil Raster</h3>
+<p>Hydrologic Soil Group raster for the area of interest with following mapping <code>{'A': 1, 'B': 2, 'C': 3, 'D':4, 'A/D':5, 'B/D':6, 'C/D':7, 'W':8, Null: 9}</code>. The soil raster is used to generate runoff estimates using NRCS Curve Number method.</p>
 <h3>Pollutant Outputs</h3>
 <p>In addition to the runoff, the algorithm will output the following rasters for each pollutant added here with Output column as Y:
 - Local (per cell) pollutant load [mg]
