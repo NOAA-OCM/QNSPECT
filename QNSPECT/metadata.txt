@@ -10,17 +10,7 @@ version=1.0
 author=NOAA
 email=ocm dot nspect dot admins at noaa dot gov
 
-about=QNSPECT is the QGIS implementation of the NOAA Office for Coastal
-Management's (OCM) previous Nonpoint-Source Pollution and Erosion Comparison
-Tool (NSPECT). QNSPECT is a screening tool designed to allow users to estimate
-initial baseline pollution and erosion over an area and then compare how those
-values would change under a different land-use or management scenario.
-Information  and resources for using QNSPECT can be found on the NOAA
-Office for Coastal Management Digital Coast <a
-href="https://coast.noaa.gov/digitalcoast/tools/qnspect.html">QNSPECT Landing
-Page</a>.  See the help and technical guid for an <a
-href="https://coast.noaa.gov/data/digitalcoast/pdf/qnspect-help-and-technical-guide.pdf#Workflow">overview
-of the typical QNSPECT workflow</a> and a list of <a href="https://coast.noaa.gov/data/digitalcoast/pdf/qnspect-help-and-technical-guide.pdf#References">references</a>.
+about=QNSPECT is the QGIS implementation of the NOAA Office for Coastal Management's (OCM) previous Nonpoint-Source Pollution and Erosion Comparison Tool (NSPECT). QNSPECT is a screening tool designed to allow users to estimate initial baseline pollution and erosion over an area and then compare how those values would change under a different land-use or management scenario. Information  and resources for using QNSPECT can be found on the NOAA Office for Coastal Management Digital Coast <a href="https://coast.noaa.gov/digitalcoast/tools/qnspect.html">QNSPECT Landing Page</a>.  See the help and technical guide for an <a href="https://coast.noaa.gov/data/digitalcoast/pdf/qnspect-help-and-technical-guide.pdf#Workflow">overview of the typical QNSPECT workflow</a> and a list of <a href="https://coast.noaa.gov/data/digitalcoast/pdf/qnspect-help-and-technical-guide.pdf#References">references</a>.
 
 
 tracker=https://github.com/NOAA-OCM/QNSPECT/issues
@@ -34,7 +24,7 @@ hasProcessingProvider=yes
 # changelog=
 
 # Tags are comma separated with spaces allowed
-tags=analysis, ecology, flood, flow, processing, erosion, pollution, environment, scenario, RUSLE, nonpoint, non-point, python, NSPECT, source, comparison, screening
+tags=analysis, ecology, flood, flow, processing, erosion, pollution, environment, scenario, RUSLE, nonpoint, non-point, python, QNSPECT, source, comparison, screening
 
 homepage=https://github.com/NOAA-OCM/QNSPECT
 category=Analysis
