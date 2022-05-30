@@ -6,11 +6,22 @@
 name=QNSPECT
 qgisMinimumVersion=3.16
 description=QGIS Plugin for NOAA Nonpoint Source Pollution and Erosion Comparison Tool (NSPECT)
-version=0.0.1
+version=1.0
 author=NOAA
 email=ocm dot nspect dot admins at noaa dot gov
 
-about=QNSPECT is the QGIS implementation of NOAA Office for Coastal Management (OCM) Nonpoint-Source Pollution and Erosion Comparison Tool (NSPECT). NSPECT is a screening tool designed to allow users to estimate initial baseline pollution and erosion over an area and then compare how those values would change under a different land-use or management scenario.
+about=QNSPECT is the QGIS implementation of the NOAA Office for Coastal
+Management's (OCM) previous Nonpoint-Source Pollution and Erosion Comparison
+Tool (NSPECT). QNSPECT is a screening tool designed to allow users to estimate
+initial baseline pollution and erosion over an area and then compare how those
+values would change under a different land-use or management scenario.
+Information  and resources for using QNSPECT can be found on the NOAA
+Office for Coastal Management Digital Coast <a
+href="https://coast.noaa.gov/digitalcoast/tools/qnspect.html">QNSPECT Landing
+Page</a>.  See the help and technical guid for an <a
+href="https://coast.noaa.gov/data/digitalcoast/pdf/qnspect-help-and-technical-guide.pdf#Workflow">overview
+of the typical QNSPECT workflow</a> and a list of <a href="https://coast.noaa.gov/data/digitalcoast/pdf/qnspect-help-and-technical-guide.pdf#References">references</a>.
+
 
 tracker=https://github.com/NOAA-OCM/QNSPECT/issues
 repository=https://github.com/NOAA-OCM/QNSPECT

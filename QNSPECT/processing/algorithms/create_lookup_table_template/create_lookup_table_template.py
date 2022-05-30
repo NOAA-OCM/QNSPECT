@@ -120,7 +120,9 @@ class CreateLookupTableTemplate(QNSPECTAlgorithm):
         return "data_preparation"
 
     def shortHelpString(self):
-        return """<html><body><h2>Algorithm description</h2>
+        return """<html><body>
+        https://coast.noaa.gov/data/digitalcoast/pdf/qnspect-help-and-technical-guide.pdf#Create_Lookup_Table
+        <h2>Algorithm description</h2>
 <p>This algorithm creates a copy of the land characteristics packaged with QNSPECT. The spreadsheet output will have the necessary fields needed for running the pollution and erosion analysis tools. The intent of this tool is to create a copy that can be edited to include any custom land cover types and coefficients necessary for your analysis.</p>
 <h2>Input parameters</h2>
 <h3>Land Cover Type</h3>

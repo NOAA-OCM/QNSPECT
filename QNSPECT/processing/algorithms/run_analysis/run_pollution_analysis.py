@@ -495,7 +495,7 @@ class RunPollutionAnalysis(QNSPECTRunAlgorithm):
 
     def shortHelpString(self):
         return """<html><body>
-<a href="https://www.noaa.gov/">Documentation</a>
+<a href="https://coast.noaa.gov/data/digitalcoast/pdf/qnspect-help-and-technical-guide.pdf#Run_Pollution_Analysis">Documentation</a>
 <h2>Algorithm Description</h2>
 <p>The `Run Pollution Analysis` algorithm estimates annual runoff volume and pollutant loading for a given area on per cell and accumulated bases. The Runoff Volume is calculated using the NRCS Curve Number method, while pollution loading is calculated using Land Cover as a proxy.</p>
 The user must provide Elevation, Land Cover, Soil, and Precipitation rasters for the area of interest. The user is also optionally required to provide a lookup table that relates different land cover classes in the provided Land Cover raster with Curve Number and pollutant loading.

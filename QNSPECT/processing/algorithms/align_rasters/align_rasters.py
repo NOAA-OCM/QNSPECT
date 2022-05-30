@@ -374,7 +374,7 @@ class AlignRasters(QNSPECTAlgorithm):
 
     def shortHelpString(self):
         return """<html><body>
-<h2>Algorithm description</h2>
+<a href="https://coast.noaa.gov/data/digitalcoast/pdf/qnspect-help-and-technical-guide.pdf#Align_Rasters">Documentation</a><h2>Algorithm description</h2>
 <p>The algorithm aligns one or more rasters to a reference raster. The aligned rasters will adopt the CRS, cell size, and origin of the reference raster. The aligned rasters will be saved as TIFF files.</p>
 <h2>Input parameters</h2>
 <h3>Reference Raster</h3>
