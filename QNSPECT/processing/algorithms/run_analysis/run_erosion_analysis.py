@@ -616,7 +616,7 @@ class RunErosionAnalysis(QNSPECTRunAlgorithm):
 
     def shortHelpString(self):
         return """<html><body>
-<a href="https://www.noaa.gov/">Documentation</a>
+<a href="https://coast.noaa.gov/data/digitalcoast/pdf/qnspect-help-and-technical-guide.pdf#Run_Erosion_Analysis">Documentation</a>
 <h2>Algorithm Description</h2>
 <p>The `Run Erosion Analysis` algorithm estimates annual erosion volume for a given area on per cell and accumulated basis. The volume is calculated using RUSLE and Sediment Delivery Ratio models (see the QNSPECT Technical documentation for details).</p>
 <p>The user must provide Elevation, Land Cover, Hydrologic Soil Group, K-Factor, and R-Factor rasters for the area of interest. The user is also optionally required to provide a lookup table that relates different land cover classes in the provided Land Cover raster with Curve Number and C-Factor values.</p>

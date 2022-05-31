@@ -225,7 +225,9 @@ class RasterizeSoil(QNSPECTAlgorithm):
         return "data_preparation"
 
     def shortHelpString(self):
-        return """<html><body><h2>Algorithm description</h2>
+        return """<html><body>
+        https://coast.noaa.gov/data/digitalcoast/pdf/qnspect-help-and-technical-guide.pdf#Rasterize_Soil
+        <h2>Algorithm description</h2>
 <p>The algorithm converts a vector polygon layer into Hydrologic Soul Group and/or K-Factor rasters. The value of the raster pixels is determined by the vector layer's attributes.</p>
 <p>Two soil parameters are needed: the hydrologic soils group, which is a measure of how permeable the soils are; and the K-factor, which is a measure of how erodible the soils are.</p>
 <h2>Input parameters</h2>

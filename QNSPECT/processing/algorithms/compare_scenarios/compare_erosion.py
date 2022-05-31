@@ -186,7 +186,7 @@ class CompareErosion(QNSPECTCompareAlgorithm):
 
     def shortHelpString(self):
         return """<html><body>
-<a href="https://www.noaa.gov/">Documentation</a>
+<a href="https://coast.noaa.gov/data/digitalcoast/pdf/qnspect-help-and-technical-guide.pdf#Compare_Scenarios_Erosion">Documentation</a>
 
 <h2>Algorithm Description</h2>
 
