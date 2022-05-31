@@ -10,7 +10,7 @@ version=0.0.1
 author=NOAA
 email=ocm dot nspect dot admins at noaa dot gov
 
-about=QNSPECT is the QGIS implementation of NOAA Office for Coastal Management (OCM) Nonpoint-Source Pollution and Erosion Comparison Tool (NSPECT). NSPECT is a screening tool designed to allow users to estimate initial baseline pollution and erosion over an area and then compare how those values would change under a different land-use or management scenario.
+about=QNSPECT is the QGIS implementation of NOAA Office for Coastal Management (OCM) Nonpoint-Source Pollution and Erosion Comparison Tool (NSPECT). NSPECT is a screening tool designed to allow users to estimate initial baseline pollution and erosion over an area and then compare how those values would change under a different land-use or management scenario. A user must have GRASS installed in QGIS to be able to use certain modules of the QNSPECT.
 
 tracker=https://github.com/NOAA-OCM/QNSPECT/issues
 repository=https://github.com/NOAA-OCM/QNSPECT
